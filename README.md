@@ -1,66 +1,72 @@
-# Blockchain — A Technical & Policy Primer (Interactive Seminar)
+# Blockchain, Built From Scratch — an interactive course
 
-An interactive, scroll-driven companion for a one-hour technical seminar on blockchain.
-Every demo runs **locally in the browser** — no build step, no dependencies, no internet
-required after first load. The SHA-256 is computed for real (pure-JS implementation),
-and digital signatures use the real **Web Crypto ECDSA P-256** API when served over
-`localhost`/`https`.
+A self-paced, **gamified course** that takes someone from *"I don't know what a blockchain is"*
+to an **ultra-technical** understanding — by having them build one, piece by piece, in the browser.
+
+Not a slideshow and not an endless scroll: it's a **dashboard** with a lesson map on the left and
+one focused, hands-on lesson at a time on the right. Crucially, the games are **connected** — there
+is a single thread of state running through the whole course:
+
+> You **generate your own keypair** → **sign a transaction** with it → that transaction is **bundled
+> into a block** → you **mine that block** → it **joins the chain** → then you **attack the chain you
+> built**. Each game's output is the next game's input.
+
+Everything runs locally. SHA-256 is computed for real; signatures use real **Web Crypto ECDSA P-256**.
 
 ## Run it
 
-Any static server works. The simplest:
-
 ```bash
 cd blockchainResearchSeminar
-python3 -m http.server 4321
-# then open http://localhost:4321
+python3 -m http.server 4321      # then open http://localhost:4321
 ```
 
-> Tip: serve over `http://localhost` (not `file://`) so the digital-signatures demo can use
-> the browser's native ECDSA. The rest (including SHA-256) works either way.
+Use the sidebar, the **Next/Previous** buttons, or the **← / →** arrow keys. Progress is saved in
+your browser (`localStorage`); "Reset progress" clears it.
 
-## Presenter notes
+## The 15 lessons, in 5 acts
 
-- **Scroll** top-to-bottom — the talk is structured as a narrative.
-- **Right-side dots** jump between sections; **← / →** arrow keys also navigate.
-- Everything is touchable. Suggested live beats:
+**Act 1 · Why blockchain?**
+1. **The Ledger** — money is a record; cheat a central bank vs. a distributed network.
+2. **The Double-Spend Problem** — spend one coin twice; see why ordering needs consensus.
 
-| Section | Do this live |
-|---|---|
-| **Hashing** | Change one letter in Input B → watch the avalanche bit-grid light up red |
-| **The Chain** | Edit Block #0's data → blocks turn red → hit *Re-mine* → cascade repairs |
-| **Signatures** | Generate → Sign → Verify (valid) → change the message → Verify (tamper caught) |
-| **Merkle Trees** | Click a transaction → see the O(log n) proof path |
-| **Consensus — 6 labs (the centerpiece)** | Build it ground-up, in order: |
-| &nbsp;&nbsp;① Double-spend | Pay Bob, then pay Carol the *same* coin → both signatures valid → why a bank-less network needs consensus |
-| &nbsp;&nbsp;② Mining puzzle | Mash "Try +1 nonce" to feel the difficulty, then "Auto-mine" → watch the hashrate, find a golden nonce. Crank difficulty to show 16× scaling |
-| &nbsp;&nbsp;③ Mining race | Set hash-power sliders → "Simulate 100 blocks" → reward share converges to hash-power share |
-| &nbsp;&nbsp;④ Forks | "Two miners find block #3 at once" → click a branch to extend → the loser is orphaned (longest-chain rule = why confirmations) |
-| &nbsp;&nbsp;⑤ 51% attack | Set your hash power + confirmations → live probability (real Satoshi whitepaper formula). "Launch attack" runs a stochastic race. Push q past 50% → guaranteed |
-| &nbsp;&nbsp;⑥ PoS & slashing | Run blocks weighted by stake, then "Make Val B sign a fraudulent block" → watch its bond get slashed |
-| **Trilemma** | Drag the point toward a corner → the other two shrink |
-| **TPS** | Bars animate Bitcoin (7) vs Ethereum (25) vs Visa (24,000) |
-| **Policy** | Toggle India / US / EU → table highlights that column |
-| **ZKP** | Run rounds as HONEST, then flip to CHEATER → exposed |
-| **Bridges** | Bridge ETH (lock→mint), then "Simulate exploit" → the $2.5B failure mode |
+**Act 2 · Cryptography**
+3. **Hashing** — live SHA-256; the avalanche effect; one-wayness.
+4. **Your Keys** — generate the ECDSA keypair that *is your identity* for the rest of the course.
+5. **Signing** — sign a payment with your key; watch an attacker's tampering get rejected.
 
-> The 51% attack probability is computed with Nakamoto's exact formula from §11 of the Bitcoin
-> whitepaper — verified against the paper's own published values (q=0.1, z=3 → 0.0132, etc.).
+**Act 3 · Build a chain**
+6. **The Block** — bundle *your* transaction; build a Merkle tree; prove inclusion in O(log n).
+7. **Mining (PoW)** — find the golden nonce for *your* block; difficulty/target math; append it.
+8. **The Chain** — tamper with a past block and watch the whole chain break (immutability).
+
+**Act 4 · Consensus**
+9. **The Mining Race** — hash power = win probability; reward share converges over 100 blocks.
+10. **Forks** — trigger a fork, resolve it with the longest-chain rule (why confirmations matter).
+11. **The 51% Attack** — set hash power + confirmations; success probability uses **Nakamoto's
+    exact formula from §11 of the Bitcoin whitepaper** (verified against the paper's own values).
+12. **Proof of Stake** — stake-weighted selection; make a validator cheat and get slashed.
+
+**Act 5 · The frontier**
+13. **Smart Contracts** — call a contract; pay too little → revert; pay enough → dispense.
+14. **Zero-Knowledge** — the Ali Baba cave; prove you know a secret without revealing it.
+15. **Recap & Frontier** — the chain *you* built, plus rollups, RWA, CBDCs, interop, AA, and policy.
 
 ## Structure
 
 ```
-index.html        all sections + copy
-css/style.css     dark cryptographic theme
-js/sha256.js      pure-JS SHA-256 (FIPS 180-4), verified against test vectors
-js/demos.js       every interactive component
-js/main.js        scroll progress, dot nav, reveal animations, keyboard nav
+index.html        app shell (sidebar + stage + nav)
+css/app.css       light, playful design system
+js/sha256.js      pure-JS SHA-256 (verified against test vectors)
+js/engine.js      shared course state (the synced thread), crypto, chain/Merkle helpers
+js/ui.js          DOM + component helpers (goal banners, cards, confetti, toasts)
+js/lessons.js     all 15 lessons
+js/app.js         sidebar map, routing, progress, lesson navigation
 ```
 
-## Content
+## Presenter tips
 
-Part I — The Technology · Part II — Global Policy Landscape · Part III — Emerging Developments.
-Covers hashing, block structure, public-key signatures, Merkle trees, PoW/PoS consensus,
-network types, smart contracts, the scalability trilemma, the India/US/EU regulatory
-comparison, zero-knowledge proofs, account abstraction, RWA tokenization, CBDCs, and
-cross-chain interoperability.
+- Each lesson follows the same rhythm: **plain-language concept → 🎯 a game with a clear goal →
+  💡 a "what this means" insight** that sets up the next lesson. Narrate the goal, play the game,
+  land the insight.
+- The strongest live moments: tamper the chain (L8), the 51% probability slider (L11), and the
+  reveal in L6 that *your* signed transaction is sitting inside the block you then mine.
