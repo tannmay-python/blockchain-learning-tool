@@ -1,17 +1,12 @@
-# Blockchain, Built From Scratch — an interactive course
+# Blockchain Live — operate a real blockchain, learn how it works
 
-A self-paced, **gamified course** that takes someone from *"I don't know what a blockchain is"*
-to an **ultra-technical** understanding — by having them build one, piece by piece, in the browser.
+Not slides, not a list of mini-games. **One persistent, live Proof-of-Work blockchain** running in
+the browser — real SHA-256 mining, real ECDSA transactions, a real mempool and account ledger — with
+a **guided teaching layer** that walks you from "what is this?" to genuinely ultra-technical, all by
+operating the *same* network.
 
-Not a slideshow and not an endless scroll: it's a **dashboard** with a lesson map on the left and
-one focused, hands-on lesson at a time on the right. Crucially, the games are **connected** — there
-is a single thread of state running through the whole course:
-
-> You **generate your own keypair** → **sign a transaction** with it → that transaction is **bundled
-> into a block** → you **mine that block** → it **joins the chain** → then you **attack the chain you
-> built**. Each game's output is the next game's input.
-
-Everything runs locally. SHA-256 is computed for real; signatures use real **Web Crypto ECDSA P-256**.
+You build an identity, broadcast money, become a miner, trigger a fork, attack the chain, and switch
+the consensus engine — and the network reacts live the whole time.
 
 ## Run it
 
@@ -20,53 +15,46 @@ cd blockchainResearchSeminar
 python3 -m http.server 4321      # then open http://localhost:4321
 ```
 
-Use the sidebar, the **Next/Previous** buttons, or the **← / →** arrow keys. Progress is saved in
-your browser (`localStorage`); "Reset progress" clears it.
+Live demo: **https://tannmay-python.github.io/blockchain-seminar/**
 
-## The 15 lessons, in 5 acts
+Controls: **space** play/pause · the speed buttons (0.5×–4×) and **⏭** step in the top bar · click any
+block to open the **inspector** · **Esc** closes it. The guide on the right has **Back / Next**.
 
-**Act 1 · Why blockchain?**
-1. **The Ledger** — money is a record; cheat a central bank vs. a distributed network.
-2. **The Double-Spend Problem** — spend one coin twice; see why ordering needs consensus.
+## What's actually real here
 
-**Act 2 · Cryptography**
-3. **Hashing** — live SHA-256; the avalanche effect; one-wayness.
-4. **Your Keys** — generate the ECDSA keypair that *is your identity* for the rest of the course.
-5. **Signing** — sign a payment with your key; watch an attacker's tampering get rejected.
+- **Real Proof of Work.** The mining loop runs real SHA-256 over real block headers searching for a
+  nonce that meets the difficulty target. The "Mining" spotlight shows the actual candidate hash being
+  tried. Which miner wins is weighted by hash power, exactly like a real network.
+- **Real cryptography.** Your wallet is a genuine **ECDSA P-256** key pair (Web Crypto). Your
+  transactions are really signed; tampering really invalidates them.
+- **A real ledger.** Accounts have balances and nonces; mining a block applies its transactions, pays
+  the miner the reward + fees, and drains the mempool. Send 25 coins and your balance really drops.
+- **Real Merkle roots, real chaining.** The inspector lets you recompute a block's Merkle root and
+  re-hash its header to verify it — change anything and it breaks.
 
-**Act 3 · Build a chain**
-6. **The Block** — bundle *your* transaction; build a Merkle tree; prove inclusion in O(log n).
-7. **Mining (PoW)** — find the golden nonce for *your* block; difficulty/target math; append it.
-8. **The Chain** — tamper with a past block and watch the whole chain break (immutability).
+## The guided journey (8 chapters, one network)
 
-**Act 4 · Consensus**
-9. **The Mining Race** — hash power = win probability; reward share converges over 100 blocks.
-10. **Forks** — trigger a fork, resolve it with the longest-chain rule (why confirmations matter).
-11. **The 51% Attack** — set hash power + confirmations; success probability uses **Nakamoto's
-    exact formula from §11 of the Bitcoin whitepaper** (verified against the paper's own values).
-12. **Proof of Stake** — stake-weighted selection; make a validator cheat and get slashed.
+1. **The living ledger** — orient: what you're watching is a live distributed ledger.
+2. **Anatomy of a block** — freeze it, open the inspector, dissect the header; SHA-256 deep-dive.
+3. **Your identity & money** — generate your ECDSA wallet; keys, addresses, the account model.
+4. **Sending value** — sign & broadcast a transaction; the fee market; watch it get confirmed.
+5. **Proof of Work** — become a miner, set your hash power & difficulty, mine a block yourself.
+6. **Consensus & forks** — trigger a fork, resolve it by the longest-chain rule; confirmations.
+7. **The 51% attack** — Nakamoto's whitepaper-§11 probability + a live stochastic attack race.
+8. **Beyond Proof of Work** — switch the network to Proof of Stake; tour the frontier.
 
-**Act 5 · The frontier**
-13. **Smart Contracts** — call a contract; pay too little → revert; pay enough → dispense.
-14. **Zero-Knowledge** — the Ali Baba cave; prove you know a secret without revealing it.
-15. **Recap & Frontier** — the chain *you* built, plus rollups, RWA, CBDCs, interop, AA, and policy.
-
-## Structure
+## Files
 
 ```
-index.html        app shell (sidebar + stage + nav)
-css/app.css       light, playful design system
-js/sha256.js      pure-JS SHA-256 (verified against test vectors)
-js/engine.js      shared course state (the synced thread), crypto, chain/Merkle helpers
-js/ui.js          DOM + component helpers (goal banners, cards, confetti, toasts)
-js/lessons.js     all 15 lessons
-js/app.js         sidebar map, routing, progress, lesson navigation
+index.html      shell: top bar + stage (miners, mining spotlight, chain, mempool) + guide rail + inspector
+css/app.css      light, rich "live network" design system
+js/sha256.js     pure-JS SHA-256 (verified against test vectors)
+js/chain.js      the blockchain engine — real PoW, ECDSA txs, ledger, miners, events (window.CHAIN)
+js/viz.js        renders the live chain/miners/mempool/spotlight + the block inspector (window.VIZ)
+js/guide.js      the 8 deep technical chapters that drive & explain the one network (window.GUIDE)
+js/app.js        boot + top-bar controls
 ```
 
-## Presenter tips
-
-- Each lesson follows the same rhythm: **plain-language concept → 🎯 a game with a clear goal →
-  💡 a "what this means" insight** that sets up the next lesson. Narrate the goal, play the game,
-  land the insight.
-- The strongest live moments: tamper the chain (L8), the 51% probability slider (L11), and the
-  reveal in L6 that *your* signed transaction is sitting inside the block you then mine.
+The engine emits events (`block`, `tx`, `mempool`, `tick`, `fork`, …); the visualization and the guide
+both subscribe. The guide chapters drive the same engine (play/pause, difficulty, fork, mode) and
+detect completion from real engine events — so the teaching and the simulation are never out of sync.

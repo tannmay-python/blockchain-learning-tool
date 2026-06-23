@@ -3,62 +3,82 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Blockchain, Built From Scratch · An Interactive Course</title>
-  <link rel="stylesheet" href="css/app.css?v=2" />
+  <title>Blockchain Live · Operate a real blockchain, learn how it works</title>
+  <link rel="stylesheet" href="css/app.css?v=4" />
 </head>
 <body>
   <div id="app">
-    <!-- ============ SIDEBAR ============ -->
-    <aside id="sidebar">
+    <!-- ===== TOP BAR ===== -->
+    <header id="topbar">
       <div class="brand">
         <div class="logo">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="3" y="3" width="7" height="7" rx="1.6" stroke="#fff" stroke-width="1.6"/>
-            <rect x="14" y="14" width="7" height="7" rx="1.6" stroke="#fff" stroke-width="1.6"/>
-            <path d="M10 6.5h2.5A1.5 1.5 0 0 1 14 8v6" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" stroke="#fff" stroke-width="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6" stroke="#fff" stroke-width="1.6"/><path d="M10 6.5h2.5A1.5 1.5 0 0 1 14 8v6" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
         </div>
-        <div>
-          <div class="t">Blockchain, from scratch</div>
-          <div class="s">Zero → ultra-technical</div>
+        <div><div class="t">Blockchain Live</div><div class="live"><span class="dot"></span>NETWORK RUNNING</div></div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="l">Height</div><div class="v brand" id="stHeight">#0</div></div>
+        <div class="stat"><div class="l">Hashrate</div><div class="v amber" id="stHps">0 H/s</div></div>
+        <div class="stat"><div class="l">Difficulty</div><div class="v" id="stDiff">4 zeros</div></div>
+        <div class="stat"><div class="l">Avg block</div><div class="v" id="stTime">—</div></div>
+        <div class="stat"><div class="l">Mempool</div><div class="v" id="stMempool">0</div></div>
+        <div class="stat"><div class="l">Energy</div><div class="v green" id="stEnergy">100%</div></div>
+      </div>
+
+      <div class="netctrl">
+        <div class="speedseg" id="speedSeg"><button data-s="0.5">0.5×</button><button data-s="1" class="on">1×</button><button data-s="2">2×</button><button data-s="4">4×</button></div>
+        <button class="iconbtn" id="ctrlStep" title="Mine one block">⏭</button>
+        <button class="iconbtn on" id="ctrlPlay" title="Play/Pause (space)">⏸</button>
+      </div>
+    </header>
+
+    <!-- ===== STAGE: the living blockchain ===== -->
+    <section id="stage">
+      <div class="stage-scroll">
+        <div class="miners" id="minersStrip"></div>
+        <div class="spotlight"><span class="lab">Mining</span><span class="h" id="spotHash"></span><span class="tgt" id="spotNonce"></span></div>
+        <div class="chain-wrap"><div class="chain-scroll" id="chainScroll"></div></div>
+        <div class="mempool">
+          <div class="mp-head"><span class="t">Mempool</span><span class="ct" id="mpCount">0 pending</span><span class="muted small" style="margin-left:auto">highest fee gets mined first →</span></div>
+          <div class="mp-chips" id="mpChips"></div>
         </div>
       </div>
 
-      <div class="course-progress">
-        <div class="bar"><i id="cpBar"></i></div>
-        <div class="lbl" id="cpLbl">0 / 15 lessons · 0%</div>
+      <!-- block inspector drawer -->
+      <aside id="inspector">
+        <div class="insp-head"><span class="t">Block inspector</span><button class="iconbtn" id="inspClose">✕</button></div>
+        <div class="insp-body" id="inspBody"></div>
+      </aside>
+
+      <!-- splash -->
+      <div id="splash">
+        <h1>You're about to run a blockchain.</h1>
+        <p>Not slides — a live Proof-of-Work network with real hashing and real signatures. Build an identity, send money, mine blocks, trigger forks, and attack it. A guide on the right teaches every layer as you operate it.</p>
+        <div class="splash-mini-chain"><span class="b" style="animation-delay:0s"></span><span class="b" style="animation-delay:.2s"></span><span class="b" style="animation-delay:.4s"></span><span class="b" style="animation-delay:.6s"></span><span class="b" style="animation-delay:.8s"></span></div>
+        <button class="btn primary lg" id="splashStart" style="font-size:16px;padding:15px 30px">Enter the network →</button>
       </div>
+    </section>
 
-      <nav id="lessonList"></nav>
-
-      <div style="margin-top:auto;padding:12px 8px 4px">
-        <button class="topbtn" id="resetBtn" style="width:100%">↺ Reset progress</button>
+    <!-- ===== GUIDE RAIL ===== -->
+    <aside id="rail">
+      <div class="rail-head">
+        <div class="rail-prog" id="railProg"></div>
+        <div class="rail-ch" id="railCh"></div>
+        <div class="rail-title" id="railTitle"></div>
+      </div>
+      <div class="rail-body" id="railBody"></div>
+      <div class="rail-foot">
+        <button class="navbtn" id="gPrev">← Back</button>
+        <button class="navbtn next" id="gNext">Next →</button>
       </div>
     </aside>
-
-    <!-- ============ MAIN ============ -->
-    <main id="main">
-      <header id="topbar">
-        <div class="crumb" id="crumb"></div>
-        <div style="display:flex;align-items:center;gap:14px">
-          <span class="pct" id="topPct">0%</span>
-        </div>
-      </header>
-
-      <div id="stage"></div>
-
-      <footer id="lessonNav">
-        <button class="navbtn" id="prevBtn">← Previous</button>
-        <span class="pct" style="color:var(--faint)">Use ← → arrow keys to navigate</span>
-        <button class="navbtn next" id="nextBtn">Next lesson →</button>
-      </footer>
-    </main>
   </div>
 
-  <script src="js/sha256.js?v=2"></script>
-  <script src="js/engine.js?v=2"></script>
-  <script src="js/ui.js?v=2"></script>
-  <script src="js/lessons.js?v=2"></script>
-  <script src="js/app.js?v=2"></script>
+  <script src="js/sha256.js?v=3"></script>
+  <script src="js/chain.js?v=3"></script>
+  <script src="js/viz.js?v=3"></script>
+  <script src="js/guide.js?v=3"></script>
+  <script src="js/app.js?v=3"></script>
 </body>
 </html>
