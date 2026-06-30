@@ -14,6 +14,40 @@ window.LESSONS = (function () {
   const card = (inner) => `<div class="fcard">${inner}</div>`;
   const P = (t) => `<p>${t}</p>`;
 
+  /* shared rich block/chain renderer — beautiful, detailed, interactive */
+  function richChain(host, opt) {
+    const diff = opt.diff || 2, GEN = "0".repeat(12);
+    const bodyOf = (b) => b.txs ? b.txs.join("|") : b.data;
+    const hh = (b, prev) => sha256(bodyOf(b) + prev + b.nonce);
+    let blocks = opt.blocks.map(b => ({ data: b.data, txs: b.txs ? b.txs.slice() : null }));
+    let prev = GEN; blocks.forEach(b => { b.nonce = 0; while (!hh(b, prev).startsWith("0".repeat(diff))) b.nonce++; b.prev = prev; b.hash = hh(b, prev); prev = b.hash; });
+    const wrap = el("div", ""); wrap.innerHTML = `<div class="xchain" id="xc"></div>`; host.appendChild(wrap);
+    const valid = (i) => { const b = blocks[i], rp = i === 0 ? GEN : blocks[i - 1].hash; return b.prev === rp && hh(b, b.prev).startsWith("0".repeat(diff)) && b.hash === hh(b, b.prev); };
+    function render(freshIdx) {
+      const c = wrap.querySelector("#xc"); c.innerHTML = "";
+      blocks.forEach((b, i) => { const ok = valid(i), cur = hh(b, b.prev);
+        const node = el("div", "xblock" + (ok ? "" : " bad") + (i === freshIdx ? " fresh" : ""));
+        const txsHtml = b.txs ? `<div class="xtxs">${b.txs.map(t => `<div class="xtx">${t}</div>`).join("")}</div>` : (opt.editable ? `<textarea class="xdata" data-i="${i}" rows="2">${(b.data || "").replace(/</g, "&lt;")}</textarea>` : `<div class="xv">${b.data || ""}</div>`);
+        node.innerHTML = `<div class="xtop"></div><div class="xpad">
+          <div class="xh"><span class="xn">#${i}</span><span class="xs">${ok ? "sealed" : "broken"}</span></div>
+          <div class="xseg xprev"><div class="xlbl">prev block ↩</div><div class="xv">${short(b.prev, 9, 5)}</div></div>
+          <div class="xseg"><div class="xlbl">${b.txs ? "transactions" : "data"}</div>${txsHtml}</div>
+          <div class="xseg xnonce"><span class="xlbl" style="margin:0">nonce</span><span class="v">${fmt(b.nonce)}</span></div>
+          <div class="xseal"><span class="lk">${ok ? "🔒" : "⚠️"}</span><span class="sv">${short(cur, 9, 5)}</span></div>
+          ${opt.editable ? `<button class="btn" data-mine="${i}" style="margin-top:10px;font-size:11px;padding:6px 10px;width:100%">Re-mine from here</button>` : ""}</div>`;
+        c.appendChild(node);
+        if (i < blocks.length - 1) { const conn = el("div", "xconn" + (ok ? "" : " bad")); conn.innerHTML = `<div class="hashtag">${short(b.hash, 5, 3)}</div><div class="ln"></div>`; c.appendChild(conn); }
+      });
+      if (opt.editable) {
+        c.querySelectorAll("textarea[data-i]").forEach(t => t.oninput = () => { const i = +t.dataset.i; blocks[i].data = t.value; blocks[i].hash = hh(blocks[i], blocks[i].prev); render(); const tt = wrap.querySelector(`textarea[data-i="${i}"]`); if (tt) tt.focus(); });
+        c.querySelectorAll("button[data-mine]").forEach(btn => btn.onclick = () => { let i = +btn.dataset.mine, p = i === 0 ? GEN : blocks[i - 1].hash; for (let j = i; j < blocks.length; j++) { blocks[j].prev = p; blocks[j].nonce = 0; while (!hh(blocks[j], p).startsWith("0".repeat(diff))) blocks[j].nonce++; blocks[j].hash = hh(blocks[j], p); p = blocks[j].hash; } render(); });
+      }
+      if (freshIdx != null) c.scrollLeft = c.scrollWidth;
+    }
+    render();
+    return { addBlock(data) { const p = blocks.length ? blocks[blocks.length - 1].hash : GEN; const nb = { data, nonce: 0 }; while (!hh(nb, p).startsWith("0".repeat(diff))) nb.nonce++; nb.prev = p; nb.hash = hh(nb, p); blocks.push(nb); render(blocks.length - 1); }, count() { return blocks.length; } };
+  }
+
   const L = {};
 
   /* ===================== FOUNDATIONS ===================== */
@@ -124,25 +158,22 @@ window.LESSONS = (function () {
 
   /* ===================== BUILDING THE CHAIN ===================== */
   L.block = { world: "chain", title: "A block", oneliner: "What gets bundled", icon: "▦",
-    hero: "Transactions don't go on one at a time. They're bundled into a block, sealed with a single fingerprint.",
+    hero: "A block is a box. It holds a batch of transactions, then gets sealed shut with one fingerprint.",
     beats: [
-      { n: "01", h: "Pack a block", cap: "Tap transactions to add them to the block. Watch the <b>Merkle root</b> — one fingerprint for the whole batch — change with every one.",
-        build(s) { const pool = ["Alice→Bob 5", "Carol→Dan 2", "Eve→Finn 8", "Gail→Hank 1", "Ivy→Jo 4"]; const inBlock = [];
-          const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>build a block</div><div class="note" style="margin-bottom:8px">mempool — tap to include</div><div id="bkPool" style="display:flex;flex-wrap:wrap;gap:8px"></div><div class="bfield hl full" style="margin-top:16px"><div class="k">merkle root of included transactions</div><div class="v go" id="bkRoot"></div></div>`;
+      { n: "01", h: "Pour transactions in", cap: "Tap a transaction to drop it into the block on the right. Watch the box fill up and its <b>seal</b> change with every one.",
+        build(s) { const pool = ["Alice → Bob: 5", "Carol → Dan: 2", "Eve → Finn: 8", "Gail → Hank: 1", "Ivy → Jo: 4"]; const inB = [];
+          const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>pack the block</div><div style="display:grid;grid-template-columns:1fr 244px;gap:20px;align-items:start"><div><div class="note" style="margin-bottom:8px">waiting transactions — tap to add</div><div id="pool" style="display:flex;flex-direction:column;gap:8px"></div></div><div id="slot"></div></div>`;
           s.appendChild(wrap);
           function merk(a) { if (!a.length) return sha256("∅"); let lvl = a.map(x => sha256(x)); while (lvl.length > 1) { const n = []; for (let i = 0; i < lvl.length; i += 2) n.push(sha256(lvl[i] + (lvl[i + 1] || lvl[i]))); lvl = n; } return lvl[0]; }
-          function render() { const pe = wrap.querySelector("#bkPool"); pe.innerHTML = ""; pool.forEach(t => { const inc = inBlock.includes(t); const chip = el("button", "btn" + (inc ? " gold" : ""), (inc ? "✓ " : "+ ") + t); chip.style.fontSize = "12.5px"; chip.style.padding = "8px 12px"; chip.onclick = () => { inc ? inBlock.splice(inBlock.indexOf(t), 1) : inBlock.push(t); render(); }; pe.appendChild(chip); }); wrap.querySelector("#bkRoot").textContent = inBlock.length ? merk(inBlock) : "— empty block —"; }
-          render();
+          function blk() { const root = inB.length ? merk(inB) : null; const seal = root ? sha256(root + "1057392") : null;
+            wrap.querySelector("#slot").innerHTML = `<div class="xblock${inB.length ? "" : ""}"><div class="xtop"></div><div class="xpad"><div class="xh"><span class="xn">#1</span><span class="xs">${inB.length} tx</span></div><div class="xseg"><div class="xlbl">transactions inside</div><div class="xtxs">${inB.length ? inB.map(t => `<div class="xtx">${t}</div>`).join("") : '<div class="note" style="padding:4px 0">empty — add some</div>'}</div></div><div class="xseg"><div class="xlbl">merkle root · one hash of all of them</div><div class="xv" style="color:var(--gold-2)">${root ? short(root, 11, 7) : "—"}</div></div><div class="xseal"><span class="lk">${seal ? "🔒" : "🔓"}</span><span class="sv">${seal ? short(seal, 9, 6) : "unsealed"}</span></div></div></div>`; }
+          function pool_() { const pe = wrap.querySelector("#pool"); pe.innerHTML = ""; pool.forEach(t => { const inc = inB.includes(t); const b = el("button", "btn" + (inc ? " gold" : ""), (inc ? "✓ " : "+ ") + t); b.style.cssText = "font-size:12.5px;justify-content:flex-start"; b.onclick = () => { inc ? inB.splice(inB.indexOf(t), 1) : inB.push(t); pool_(); blk(); }; pe.appendChild(b); }); }
+          pool_(); blk();
         } },
-      { n: "02", h: "Five fields, one seal", cap: "A block's <b>header</b> is tiny: a link to the previous block, the Merkle root, a time, and the mining fields. Edit a transaction and the whole seal shifts.",
-        build(s) { const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="k" style="font-size:10px;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px">transactions</div><textarea class="in mono" id="bTx" rows="2">Alice → Bob: 5
-Carol → Dan: 2</textarea><div class="bfields" style="margin-top:14px"><div class="bfield"><div class="k">previous hash · the chain link</div><div class="v" id="bP"></div></div><div class="bfield"><div class="k">nonce · mining (next)</div><div class="v vi">1 057 392</div></div><div class="bfield hl full"><div class="k">merkle root</div><div class="v go" id="bR"></div></div><div class="bfield hl full"><div class="k">block hash = SHA-256(header)</div><div class="v hash" id="bH"></div></div></div>`;
-          s.appendChild(wrap); const prev = "0000a3f2" + sha256("prev").slice(8, 64); wrap.querySelector("#bP").textContent = short(prev, 14, 8);
-          function merk(lines) { let lvl = lines.map(x => sha256(x)); if (!lvl.length) return sha256("∅"); while (lvl.length > 1) { const n = []; for (let i = 0; i < lvl.length; i += 2) n.push(sha256(lvl[i] + (lvl[i + 1] || lvl[i]))); lvl = n; } return lvl[0]; }
-          const tx = wrap.querySelector("#bTx"); function render() { const lines = tx.value.split("\n").filter(x => x.trim()); const root = merk(lines); wrap.querySelector("#bR").textContent = root; wrap.querySelector("#bH").innerHTML = splitZ(sha256(prev + root + "1057392")); } tx.oninput = render; render();
-        } },
+      { n: "02", h: "What's inside the header", cap: "Every block carries a tiny <b>header</b>: a link back to the previous block, the Merkle root, and the mining fields. Edit a transaction below — the seal instantly changes.",
+        build(s) { richChain(s, { blocks: [{ data: "Alice → Bob: 5\nCarol → Dan: 2" }], editable: true, diff: 3 }); } },
     ],
-    deeper: P("Each transaction is hashed; pairs of hashes are hashed together, up a tree, until one <b>Merkle root</b> remains in the header. Hashing the header gives the block its own ID. A block on its own isn't special — anyone can build one. What makes <i>adding</i> it costly, and the past unchangeable, is the next two lessons: the nonce, and the chain.") };
+    deeper: P("Each transaction is hashed; pairs of hashes are combined and hashed again, up a tree, until one <b>Merkle root</b> remains in the header. Hashing the whole header gives the block its ID — its seal. A block on its own isn't special; anyone can build one. What makes <i>adding</i> it costly, and the past unchangeable, is the next two lessons: the nonce, and the chain.") };
 
   L.nonce = { world: "chain", title: "The nonce", oneliner: "Proof of Work, by hand", icon: "⛏",
     hero: "Adding a block has to be expensive, or rewriting history would be free. The cost is a guessing game.",
@@ -167,21 +198,17 @@ Carol → Dan: 2</textarea><div class="bfields" style="margin-top:14px"><div cla
     deeper: P("If <code>p = target / 2²⁵⁶</code> is the chance one hash qualifies, expected tries is <code>1/p</code>, and each extra zero of difficulty makes it 16× rarer (a hex digit has 16 values). Bitcoin runs about 10²³ hashes per block every ten minutes, re-tuning the target every two weeks to hold that pace. The winner mints new coins plus fees. The recurring theme: producing a block is staggeringly expensive, but <b>checking</b> it is a single hash. <b>Policy hook:</b> Proof of Work turns electricity into security, so mining migrates to the cheapest power — China's 2021 ban moved half the world's hashrate across borders in months.") };
 
   L.chainlink = { world: "chain", title: "The chain", oneliner: "Why the past locks", icon: "⛓",
-    hero: "Each block carries the fingerprint of the one before it. That's the chain — and the lock.",
+    hero: "Line the blocks up. Each one writes down the fingerprint of the block before it — and that's the chain.",
     beats: [
-      { n: "01", h: "Welded by fingerprints", cap: "Edit any block's transaction. Its hash changes, the next block's ‘previous hash’ stops matching, and the break <b>cascades</b> all the way down.",
-        build(s) { const GEN = "0".repeat(16), DIFF = 3; let blocks = [{ d: "Genesis" }, { d: "Alice → Bob: 5" }, { d: "Carol → Dan: 2" }, { d: "Eve → Finn: 8" }];
-          const bh = (d, prev, nonce) => sha256(d + prev + nonce); function mine(b, prev) { b.nonce = 0; while (!bh(b.d, prev, b.nonce).startsWith("0".repeat(DIFF))) b.nonce++; }
-          let prev = GEN; blocks.forEach(b => { mine(b, prev); b.prev = prev; b.hash = bh(b.d, prev, b.nonce); prev = b.hash; });
-          const wrap = el("div", ""); wrap.innerHTML = `<div class="mchain" id="cR"></div>`; s.appendChild(wrap);
-          function valid(i) { const b = blocks[i]; const realPrev = i === 0 ? GEN : blocks[i - 1].hash; return b.prev === realPrev && bh(b.d, b.prev, b.nonce).startsWith("0".repeat(DIFF)) && b.hash === bh(b.d, b.prev, b.nonce); }
-          function render() { const row = wrap.querySelector("#cR"); row.innerHTML = ""; blocks.forEach((b, i) => { const ok = valid(i); const c = el("div", "mblk" + (ok ? "" : " bad"), `<div class="top">#${i}<span class="st">${ok ? "✓" : "✕"}</span></div><textarea data-i="${i}" rows="2">${b.d.replace(/</g, "&lt;")}</textarea><div class="r"><div class="k">prev</div><div class="v">${short(b.prev, 8, 4)}</div></div><div class="r"><div class="k">hash</div><div class="v hash">${short(bh(b.d, b.prev, b.nonce), 8, 4)}</div></div><button class="btn" data-mine="${i}" style="margin-top:9px;font-size:11px;padding:6px 10px">Re-mine from here</button>`); row.appendChild(c); if (i < blocks.length - 1) row.appendChild(el("div", "mlink" + (ok ? "" : " bad"))); });
-            row.querySelectorAll("textarea[data-i]").forEach(t => t.oninput = () => { const i = +t.dataset.i; blocks[i].d = t.value; blocks[i].hash = bh(blocks[i].d, blocks[i].prev, blocks[i].nonce); render(); const tt = wrap.querySelector(`textarea[data-i="${i}"]`); if (tt) tt.focus(); });
-            row.querySelectorAll("button[data-mine]").forEach(btn => btn.onclick = () => { let i = +btn.dataset.mine, pr = i === 0 ? GEN : blocks[i - 1].hash; for (let j = i; j < blocks.length; j++) { blocks[j].prev = pr; mine(blocks[j], pr); blocks[j].hash = bh(blocks[j].d, pr, blocks[j].nonce); pr = blocks[j].hash; } render(); });
-          } render();
+      { n: "01", h: "Each block points back", cap: "See the arrows? Every block stores the previous block's seal in its <b>‘prev’</b> field. Add a few more and watch the chain grow, each link freshly mined.",
+        build(s) { const c = richChain(s, { blocks: [{ data: "Genesis block" }, { data: "Alice → Bob: 5" }, { data: "Carol → Dan: 2" }], editable: false, diff: 3 });
+          const row = el("div", "btn-row"); row.style.justifyContent = "center"; row.style.marginTop = "8px";
+          const b = el("button", "btn primary", "+ Add a block"); let i = 1; b.onclick = () => { c.addBlock(["Dan → Eve: 3", "Eve → Finn: 8", "Finn → Gail: 2", "Gail → Hank: 6"][i++ % 4]); }; row.appendChild(b); s.appendChild(row);
         } },
+      { n: "02", h: "Now try to rewrite the past", cap: "Edit a transaction in an old block. Its seal changes, the next ‘prev’ stops matching, and every link after it turns <b>red</b> — the tampering is visible to everyone, instantly.",
+        build(s) { richChain(s, { blocks: [{ data: "Genesis" }, { data: "Alice → Bob: 5" }, { data: "Carol → Dan: 2" }, { data: "Eve → Finn: 8" }], editable: true, diff: 3 }); } },
     ],
-    deeper: P("Changing the past doesn't just edit a block — it invalidates everything built on top, in plain view. To repair it you'd have to re-mine that block <i>and every block after it</i>, winning the whole Proof-of-Work race again, while the honest network keeps extending the real chain with all its power. Below 50% of the hashrate, you fall further behind every ten minutes. Fingerprints make tampering visible; work makes fixing it a race you lose. That combination is immutability.") };
+    deeper: P("Changing the past doesn't just edit one block — it invalidates everything built on top, in plain view. To repair it you'd have to re-mine that block <i>and every block after it</i>, winning the whole Proof-of-Work race again, while the honest network keeps extending the real chain with all its power. Below 50% of the hashrate, you fall further behind every ten minutes. Fingerprints make tampering visible; work makes fixing it a race you lose. That combination is immutability.") };
 
   L.merkle = { world: "chain", title: "Merkle tree", oneliner: "Prove inclusion cheaply", icon: "⋔",
     hero: "How does a phone confirm a payment without downloading the whole blockchain? A clever tree of hashes.",
@@ -286,6 +313,82 @@ Carol → Dan: 2</textarea><div class="bfields" style="margin-top:14px"><div cla
         } },
     ],
     deeper: P("<b>Stablecoins</b> hold a peg — fiat-backed (a dollar in reserve), crypto-backed (over-collateralised), or algorithmic (held by code, and fragile — Terra collapsed). A <b>CBDC</b> is a central bank's own digital currency, and technically the opposite of crypto: centralised, permissioned, fully controlled. The through-line of the whole course: take the referee out and you get money no state can freeze; hand the state the keys and you get the most controllable money in history. The policy question is never the tech — it's who holds the keys.") };
+
+  /* ===================== PRIMER (start here) ===================== */
+  L.whatis = { world: "primer", title: "What is a blockchain?", oneliner: "The whole idea, in one screen", icon: "◧",
+    hero: "Forget the buzzwords. A blockchain is a list of blocks, copied across many computers, that nobody can quietly rewrite. Let us build that picture.",
+    beats: [
+      { n: "01", h: "A block holds records", cap: "Start with one <b>block</b> — just a box that holds a list of records, like a page in a notebook. Add a few and watch its fingerprint at the bottom change.",
+        build(s) { const recs = ["Alice → Bob: 5 coins", "Carol → Dan: 2 coins", "Eve → Finn: 8 coins", "Gail → Hank: 1 coin"];
+          const wrap = el("div", ""); wrap.innerHTML = `<div class="bigblock"><div class="bt"></div><div class="bp"><div class="bn">Block #1</div><div class="brow"><div class="k">records inside</div><div class="v" id="recs"></div></div><div class="brow"><div class="k">fingerprint that seals it</div><div class="v" style="color:var(--gold-2)" id="seal"></div></div></div></div><div class="btn-row" style="justify-content:center;margin-top:16px"><button class="btn" id="add">+ Add a record</button></div>`;
+          s.appendChild(wrap); let list = recs.slice(0, 2), i = 2;
+          function draw() { wrap.querySelector("#recs").innerHTML = list.map(r => `<div style="padding:3px 0">${r}</div>`).join(""); wrap.querySelector("#seal").textContent = short(sha256(list.join("|")), 18, 10); }
+          wrap.querySelector("#add").onclick = () => { list.push(i < recs.length ? recs[i++] : "Someone → Someone: " + (1 + Math.floor(Math.random() * 9)) + " coins"); draw(); }; draw();
+        } },
+      { n: "02", h: "Chain the blocks together", cap: "Each block writes down the <b>fingerprint of the block before it</b> (follow the arrows). That backward link is the whole reason it is called a <i>chain</i>. Add a few.",
+        build(s) { const c = richChain(s, { blocks: [{ data: "Genesis block" }, { data: "Alice → Bob: 5" }, { data: "Carol → Dan: 2" }], editable: false, diff: 2 });
+          const row = el("div", "btn-row"); row.style.cssText = "justify-content:center;margin-top:8px"; const b = el("button", "btn primary", "+ Add a block"); let i = 0; const tx = ["Dan → Eve: 3", "Eve → Finn: 8", "Finn → Gail: 2", "Gail → Hank: 6"]; b.onclick = () => c.addBlock(tx[i++ % tx.length]); row.appendChild(b); s.appendChild(row); } },
+      { n: "03", h: "And everyone keeps a copy", cap: "There is no master copy. The exact same chain lives on thousands of computers. Try to tamper with one — the others simply <b>out-vote</b> it.",
+        build(s) { const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>the same chain, everywhere</div><div class="copies" id="cps"></div><div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn danger" id="tamper">Tamper with one copy</button><button class="btn" id="reset">Reset</button></div><div class="note" id="msg" style="text-align:center;margin-top:12px">All copies agree on the same history.</div>`;
+          s.appendChild(wrap); const N = 6; let bad = -1;
+          function draw() { const g = wrap.querySelector("#cps"); g.innerHTML = ""; for (let i = 0; i < N; i++) { const t = i === bad; const node = el("div", "cnode" + (t ? " bad" : "")); node.innerHTML = `<div class="nlabel">computer ${i + 1}</div><div class="minichain">${[0, 1, 2, 3].map(k => `<div class="mb${t && k === 2 ? " tampered" : ""}"></div>`).join("")}</div>`; g.appendChild(node); } }
+          wrap.querySelector("#tamper").onclick = () => { bad = Math.floor(Math.random() * N); draw(); wrap.querySelector("#msg").innerHTML = `<span style="color:var(--red)">Computer ${bad + 1} now disagrees with the other ${N - 1}. The majority wins, so the lie is ignored.</span>`; };
+          wrap.querySelector("#reset").onclick = () => { bad = -1; draw(); wrap.querySelector("#msg").textContent = "All copies agree on the same history."; }; draw();
+        } },
+    ],
+    deeper: P("That is the entire mental model: <b>blocks</b> of records, <b>chained</b> by fingerprints, <b>copied</b> across a whole network. The clever part is not any single piece — it is that together they let strangers keep one shared, tamper-proof record without trusting anyone in charge. Everything else in this course is just <i>how</i> each of those three words actually works.") };
+
+  L.why = { world: "primer", title: "Why do we need it?", oneliner: "The problem it solves", icon: "?",
+    hero: "Why go to all this trouble? Because handing your records to a single keeper has real costs — and sometimes you cannot.",
+    beats: [
+      { n: "01", h: "Today, a middleman holds the record", cap: "To send money, it runs through a bank. You trust them to keep the ledger honest, available, and yours.",
+        build(s) { const wrap = el("div", "fcard"); wrap.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;gap:20px;padding:22px 0"><div style="text-align:center"><div style="font-size:38px">🧑</div><div class="note">you</div></div><div style="color:var(--ink-3);font-size:22px">→</div><div style="text-align:center"><div style="font-size:38px">🏦</div><div class="note">bank<br>holds the only ledger</div></div><div style="color:var(--ink-3);font-size:22px">→</div><div style="text-align:center"><div style="font-size:38px">🧑</div><div class="note">friend</div></div></div><div class="note" style="text-align:center;font-size:14px">Every payment passes through a keeper you have to trust.</div>`; s.appendChild(wrap); } },
+      { n: "02", h: "But one keeper is one weak point", cap: "Everything sits with a single party. Press the buttons — a frozen account or a failed server, and your money is suddenly out of reach.",
+        build(s) { const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>the bank's ledger</div><div class="kvs"><div class="kv"><span class="k">your balance</span><span class="v gr" id="bal">20 coins</span></div></div><div class="btn-row" style="margin-top:14px"><button class="btn danger" id="freeze">Freeze the account</button><button class="btn danger" id="fail">Server fails</button><button class="btn" id="reset">Reset</button></div><div class="sig-state" id="msg" style="margin-top:12px">Your money sits with one keeper.</div>`;
+          s.appendChild(wrap); const setM = (t) => { wrap.querySelector("#msg").className = "sig-state bad"; wrap.querySelector("#msg").textContent = t; };
+          wrap.querySelector("#freeze").onclick = () => { wrap.querySelector("#bal").innerHTML = `<span style="color:var(--red)">frozen 🔒</span>`; setM("One decision, and you cannot touch your own money. There is no one to appeal to."); };
+          wrap.querySelector("#fail").onclick = () => { wrap.querySelector("#bal").innerHTML = `<span style="color:var(--red)">— gone —</span>`; setM("The only copy is gone. A single point of failure took everything with it."); };
+          wrap.querySelector("#reset").onclick = () => { wrap.querySelector("#bal").textContent = "20 coins"; wrap.querySelector("#bal").className = "v gr"; wrap.querySelector("#msg").className = "sig-state"; wrap.querySelector("#msg").textContent = "Your money sits with one keeper."; };
+        } },
+      { n: "03", h: "Blockchain removes the keeper", cap: "Spread the same record across everyone. Now no single party can freeze you, and no single failure can erase it. Try to freeze it — nothing happens.",
+        build(s) { const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>the same balance, on every computer</div><div class="copies" id="cps"></div><div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn danger" id="freeze">Try to freeze it</button></div><div class="note" id="msg" style="text-align:center;margin-top:12px">Your balance lives on all of them at once.</div>`;
+          s.appendChild(wrap); const N = 6; function draw() { wrap.querySelector("#cps").innerHTML = Array.from({ length: N }, (_, i) => `<div class="cnode"><div class="nlabel">computer ${i + 1}</div><div class="minichain">${[0, 1, 2].map(() => `<div class="mb"></div>`).join("")}</div></div>`).join(""); }
+          wrap.querySelector("#freeze").onclick = () => { wrap.querySelector("#msg").innerHTML = `<span style="color:var(--green)">There is no single keeper to lean on. To freeze you, someone would have to seize a majority of the world's computers at once — practically impossible.</span>`; }; draw();
+        } },
+    ],
+    deeper: P("This is the real pitch, stripped of hype: blockchain trades a <i>trusted</i> keeper for a <i>trustless</i> system. You give up the convenience of someone to call when things go wrong, and in return you get money — or records — that no single party can censor, freeze, or quietly alter. Whether that trade is worth it depends entirely on the use case, which is the honest question to ask of any blockchain pitch.") };
+
+  L.tour = { world: "primer", title: "The life of a payment", oneliner: "How it all fits together", icon: "↗",
+    hero: "Before the details, watch the whole machine work. Follow one payment from your fingertips to the permanent record, in five steps.",
+    beats: [
+      { n: "01", h: "Step through it", cap: "Click through the journey of a single payment. Each step is its own lesson later — this is just the map.",
+        build(s) { const steps = [
+            { ic: "✍️", t: "You sign a payment", d: "You use your secret key to authorise ‘send 5 coins to Bob’. Only you can sign it, but anyone can check that you did." },
+            { ic: "📥", t: "It joins the waiting pool", d: "Your signed payment is broadcast to the network and waits in a shared pool with everyone else's pending payments." },
+            { ic: "⛏️", t: "A miner seals it into a block", d: "A miner scoops up a batch of waiting payments, packs them into a block, and burns real effort to seal it shut." },
+            { ic: "⛓️", t: "The block joins the chain", d: "The new block points back to the previous one and locks onto the end of the chain. Your payment is now on the record." },
+            { ic: "🌍", t: "Every copy updates", d: "Every computer adds the same block. With a few more stacked on top, your payment is final — there are no take-backs." },
+          ];
+          let i = 0; const wrap = el("div", "fcard"); s.appendChild(wrap);
+          function draw() { const st = steps[i]; wrap.innerHTML = `<div style="text-align:center;padding:16px 0"><div style="font-size:50px">${st.ic}</div><div style="font-family:var(--disp);font-weight:500;font-size:25px;color:var(--plum);margin-top:12px">${st.t}</div><p class="note" style="font-size:15px;color:var(--ink-2);max-width:450px;margin:12px auto 0;line-height:1.55">${st.d}</p></div><div style="display:flex;gap:6px;justify-content:center;margin:14px 0">${steps.map((_, k) => `<div style="width:34px;height:5px;border-radius:99px;background:${k <= i ? "var(--plum)" : "var(--surface-3)"};transition:background .3s"></div>`).join("")}</div><div class="btn-row" style="justify-content:center"><button class="btn" id="prev" ${i === 0 ? "disabled" : ""}>← Back</button><button class="btn primary" id="next">${i < steps.length - 1 ? "Next step →" : "Start over"}</button></div>`;
+            wrap.querySelector("#prev").onclick = () => { if (i > 0) { i--; draw(); } }; wrap.querySelector("#next").onclick = () => { i = i < steps.length - 1 ? i + 1 : 0; draw(); }; }
+          draw();
+        } },
+    ],
+    deeper: P("Those five steps map onto the rest of this course: <b>signing</b> is the Cryptography world, <b>packing a block</b> and <b>sealing it with work</b> are Building the Chain, and <b>every copy agreeing</b> is the Consensus world. If you remember nothing else, remember this loop — sign, pool, seal, link, agree — repeating roughly every ten minutes, forever.") };
+
+  /* ===================== CAPSTONE ===================== */
+  L.recap = { world: "capstone", title: "The whole machine", oneliner: "Everything, running together", icon: "★",
+    hero: "You have built every part by hand. Here is the finished machine — keep mining blocks and watch the chain you understand grow.",
+    beats: [
+      { n: "01", h: "Run the chain", cap: "Mine block after block. You now know exactly what each one means: bundled records, sealed by work, linked to the past, copied to all.",
+        build(s) { const c = richChain(s, { blocks: [{ data: "Genesis" }, { data: "Alice → Bob: 5" }], editable: false, diff: 2 });
+          const row = el("div", "btn-row"); row.style.cssText = "justify-content:center;margin-top:8px"; const b = el("button", "btn primary", "+ Mine the next block"); let i = 0; const tx = ["Bob → Carol: 3", "Carol → Dan: 7", "Dan → Eve: 2", "Eve → Finn: 9", "Finn → Gail: 4", "Gail → Hank: 6"]; b.onclick = () => c.addBlock(tx[i++ % tx.length]); row.appendChild(b); s.appendChild(row); } },
+      { n: "02", h: "Everything you built", cap: "Seven ideas, one machine. Each was a lesson; together they let strangers agree on one history with no one in charge.",
+        build(s) { const items = [["A hash", "a fingerprint you cannot reverse"], ["Keys", "a secret that proves what is yours"], ["A block", "records bundled and sealed shut"], ["Mining", "work that makes sealing expensive"], ["The chain", "links that lock the past in place"], ["Consensus", "the chain with the most work wins"], ["Stake or work", "lying always costs more than it pays"]];
+          const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>the journey, in one line each</div>` + items.map(([h, d]) => `<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)"><span style="color:var(--gold-2);font-weight:700;font-family:var(--mono)">→</span><div><b style="color:var(--ink)">${h}</b> <span class="note">— ${d}</span></div></div>`).join(""); s.appendChild(wrap); } },
+    ],
+    deeper: P("The point was never the coin. It was a way for people who do not trust each other to agree on one shared record without a referee. Take the referee out and you get money no state can freeze; hand a state the keys and you get the most controllable money in history. Same machine, opposite valence — which is exactly why the policy questions are so hard.") };
 
   return L;
 })();

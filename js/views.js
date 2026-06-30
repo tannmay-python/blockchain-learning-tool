@@ -14,7 +14,7 @@ window.VIEWS = (function () {
     return `<div class="progmini"><span>${d} / ${t}</span><div class="bar"><i style="width:${(d / t * 100).toFixed(0)}%"></i></div></div>`;
   }
   function nav(active) {
-    return `<nav class="nav"><div class="brand" data-go="#/"><div class="mk">${LOGO}</div><div class="bt">Chain<span>World</span></div></div>
+    return `<nav class="nav"><div class="brand" data-go="#/" title="Home"><div class="mk">${LOGO}</div></div>
       <div class="links"><a data-go="#/" class="${active === "home" ? "on" : ""}">Home</a><a data-go="#/map" class="${active === "map" ? "on" : ""}">The Journey</a></div>
       <div class="right">${progMini()}</div></nav>`;
   }
@@ -24,22 +24,14 @@ window.VIEWS = (function () {
   function home() {
     const done = S.totalDone(), total = S.lessonsTotal, resume = done > 0 && done < total, startId = S.firstUndone();
     root().innerHTML = nav("home") + `
-      <section class="hero"><canvas id="heroCanvas"></canvas><div class="hero-in">
-        <div class="eyebrow">A visual companion</div>
-        <h1>Blockchain<br>you can <em>see</em>.</h1>
-        <p class="sub">Fourteen short, hands-on explainers across five worlds. Almost no jargon — you move things, watch what happens, and the idea clicks.</p>
+      <section class="hero hero-full"><canvas id="heroCanvas"></canvas><div class="hero-in">
+        <div class="eyebrow">A visual experience</div>
+        <h1>Learn Blockchain<br>by <em>doing</em>.</h1>
         <div class="cta">
-          <button class="btn primary lg" data-go="#/lesson/${startId}">${resume ? "Continue" : done === total ? "Revisit the journey" : "Start exploring"} →</button>
-          <button class="btn lg ghost" data-go="#/map">See the map</button>
-        </div></div><div class="scroll-hint">SCROLL</div>
-      </section>
-      <section class="section">
-        <div class="section-h"><div class="k">The curriculum</div><h2>Five worlds, one machine</h2><p>Each world builds on the last — from why blockchain exists, to the cryptography, to consensus and the wider ecosystem.</p></div>
-        <div class="worlds-grid">${S.WORLDS.map(worldCard).join("")}</div>
-      </section>
-      <footer>Every demo runs locally in your browser — the hashing is real SHA-256, the signatures real ECDSA.</footer>`;
+          <button class="btn primary lg" data-go="#/lesson/${startId}">${resume ? "Continue where you left off" : "Start exploring"} →</button>
+        </div></div>
+      </section>`;
     wireGo();
-    root().querySelectorAll(".wcard").forEach(c => c.onclick = () => go("#/map"));
     if (window.APP) window.APP.heroCanvas();
   }
   function worldCard(w) {
@@ -89,8 +81,7 @@ window.VIEWS = (function () {
         <div id="beats"></div>
         ${l.deeper ? `<details class="deeper"><summary>Go deeper — the technical detail</summary><div class="dbody">${l.deeper}</div></details>` : ""}
         <div class="lesson-end">
-          <div class="done-tog ${S.isDone(id) ? "on" : ""}" id="doneTog"><span class="box">${S.isDone(id) ? "✓" : ""}</span> ${S.isDone(id) ? "Marked as explored" : "Mark as explored"}</div>
-          <div class="btn-row" style="justify-content:center">${prev ? `<button class="btn ghost" data-go="#/lesson/${prev}">← ${L[prev].title}</button>` : ""}${next ? `<button class="btn primary" data-go="#/lesson/${next}">${L[next].title} →</button>` : `<button class="btn primary" data-go="#/map">Back to the map</button>`}</div>
+          <div class="btn-row" style="justify-content:center">${prev ? `<button class="btn ghost" data-go="#/lesson/${prev}">← ${L[prev].title}</button>` : ""}${next ? `<button class="btn primary" id="endNext">${L[next].title} →</button>` : `<button class="btn primary" data-go="#/map">Back to the map</button>`}</div>
         </div>
       </div>`;
     wireGo();
@@ -105,12 +96,12 @@ window.VIEWS = (function () {
     // reveal on scroll
     const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.12 });
     root().querySelectorAll(".reveal").forEach(r => io.observe(r));
-    // mark done + nav
-    const markDone = () => { if (!S.isDone(id)) { S.setDone(id, true); refreshDoneUI(true); } };
-    function refreshDoneUI(on) { const t = document.getElementById("doneTog"); t.className = "done-tog" + (on ? " on" : ""); t.querySelector(".box").textContent = on ? "✓" : ""; t.childNodes[1].textContent = on ? " Marked as explored" : " Mark as explored"; document.querySelectorAll(".progmini").forEach(p => { p.outerHTML = progMini(); }); }
-    document.getElementById("doneTog").onclick = () => { const nowOn = !S.isDone(id); S.setDone(id, nowOn); refreshDoneUI(nowOn); };
+    // silently mark done when the learner moves on
+    const markDone = () => { if (!S.isDone(id)) { S.setDone(id, true); document.querySelectorAll(".progmini").forEach(p => { p.outerHTML = progMini(); }); } };
     document.getElementById("lPrev").onclick = () => prev && go("#/lesson/" + prev);
-    document.getElementById("lNext").onclick = () => { markDone(); next ? go("#/lesson/" + next) : go("#/map"); };
+    const onNext = () => { markDone(); next ? go("#/lesson/" + next) : go("#/map"); };
+    document.getElementById("lNext").onclick = onNext;
+    const en = document.getElementById("endNext"); if (en) en.onclick = onNext;
   }
 
   return { home, map, lesson };
