@@ -3,47 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Blockchain — an interactive primer</title>
-  <link rel="stylesheet" href="css/app.css?v=10" />
+  <title>ChainWorld — learn blockchain, visually</title>
+  <link rel="stylesheet" href="css/app.css?v=12" />
 </head>
 <body>
-  <!-- cinematic hero -->
-  <div id="hero">
-    <canvas id="heroCanvas"></canvas>
-    <div class="hero-in">
-      <div class="hero-eyebrow">An interactive companion</div>
-      <h1 class="hero-title">Blockchain,<br>from <em>first principles</em>.</h1>
-      <p class="hero-sub">One idea at a time — hashing, signatures, blocks, mining, consensus — each one a thing you can touch. Built to teach alongside the talk.</p>
-      <button class="hero-cta" id="heroStart">Begin →</button>
-      <div class="hero-foot">Use ← → to move between modules · press P for presentation mode</div>
-    </div>
-  </div>
+  <canvas id="starfield"></canvas>
+  <div class="bg-aura"></div>
+  <div id="root"></div>
 
-  <div id="app">
-    <header id="topbar">
-      <div class="brand">
-        <div class="mk"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" stroke="#fff" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.6" stroke="#fff" stroke-width="1.7"/><path d="M10 6.5h2.5A1.5 1.5 0 0 1 14 8v6" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg></div>
-        <div><div class="t">Blockchain</div><div class="live"><span class="d"></span>INTERACTIVE PRIMER</div></div>
-      </div>
-      <div style="flex:1;text-align:center"><span class="mono" id="topLabel" style="font-size:12.5px;color:var(--ink-3);letter-spacing:.04em"></span></div>
-      <div class="netctrl">
-        <button class="ibtn" id="ctrlPresent" title="Presentation mode — larger text (P)">Aa</button>
-        <button class="ibtn" id="ctrlFull" title="Fullscreen (F)">⤢</button>
-      </div>
-    </header>
-
-    <aside id="rail"></aside>
-    <section id="stage"><div class="mstage" id="moduleStage"></div></section>
-
-    <aside id="narr">
-      <div class="narr-head"><div class="narr-ch" id="narrKick"></div><div class="narr-title" id="narrTitle"></div></div>
-      <div class="narr-body" id="narrBody"></div>
-      <div class="narr-foot"><button class="nav" id="gPrev">← Back</button><button class="nav next" id="gNext">Next →</button></div>
-    </aside>
-  </div>
-
-  <script src="js/sha256.js?v=10"></script>
-  <script src="js/modules.js?v=10"></script>
-  <script src="js/app.js?v=10"></script>
+  <script src="js/sha256.js?v=12"></script>
+  <script src="js/store.js?v=12"></script>
+  <script src="js/lessons.js?v=12"></script>
+  <script src="js/views.js?v=12"></script>
+  <script src="js/app.js?v=12"></script>
 </body>
 </html>
