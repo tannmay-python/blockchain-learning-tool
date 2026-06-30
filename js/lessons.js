@@ -45,7 +45,48 @@ window.LESSONS = (function () {
       if (freshIdx != null) c.scrollLeft = c.scrollWidth;
     }
     render();
-    return { addBlock(data) { const p = blocks.length ? blocks[blocks.length - 1].hash : GEN; const nb = { data, nonce: 0 }; while (!hh(nb, p).startsWith("0".repeat(diff))) nb.nonce++; nb.prev = p; nb.hash = hh(nb, p); blocks.push(nb); render(blocks.length - 1); }, count() { return blocks.length; } };
+    return {
+      addBlock(data) { const p = blocks.length ? blocks[blocks.length - 1].hash : GEN; const nb = { data, nonce: 0 }; while (!hh(nb, p).startsWith("0".repeat(diff))) nb.nonce++; nb.prev = p; nb.hash = hh(nb, p); blocks.push(nb); render(blocks.length - 1); },
+      mineNext(data, onDone) { // animated: scramble the seal while searching, then snap
+        const p = blocks.length ? blocks[blocks.length - 1].hash : GEN; const tmp = { data, nonce: 0 };
+        const c = wrap.querySelector("#xc");
+        if (blocks.length) { const conn = el("div", "xconn"); conn.innerHTML = `<div class="ln"></div>`; c.appendChild(conn); }
+        const ph = el("div", "xblock mining"); ph.innerHTML = `<div class="xtop"></div><div class="xpad"><div class="xh"><span class="xn">#${blocks.length}</span><span class="xs">mining…</span></div><div class="xseg"><div class="xlbl">data</div><div class="xv">${data}</div></div><div class="xseg xnonce"><span class="xlbl" style="margin:0">nonce</span><span class="v" id="phn">0</span></div><div class="xseal"><span class="lk">🔓</span><span class="sv" id="phh"></span></div></div>`;
+        c.appendChild(ph); c.scrollLeft = c.scrollWidth;
+        const tick = () => { for (let i = 0; i < 130; i++) { if (hh(tmp, p).startsWith("0".repeat(diff))) { tmp.prev = p; tmp.hash = hh(tmp, p); blocks.push(tmp); render(blocks.length - 1); if (onDone) onDone(); return; } tmp.nonce++; } ph.querySelector("#phn").textContent = fmt(tmp.nonce); ph.querySelector("#phh").textContent = short(hh(tmp, p), 10, 6); setTimeout(tick, 16); };
+        setTimeout(tick, 16);
+      },
+      count() { return blocks.length; }
+    };
+  }
+
+  /* drag-to-build + live-mine a single block */
+  function blockLab(host) {
+    const pool = ["Alice → Bob: 5", "Carol → Dan: 2", "Eve → Finn: 8", "Gail → Hank: 1", "Ivy → Jo: 4", "Ken → Lee: 6"];
+    let inB = [], mining = false, sealed = false, curHash = "";
+    const merk = (a) => { if (!a.length) return ""; let lvl = a.map(x => sha256(x)); while (lvl.length > 1) { const n = []; for (let i = 0; i < lvl.length; i += 2) n.push(sha256(lvl[i] + (lvl[i + 1] || lvl[i]))); lvl = n; } return lvl[0]; };
+    const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>build &amp; seal your own block</div>
+      <div class="lab-grid"><div><div class="note" style="margin-bottom:8px">drag these in — or tap them →</div><div class="txpool" id="pool"></div></div>
+      <div><div id="slot"></div><button class="btn gold block" id="mine" style="margin-top:12px" disabled>⛏ Mine to seal it</button></div></div>`;
+    host.appendChild(wrap);
+    const poolEl = wrap.querySelector("#pool"), slot = wrap.querySelector("#slot"), mineBtn = wrap.querySelector("#mine");
+    function drawPool() { poolEl.innerHTML = ""; pool.forEach(t => { const used = inB.includes(t); const chip = el("div", "txchip" + (used ? " used" : ""), `<span class="grip">⠿</span>${t}`); if (!used && !sealed) { chip.draggable = true; chip.ondragstart = e => { e.dataTransfer.setData("text/plain", t); chip.classList.add("dragging"); }; chip.ondragend = () => chip.classList.remove("dragging"); chip.onclick = () => add(t); } poolEl.appendChild(chip); }); }
+    function drawBlock() { const root = inB.length ? merk(inB) : null;
+      slot.innerHTML = `<div class="xblock${sealed ? " justsealed" : mining ? " mining" : ""}"><div class="xtop"></div><div class="xpad">
+        <div class="xh"><span class="xn">#1</span><span class="xs">${sealed ? "sealed" : mining ? "mining…" : inB.length + " tx"}</span></div>
+        <div class="xseg"><div class="xlbl">transactions${sealed ? " (locked)" : " — drop here"}</div><div class="dropzone${inB.length ? "" : " empty"}" id="dz">${inB.length ? inB.map(t => `<div class="xtx">${t}</div>`).join("") : "drag a transaction here"}</div></div>
+        <div class="xseg"><div class="xlbl">merkle root</div><div class="xv" style="color:var(--gold-2)">${root ? short(root, 11, 7) : "—"}</div></div>
+        <div class="xseal"><span class="lk">${sealed ? "🔒" : "🔓"}</span><span class="sv">${sealed || mining ? short(curHash || "0".repeat(64), 10, 6) : "not sealed yet"}</span></div>
+        ${mining ? `<div class="minebar"><i id="mb"></i></div>` : ""}</div></div>`;
+      const dz = slot.querySelector("#dz"); if (!sealed && !mining) { dz.ondragover = e => { e.preventDefault(); dz.classList.add("over"); }; dz.ondragleave = () => dz.classList.remove("over"); dz.ondrop = e => { e.preventDefault(); dz.classList.remove("over"); add(e.dataTransfer.getData("text/plain")); }; }
+      mineBtn.disabled = !inB.length || sealed || mining;
+    }
+    function add(t) { if (sealed || mining || inB.includes(t) || !pool.includes(t)) return; inB.push(t); drawPool(); drawBlock(); }
+    mineBtn.onclick = () => { if (!inB.length || sealed || mining) return; mining = true; drawBlock();
+      let n = 0; const b = merk(inB) + "prev0";
+      const tick = () => { if (!mining && !sealed) return; for (let i = 0; i < 130; i++) { const h = sha256(b + n); if (h.startsWith("000")) { curHash = h; mining = false; sealed = true; drawPool(); drawBlock(); mineBtn.textContent = "✓ Sealed — it is now locked by its fingerprint"; return; } n++; } curHash = sha256(b + n); const mb = slot.querySelector("#mb"); if (mb) mb.style.width = Math.min(96, n / 4096 * 100) + "%"; const sv = slot.querySelector(".sv"); if (sv) sv.textContent = short(curHash, 10, 6); setTimeout(tick, 16); };
+      setTimeout(tick, 16); };
+    drawPool(); drawBlock();
   }
 
   const L = {};
@@ -157,20 +198,12 @@ window.LESSONS = (function () {
     deeper: P("This is <b>ECDSA</b>, the same elliptic-curve signatures Bitcoin and Ethereum use. The trapdoor: your public key is a fixed point added to itself a secret number of times; going forward is fast, going back (the discrete-log problem) is hopeless. Signing covers the <b>hash</b> of the transaction, so it proves authenticity and integrity at once — and the verifier learns only ‘this key signed this’, never your secret. Lose the key and the coins freeze forever; copy it and the thief simply is you. <b>Policy hook:</b> there's no intermediary to pressure — so states regulate the exchanges, the one place an intermediary reappears.") };
 
   /* ===================== BUILDING THE CHAIN ===================== */
-  L.block = { world: "chain", title: "A block", oneliner: "What gets bundled", icon: "▦",
-    hero: "A block is a box. It holds a batch of transactions, then gets sealed shut with one fingerprint.",
+  L.block = { world: "chain", title: "A block", oneliner: "Build one, then seal it", icon: "▦",
+    hero: "A block is a box. Drag some transactions in, then mine it — and watch the fingerprint churn through thousands of guesses before it locks shut.",
     beats: [
-      { n: "01", h: "Pour transactions in", cap: "Tap a transaction to drop it into the block on the right. Watch the box fill up and its <b>seal</b> change with every one.",
-        build(s) { const pool = ["Alice → Bob: 5", "Carol → Dan: 2", "Eve → Finn: 8", "Gail → Hank: 1", "Ivy → Jo: 4"]; const inB = [];
-          const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>pack the block</div><div style="display:grid;grid-template-columns:1fr 244px;gap:20px;align-items:start"><div><div class="note" style="margin-bottom:8px">waiting transactions — tap to add</div><div id="pool" style="display:flex;flex-direction:column;gap:8px"></div></div><div id="slot"></div></div>`;
-          s.appendChild(wrap);
-          function merk(a) { if (!a.length) return sha256("∅"); let lvl = a.map(x => sha256(x)); while (lvl.length > 1) { const n = []; for (let i = 0; i < lvl.length; i += 2) n.push(sha256(lvl[i] + (lvl[i + 1] || lvl[i]))); lvl = n; } return lvl[0]; }
-          function blk() { const root = inB.length ? merk(inB) : null; const seal = root ? sha256(root + "1057392") : null;
-            wrap.querySelector("#slot").innerHTML = `<div class="xblock${inB.length ? "" : ""}"><div class="xtop"></div><div class="xpad"><div class="xh"><span class="xn">#1</span><span class="xs">${inB.length} tx</span></div><div class="xseg"><div class="xlbl">transactions inside</div><div class="xtxs">${inB.length ? inB.map(t => `<div class="xtx">${t}</div>`).join("") : '<div class="note" style="padding:4px 0">empty — add some</div>'}</div></div><div class="xseg"><div class="xlbl">merkle root · one hash of all of them</div><div class="xv" style="color:var(--gold-2)">${root ? short(root, 11, 7) : "—"}</div></div><div class="xseal"><span class="lk">${seal ? "🔒" : "🔓"}</span><span class="sv">${seal ? short(seal, 9, 6) : "unsealed"}</span></div></div></div>`; }
-          function pool_() { const pe = wrap.querySelector("#pool"); pe.innerHTML = ""; pool.forEach(t => { const inc = inB.includes(t); const b = el("button", "btn" + (inc ? " gold" : ""), (inc ? "✓ " : "+ ") + t); b.style.cssText = "font-size:12.5px;justify-content:flex-start"; b.onclick = () => { inc ? inB.splice(inB.indexOf(t), 1) : inB.push(t); pool_(); blk(); }; pe.appendChild(b); }); }
-          pool_(); blk();
-        } },
-      { n: "02", h: "What's inside the header", cap: "Every block carries a tiny <b>header</b>: a link back to the previous block, the Merkle root, and the mining fields. Edit a transaction below — the seal instantly changes.",
+      { n: "01", h: "Drag transactions in, then seal it", cap: "Grab the waiting transactions and drop them into the block (or tap them). When you are ready, hit <b>Mine</b> — the seal scrambles through guess after guess until it finally locks.",
+        build(s) { blockLab(s); } },
+      { n: "02", h: "What's actually inside", cap: "Every block carries a tiny header: a link back to the previous block, the merkle root, and the nonce you just found. Edit a transaction below and the seal changes on the spot.",
         build(s) { richChain(s, { blocks: [{ data: "Alice → Bob: 5\nCarol → Dan: 2" }], editable: true, diff: 3 }); } },
     ],
     deeper: P("Each transaction is hashed; pairs of hashes are combined and hashed again, up a tree, until one <b>Merkle root</b> remains in the header. Hashing the whole header gives the block its ID — its seal. A block on its own isn't special; anyone can build one. What makes <i>adding</i> it costly, and the past unchangeable, is the next two lessons: the nonce, and the chain.") };
@@ -200,10 +233,11 @@ window.LESSONS = (function () {
   L.chainlink = { world: "chain", title: "The chain", oneliner: "Why the past locks", icon: "⛓",
     hero: "Line the blocks up. Each one writes down the fingerprint of the block before it — and that's the chain.",
     beats: [
-      { n: "01", h: "Each block points back", cap: "See the arrows? Every block stores the previous block's seal in its <b>‘prev’</b> field. Add a few more and watch the chain grow, each link freshly mined.",
+      { n: "01", h: "Each block points back", cap: "See the arrows and the little hash on each link? Every block stores the previous block's seal in its <b>‘prev’</b> field. Mine a few more and watch each new link get sealed in real time.",
         build(s) { const c = richChain(s, { blocks: [{ data: "Genesis block" }, { data: "Alice → Bob: 5" }, { data: "Carol → Dan: 2" }], editable: false, diff: 3 });
           const row = el("div", "btn-row"); row.style.justifyContent = "center"; row.style.marginTop = "8px";
-          const b = el("button", "btn primary", "+ Add a block"); let i = 1; b.onclick = () => { c.addBlock(["Dan → Eve: 3", "Eve → Finn: 8", "Finn → Gail: 2", "Gail → Hank: 6"][i++ % 4]); }; row.appendChild(b); s.appendChild(row);
+          const tx = ["Dan → Eve: 3", "Eve → Finn: 8", "Finn → Gail: 2", "Gail → Hank: 6", "Hank → Ivy: 1"]; let i = 0, busy = false;
+          const b = el("button", "btn primary", "⛏ Mine the next block"); b.onclick = () => { if (busy) return; busy = true; b.disabled = true; b.textContent = "mining…"; c.mineNext(tx[i++ % tx.length], () => { busy = false; b.disabled = false; b.textContent = "⛏ Mine the next block"; }); }; row.appendChild(b); s.appendChild(row);
         } },
       { n: "02", h: "Now try to rewrite the past", cap: "Edit a transaction in an old block. Its seal changes, the next ‘prev’ stops matching, and every link after it turns <b>red</b> — the tampering is visible to everyone, instantly.",
         build(s) { richChain(s, { blocks: [{ data: "Genesis" }, { data: "Alice → Bob: 5" }, { data: "Carol → Dan: 2" }, { data: "Eve → Finn: 8" }], editable: true, diff: 3 }); } },
@@ -235,6 +269,11 @@ window.LESSONS = (function () {
           function ctl() { const c = wrap.querySelector("#fkC"); c.innerHTML = ""; if (state === "base") { const b = el("button", "btn primary", "Two miners find #4 at once"); b.onclick = () => { state = "fork"; log("Pool A mines #4a; Pool B mines #4b — same height", ""); log("network split: both valid, briefly undecided", "warn"); render(); }; c.appendChild(b); } else if (state === "fork") { const a = el("button", "btn", "Extend #4a"); a.onclick = res; const b = el("button", "btn", "Extend #4b"); b.onclick = res; c.append(a, b); } else { const b = el("button", "btn", "Replay"); b.onclick = () => { state = "base"; wrap.querySelector("#fkL").innerHTML = '<div class="info">network view</div>'; render(); }; c.appendChild(b); } }
           function res() { state = "done"; log("next block extends one branch → more work → it wins", "info"); log("the losing block is orphaned; its transactions return to the pool", "bad"); log("consensus restored — the fork lasted one block", "ok"); render(); } render();
         } },
+      { n: "02", h: "Why you wait for confirmations", cap: "Each new block stacked on top of yours makes it exponentially harder to undo. Stack a few and watch the chance of reversal fall off a cliff.",
+        build(s) { let conf = 0; const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>burying a payment</div><div id="stack" style="display:flex;flex-direction:column-reverse;gap:5px;align-items:center;min-height:50px"></div><div style="text-align:center;margin:12px 0"><div class="note">rough chance it could still be reversed</div><div class="mono" id="risk" style="font-size:30px;font-weight:700"></div></div><div class="btn-row" style="justify-content:center"><button class="btn primary" id="add">+ One confirmation</button><button class="btn" id="reset">Reset</button></div>`;
+          s.appendChild(wrap); function draw() { wrap.querySelector("#stack").innerHTML = `<div class="xtx" style="background:var(--gold-soft);color:var(--gold-2);font-weight:700">★ your payment</div>` + Array.from({ length: conf }, (_, i) => `<div class="xtx">confirmation ${i + 1}</div>`).join(""); const risk = conf === 0 ? 50 : Math.max(0.001, 50 * Math.pow(0.25, conf)); const r = wrap.querySelector("#risk"); r.textContent = risk >= 1 ? "~" + Math.round(risk) + "%" : risk < 0.01 ? "<0.01%" : risk.toFixed(2) + "%"; r.style.color = risk > 1 ? "var(--red)" : "var(--green)"; }
+          wrap.querySelector("#add").onclick = () => { if (conf < 8) { conf++; draw(); } }; wrap.querySelector("#reset").onclick = () => { conf = 0; draw(); }; draw();
+        } },
     ],
     deeper: P("A recent block is never fully final — a deeper competing branch could replace it (a <b>reorg</b>). You get <b>probabilistic finality</b>: every block stacked on top makes reversal exponentially harder. ‘Wait for six confirmations’ — about an hour — is exactly this idea with a number on it. There is no moment of certainty, only certainty that grows.") };
 
@@ -249,6 +288,10 @@ window.LESSONS = (function () {
           wrap.querySelector("#aRc").innerHTML = `<div class="srow" style="gap:8px"><span class="nm" style="width:56px;color:var(--green)">honest</span><div style="flex:1;height:16px;background:var(--surface-3);border-radius:7px;overflow:hidden;border:1px solid var(--line)"><i id="aH" style="display:block;height:100%;width:0;background:var(--green)"></i></div><span class="v" style="width:22px;color:var(--green)" id="aHn">0</span></div><div class="srow" style="gap:8px;margin-top:6px"><span class="nm" style="width:56px;color:var(--red)">you</span><div style="flex:1;height:16px;background:var(--surface-3);border-radius:7px;overflow:hidden;border:1px solid var(--line)"><i id="aE" style="display:block;height:100%;width:0;background:var(--red)"></i></div><span class="v" style="width:22px;color:var(--red)" id="aEn">0</span></div>`;
           wrap.querySelector("#aQ").oninput = e => { q = +e.target.value; upd(); }; wrap.querySelector("#aZ").oninput = e => { z = +e.target.value; upd(); }; upd();
           wrap.querySelector("#aR").onclick = () => { if (run) return; run = true; const qf = q / 100; let h = z, ev = 0, t = 0; const hf = wrap.querySelector("#aH"), ef = wrap.querySelector("#aE"); const step = () => { t++; Math.random() < qf ? ev++ : h++; const sc = Math.max(h, ev, z + 3); hf.style.width = h / sc * 100 + "%"; ef.style.width = ev / sc * 100 + "%"; wrap.querySelector("#aHn").textContent = h; wrap.querySelector("#aEn").textContent = ev; if (ev > h) { wrap.querySelector("#aM").innerHTML = `<span style="color:var(--red)">You overtook the honest chain. Payment reversed.</span>`; run = false; return; } if (t > 220 || (qf < .5 && h - ev > 22)) { wrap.querySelector("#aM").innerHTML = `<span style="color:var(--green)">The honest chain pulled away. Attack failed.</span> Re-run — the odds above are the truth.`; run = false; return; } setTimeout(step, 42); }; step(); };
+        } },
+      { n: "02", h: "Even a majority has limits", cap: "Controlling most of the mining is powerful — but the cryptography still holds. Here is exactly where the line sits.",
+        build(s) { const can = ["Reverse its own recent payments", "Block (censor) transactions", "Out-race the honest chain"]; const cant = ["Forge anyone else's signature", "Steal coins it has no key for", "Mint coins out of nothing", "Rewrite deep, buried history"];
+          const wrap = el("div", "fcard"); wrap.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px"><div><div class="flabel" style="color:var(--red)"><span class="pin" style="background:var(--red)"></span>a 51% attacker can</div>${can.map(x => `<div class="sig-state bad" style="margin-bottom:6px">${x}</div>`).join("")}</div><div><div class="flabel" style="color:var(--green)"><span class="pin" style="background:var(--green)"></span>even then, cannot</div>${cant.map(x => `<div class="sig-state ok" style="margin-bottom:6px">${x}</div>`).join("")}</div></div>`; s.appendChild(wrap);
         } },
     ],
     deeper: P("With a majority you <b>can</b> double-spend your own recent payments and censor transactions; you <b>cannot</b> forge signatures, steal coins you have no key for, or change the rules. Below 50%, catch-up probability decays exponentially with each confirmation (Satoshi's gambler's-ruin result). At 50% it becomes certain — a cliff, not a slope. Subtler threats: <b>selfish mining</b> pays off above ~⅓ of hashrate, and <b>pools</b> can quietly drift toward majority. Security is economic, not absolute — attacks are deterred by costing more than they're worth.") };
@@ -265,6 +308,9 @@ window.LESSONS = (function () {
           wrap.querySelector("#pR").onclick = () => { for (let i = 0; i < 50; i++) pick().w++; grid(); log("ran 50 blocks — reward share tracks stake share", "info"); };
           wrap.querySelector("#pC").onclick = () => { const b = vals[1]; if (b.x) return; log("Val B signs two conflicting blocks at one height", "warn"); const lost = b.stake; b.x = true; b.stake = 0; grid(); log(`Val B slashed — ${lost}Ξ destroyed and ejected.`, "bad"); };
           wrap.querySelector("#pRs").onclick = () => { vals.forEach(v => { v.w = 0; v.x = false; }); vals[1].stake = 96; wrap.querySelector("#pL").innerHTML = '<div class="info">beacon chain</div>'; grid(); }; grid();
+        } },
+      { n: "02", h: "And it sips energy", cap: "Same security, almost none of the power. Switching from mining to staking cut Ethereum's energy use by about 99.9%.",
+        build(s) { const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>energy use, compared</div><div style="margin:12px 0"><div style="display:flex;justify-content:space-between;font-size:13.5px"><b>Proof of Work</b><span class="mono">100%</span></div><div style="height:20px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin-top:5px"><div style="height:100%;width:100%;background:var(--gold)"></div></div></div><div style="margin:12px 0"><div style="display:flex;justify-content:space-between;font-size:13.5px"><b>Proof of Stake</b><span class="mono">~0.05%</span></div><div style="height:20px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin-top:5px"><div style="height:100%;width:0.6%;background:var(--green)"></div></div></div><div class="note" style="margin-top:6px">That sliver at the bottom is proof of stake. The trade-off critics raise: wealth and staking pools can concentrate control.</div>`; s.appendChild(wrap);
         } },
     ],
     deeper: P("Faking a thousand validators means risking a thousand times the money — the same Sybil defence as mining, but the scarce resource is capital, not energy. Ethereum's 2022 switch cut its energy use ~99.9%. The debate is genuinely open: PoW's cost is external and physical (you can't fake electricity); PoS's attacker has their own stake slashed (the attack destroys their capital). The shared worry: wealth and staking pools concentrate control.") };
@@ -285,6 +331,11 @@ window.LESSONS = (function () {
           s.appendChild(wrap); const log = (h, c) => wrap.querySelector("#cL").appendChild(el("div", c, h));
           wrap.querySelector("#cCall").onclick = () => { const a = parseFloat(wrap.querySelector("#cAmt").value) || 0; log(`> buy() · msg.value = ${a}`); if (a < 3) { log(`require(value >= price) failed → REVERT "underpaid". State unchanged.`, "bad"); return; } if (stock <= 0) { log(`REVERT "sold out".`, "bad"); return; } stock--; wrap.querySelector("#cStock").textContent = "stock: " + stock; log(`guards passed · stock → ${stock} · emit Dispensed()`, "ok"); };
         } },
+      { n: "02", h: "Immutable code, immutable bugs", cap: "Because a deployed contract cannot be patched, a single flaw is a vault with a hole. Trigger the bug and watch the funds drain — with no admin to stop it.",
+        build(s) { let bal = 1000, t = null; const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>a buggy vault contract</div><div style="text-align:center"><div class="metric"><span class="n" id="v" style="color:var(--green)">1,000</span> <span class="u">coins locked in the contract</span></div></div><div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn danger" id="hack">Exploit the bug</button><button class="btn" id="reset">Reset</button></div><div class="sig-state" id="msg" style="margin-top:12px">The code runs exactly as written — flaws included.</div>`;
+          s.appendChild(wrap); wrap.querySelector("#hack").onclick = () => { if (t) return; t = setInterval(() => { bal = Math.max(0, bal - Math.ceil(bal * 0.25)); wrap.querySelector("#v").textContent = bal.toLocaleString(); wrap.querySelector("#v").style.color = "var(--red)"; if (bal === 0) { clearInterval(t); t = null; wrap.querySelector("#msg").className = "sig-state bad"; wrap.querySelector("#msg").textContent = "Drained. No admin to pause it, no undo — billions have been lost exactly like this."; } }, 200); };
+          wrap.querySelector("#reset").onclick = () => { if (t) { clearInterval(t); t = null; } bal = 1000; wrap.querySelector("#v").textContent = "1,000"; wrap.querySelector("#v").style.color = "var(--green)"; wrap.querySelector("#msg").className = "sig-state"; wrap.querySelector("#msg").textContent = "The code runs exactly as written — flaws included."; };
+        } },
     ],
     deeper: P("It isn't ‘smart’ and isn't a ‘contract’: it's a deterministic program every node runs in lockstep, agreeing on the result. <b>Gas</b> charges for each operation, rationing the shared computer and stopping infinite loops. This powers <b>DeFi</b>, <b>NFTs</b>, and <b>DAOs</b> — all just contracts moving tokens by rules. The catch: immutable code means immutable <b>bugs</b>, and the funds sit inside the contract. ‘Code is law’ collides with the law's need to reverse fraud — billions have been lost to contract exploits.") };
 
@@ -297,6 +348,10 @@ window.LESSONS = (function () {
           wrap.querySelector("#zM").onclick = () => { honest = !honest; wrap.querySelector("#zMl").textContent = honest ? "HONEST" : "CHEATER"; wrap.querySelector("#zM").style.borderColor = honest ? "" : "var(--red)"; };
           wrap.querySelector("#zRs").onclick = () => { rounds = 0; fooled = 1; wrap.querySelector("#zB").style.width = "0"; wrap.querySelector("#zL").innerHTML = ""; };
           wrap.querySelector("#zR").onclick = () => { rounds++; const enter = Math.random() < .5 ? "A" : "B", ask = Math.random() < .5 ? "A" : "B"; if (honest) { log(`R${rounds}: enters ${enter}, exit ${ask} → opens the door, complies ✓`, "ok"); fooled *= .5; } else { (ask === enter) ? (log(`R${rounds}: enters ${enter}, exit ${ask} → lucky guess ✓ (50%)`, "ok"), fooled *= .5) : (log(`R${rounds}: enters ${enter}, exit ${ask} → wrong side, EXPOSED ✕`, "bad"), fooled = 0); } wrap.querySelector("#zB").style.width = ((1 - fooled) * 100).toFixed(1) + "%"; };
+        } },
+      { n: "02", h: "Why it matters", cap: "That one trick — prove something is true while revealing nothing else — quietly unlocks three big things.",
+        build(s) { const items = [["🔒 Private payments", "Send money on a public chain while hiding the amount and the parties (Zcash)."], ["📦 zk-rollups", "Bundle thousands of transactions into one tiny proof, scaling the chain cheaply."], ["✅ Quiet compliance", "Prove you are not on a sanctions list without revealing who you are."]];
+          const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>zero-knowledge in the wild</div>` + items.map(([h, d]) => `<div class="bfield" style="margin-bottom:8px"><b>${h}</b><div class="note" style="margin-top:4px;color:var(--ink-2)">${d}</div></div>`).join(""); s.appendChild(wrap);
         } },
     ],
     deeper: P("Real <b>zk-SNARKs / zk-STARKs</b> compress this into a tiny proof that ‘I ran this computation correctly’, cheap to check even when the computation was huge. That powers private payments and <b>zk-rollups</b> — bundling thousands of transactions off-chain and posting one proof to settle them, scaling the chain without trusting anyone. Privacy-preserving compliance is the policy frontier: prove you're not on a sanctions list without revealing your identity.") };
@@ -311,8 +366,59 @@ window.LESSONS = (function () {
           function render(v) { let pick = ex[0]; for (const e of ex) if (v >= e.at - 15) pick = e; cardEl.innerHTML = `<h3 style="font-family:var(--disp);font-weight:500;font-size:22px;margin-bottom:6px;color:var(--plum)">${pick.t}</h3><p class="note" style="font-size:13.5px;color:var(--ink-2);line-height:1.5">${pick.d}</p><div class="note" style="margin-top:10px;font-family:var(--mono)">decentralisation ${100 - v}% · state control ${v}%</div>`; }
           R.oninput = e => render(+e.target.value); render(20);
         } },
+      { n: "02", h: "How a stablecoin holds its peg", cap: "A stablecoin is built to stay worth one dollar. There are three ways to try — and they are not equally safe.",
+        build(s) { const items = [["Fiat-backed", "One real dollar in a reserve per token (USDC, Tether).", "safest — if the reserve is truly there", "var(--green)"], ["Crypto-backed", "Over-collateralised with volatile crypto (DAI).", "needs a buffer against price swings", "var(--gold-2)"], ["Algorithmic", "Held up only by code and incentives, no full backing.", "fragile — Terra collapsed to zero", "var(--red)"]];
+          const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>three ways to hold a peg</div>` + items.map(([h, d, n, c]) => `<div class="bfield" style="margin-bottom:8px;border-color:${c}"><b>${h}</b><div class="note" style="margin-top:4px;color:var(--ink-2)">${d}</div><div class="note" style="margin-top:4px;color:${c}">${n}</div></div>`).join(""); s.appendChild(wrap);
+        } },
     ],
     deeper: P("<b>Stablecoins</b> hold a peg — fiat-backed (a dollar in reserve), crypto-backed (over-collateralised), or algorithmic (held by code, and fragile — Terra collapsed). A <b>CBDC</b> is a central bank's own digital currency, and technically the opposite of crypto: centralised, permissioned, fully controlled. The through-line of the whole course: take the referee out and you get money no state can freeze; hand the state the keys and you get the most controllable money in history. The policy question is never the tech — it's who holds the keys.") };
+
+  L.tokens = { world: "frontier", title: "Tokens & NFTs", oneliner: "Anything you can count or own", icon: "◎",
+    hero: "Once a chain can run code, it can track more than coins. A token is just an entry in a contract's ledger — and an NFT is a token that is one of a kind.",
+    beats: [
+      { n: "01", h: "Mint and move tokens", cap: "A token is just a row in a contract saying how many you hold. Mint some and send them around — the contract keeps the count.",
+        build(s) { let bal = { You: 0, Bob: 0, Carol: 0 }; const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>a token contract</div><div class="kvs" id="t"></div><div class="btn-row" style="margin-top:14px"><button class="btn primary" id="mint">Mint 10 to you</button><button class="btn" id="send">Send 5 to Bob</button><button class="btn" id="reset">Reset</button></div>`;
+          s.appendChild(wrap); function draw() { wrap.querySelector("#t").innerHTML = Object.entries(bal).map(([k, v]) => `<div class="kv"><span class="k">${k}</span><span class="v ${v > 0 ? "gr" : ""}">${v} TOKEN</span></div>`).join(""); wrap.querySelector("#send").disabled = bal.You < 5; }
+          wrap.querySelector("#mint").onclick = () => { bal.You += 10; draw(); }; wrap.querySelector("#send").onclick = () => { if (bal.You >= 5) { bal.You -= 5; bal.Bob += 5; draw(); } }; wrap.querySelector("#reset").onclick = () => { bal = { You: 0, Bob: 0, Carol: 0 }; draw(); }; draw();
+        } },
+      { n: "02", h: "Make each one unique", cap: "Give every token its own id and it becomes <b>non-fungible</b> — an NFT. The chain proves who owns that exact one. Tap to claim them.",
+        build(s) { const items = [["🎨", "#1"], ["🎟️", "#2"], ["🪙", "#3"], ["🖼️", "#4"], ["🎮", "#5"], ["🎵", "#6"]]; const owner = {}; const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>unique tokens (NFTs)</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px" id="g"></div>`;
+          s.appendChild(wrap); function draw() { wrap.querySelector("#g").innerHTML = ""; items.forEach((it, i) => { const mine = owner[i]; const c = el("div", "bfield", `<div style="font-size:26px;text-align:center">${it[0]}</div><div class="note" style="text-align:center;margin-top:4px">${it[1]}</div><div class="note" style="text-align:center;color:${mine ? "var(--green)" : "var(--ink-4)"}">${mine ? "owned by you" : "unclaimed"}</div>`); c.style.cssText = "cursor:pointer" + (mine ? ";border-color:var(--green)" : ""); c.onclick = () => { owner[i] = !owner[i]; draw(); }; wrap.querySelector("#g").appendChild(c); }); } draw();
+        } },
+    ],
+    deeper: P("Most tokens follow standards (ERC-20 for fungible, ERC-721 for NFTs) so any wallet or exchange can handle them the same way. The token itself is just bookkeeping inside a contract; an NFT usually <i>points</i> to an image or asset stored elsewhere — which is why ‘what exactly do you own’ is a real and often misunderstood question.") };
+
+  L.wallets = { world: "frontier", title: "Wallets & custody", oneliner: "Who holds the keys", icon: "❖",
+    hero: "A wallet does not hold coins. It holds keys. The coins are entries on the chain — your key is just what proves they are yours.",
+    beats: [
+      { n: "01", h: "A wallet is a key, not a vault", cap: "From one secret phrase, a wallet derives all your keys and addresses. The balance lives on the chain; the wallet just unlocks it.",
+        build(s) { const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>from seed phrase to addresses</div><div class="bfield" style="border-color:var(--red)"><div class="k" style="color:var(--red)">seed phrase · the master secret</div><div class="v" id="seed" style="color:var(--red)">·············</div></div><div style="text-align:center;color:var(--gold-2);margin:8px 0">↓ derives ↓</div><div id="addrs"></div><button class="btn primary block" id="gen" style="margin-top:12px">Generate a wallet</button>`;
+          s.appendChild(wrap); const words = ["ocean", "maple", "silver", "tiger", "amber", "ginger", "violet", "harbor", "cedar", "ribbon"];
+          wrap.querySelector("#gen").onclick = () => { const seed = Array.from({ length: 4 }, () => words[Math.floor(Math.random() * words.length)]).join(" "); wrap.querySelector("#seed").textContent = seed; const base = sha256(seed); wrap.querySelector("#addrs").innerHTML = [0, 1, 2].map(i => `<div class="bfield" style="margin-bottom:6px"><div class="k">address ${i + 1}</div><div class="v gr">0x${sha256(base + i).slice(-16)}</div></div>`).join(""); };
+        } },
+      { n: "02", h: "Not your keys, not your coins", cap: "Hold the keys yourself and no one can freeze you — but lose them and they are gone. Let an exchange hold them and it is easy — until it freezes or fails. Flip between the two.",
+        build(s) { let self = true; const wrap = el("div", "fcard"); s.appendChild(wrap);
+          function draw() { wrap.innerHTML = `<div class="btn-row" style="margin-bottom:14px"><button class="btn${self ? " primary" : ""}" id="a">You hold the keys</button><button class="btn${self ? "" : " primary"}" id="b">An exchange holds them</button></div><div class="sig-state ${self ? "ok" : "bad"}">${self ? "Self-custody: you control the keys. No one can freeze or seize your coins — but there is no reset if you lose the phrase." : "Custodial: the exchange controls the keys. Easy to use and recover — but it can freeze you, and if it collapses (as FTX did), your coins can vanish with it."}</div>`;
+            wrap.querySelector("#a").onclick = () => { self = true; draw(); }; wrap.querySelector("#b").onclick = () => { self = false; draw(); }; } draw();
+        } },
+    ],
+    deeper: P("This is the trade-off behind ‘not your keys, not your coins’. Self-custody gives you sovereignty and full responsibility; custodial services give you convenience and a recovery path, at the cost of trusting them — the very intermediary blockchains were built to remove. Most regulation targets these custodians, because they are the one place a government can actually apply pressure.") };
+
+  L.layer2 = { world: "frontier", title: "Layer 2 & scaling", oneliner: "Doing more without breaking it", icon: "⏫",
+    hero: "A secure, decentralised chain is slow on purpose — every computer re-checks every transaction. Layer 2 buys back the speed without giving that up.",
+    beats: [
+      { n: "01", h: "The base chain is slow on purpose", cap: "Because thousands of computers each verify every transaction, throughput stays low. Here is the gap Layer 2 has to close.",
+        build(s) { const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>transactions per second</div><div id="bars"></div>`;
+          s.appendChild(wrap); const rows = [["Bitcoin", 7, "var(--gold-2)"], ["Ethereum", 15, "var(--plum)"], ["Visa", 1700, "var(--green)"]];
+          wrap.querySelector("#bars").innerHTML = rows.map(([n, v, c]) => `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13.5px"><b>${n}</b><span class="mono">${v.toLocaleString()}/s</span></div><div style="height:14px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${Math.max(3, Math.log10(v + 1) / Math.log10(1701) * 100)}%;background:${c};border-radius:99px"></div></div></div>`).join("") + `<div class="note" style="margin-top:8px">Log scale — Visa dwarfs base-layer chains. That gap is the whole job of Layer 2.</div>`;
+        } },
+      { n: "02", h: "Roll thousands into one", cap: "A rollup runs the transactions off to the side, then posts a single summary back to the secure main chain. Pile some up and roll them.",
+        build(s) { let pending = 0, posted = 0; const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>rollup batcher</div><div style="text-align:center"><div class="metric"><span class="n" id="p">0</span> <span class="u">waiting off-chain</span></div></div><div class="btn-row" style="justify-content:center;margin:14px 0"><button class="btn" id="add">+ 100 transactions</button><button class="btn primary" id="batch">Roll up &amp; post one proof →</button></div><div id="ch"></div><div class="note" id="msg" style="text-align:center;margin-top:8px"></div>`;
+          s.appendChild(wrap); wrap.querySelector("#add").onclick = () => { pending += 100; wrap.querySelector("#p").textContent = pending; };
+          wrap.querySelector("#batch").onclick = () => { if (!pending) return; const did = pending; posted += pending; wrap.querySelector("#ch").innerHTML = `<div class="xblock" style="max-width:240px;margin:8px auto 0"><div class="xtop"></div><div class="xpad"><div class="xh"><span class="xn">L1</span><span class="xs">1 proof</span></div><div class="xseg"><div class="xlbl">settles in one block</div><div class="xv gr">${posted.toLocaleString()} transactions</div></div><div class="xseal"><span class="lk">🔒</span><span class="sv">${short(sha256("batch" + posted), 9, 5)}</span></div></div></div>`; wrap.querySelector("#msg").innerHTML = `<span style="color:var(--green)">${did} transactions settled on the main chain with a single proof.</span>`; pending = 0; wrap.querySelector("#p").textContent = 0; };
+        } },
+    ],
+    deeper: P("Two main flavours. <b>Optimistic rollups</b> assume each batch is valid and allow a challenge window to prove fraud. <b>zk-rollups</b> attach a cryptographic proof that the batch is valid (the zero-knowledge maths from the next lesson), so there is nothing to dispute. Either way the heavy work happens off-chain and only a tiny summary touches the expensive, secure base layer — buying scale without selling decentralisation or security.") };
 
   /* ===================== PRIMER (start here) ===================== */
   L.whatis = { world: "primer", title: "What is a blockchain?", oneliner: "The whole idea, in one screen", icon: "◧",

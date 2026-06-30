@@ -293,6 +293,27 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .bigblock .bn { font-family: var(--disp); font-weight: 600; font-size: 30px; color: var(--plum); }
 .bigblock .brow { margin-top: 14px; } .bigblock .brow .k { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); font-weight: 700; } .bigblock .brow .v { font-family: var(--mono); font-size: 13px; color: var(--ink-2); word-break: break-all; margin-top: 3px; }
 
+/* drag-to-build block playground */
+.lab-grid { display: grid; grid-template-columns: 1fr 268px; gap: 22px; align-items: start; }
+@media (max-width: 720px) { .lab-grid { grid-template-columns: 1fr; } }
+.txpool { display: flex; flex-direction: column; gap: 9px; }
+.txchip { font-family: var(--mono); font-size: 12px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 10px; padding: 9px 12px; cursor: grab; display: flex; align-items: center; gap: 9px; transition: border-color .15s, box-shadow .15s, opacity .15s; user-select: none; }
+.txchip:hover { border-color: var(--plum); box-shadow: var(--sh-sm); }
+.txchip:active { cursor: grabbing; }
+.txchip.dragging { opacity: .4; }
+.txchip.used { opacity: .4; border-style: dashed; cursor: default; }
+.txchip .grip { color: var(--ink-4); font-size: 14px; }
+.dropzone { min-height: 86px; border: 2px dashed var(--line-2); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 6px; transition: all .2s; background: var(--surface-2); }
+.dropzone.over { border-color: var(--plum); background: var(--plum-tint); transform: scale(1.01); }
+.dropzone.empty { align-items: center; justify-content: center; color: var(--ink-4); font-size: 12.5px; text-align: center; }
+.dropzone .xtx { animation: txin .35s; }
+@keyframes sealpulse { 0% { box-shadow: 0 0 0 0 rgba(46,158,107,.5); } 100% { box-shadow: 0 0 0 20px rgba(46,158,107,0); } }
+.xblock.justsealed { animation: sealpulse .75s; }
+.xblock.mining .sv { animation: flick .12s infinite; }
+@keyframes flick { 50% { opacity: .55; } }
+.minebar { height: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; margin-top: 4px; }
+.minebar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-2)); width: 0; transition: width .1s; }
+
 footer { text-align: center; padding: 56px 24px; color: var(--ink-4); font-size: 13px; }
 .hero-full { min-height: 100vh; }
 .fadein { animation: fadein .5s ease; } @keyframes fadein { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
