@@ -7,6 +7,17 @@ have built the experience.
 
 **Live:** https://tannmay-python.github.io/blockchain-learning-tool/
 
+## The Observatory
+
+The second layer of the site (`#/live`): a **living blockchain on one screen**. A 26-node
+peer-to-peer network runs continuously — transactions gossip node to node, five miners race
+real SHA-256 (every candidate hash shown live), winning blocks sweep the map as waves, and
+forks genuinely split the network in two colours before the next block heals them and orphans
+the loser. Click any node to open its mempool; click any block on the ribbon to read its real
+header. A narrated **guided tour** plays on first visit — nine acts, each driven by real
+simulator events. Buttons let you broadcast a transaction, make a node announce an invalid
+block (its neighbours reject it), or force a fork.
+
 ## The journey (7 chapters · 24 lessons · ~60 hands-on demos)
 
 | # | Chapter | What it answers |
