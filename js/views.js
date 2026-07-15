@@ -15,7 +15,7 @@ window.VIEWS = (function () {
   }
   function nav(active) {
     return `<nav class="nav"><div class="brand" data-go="#/" title="Home"><div class="mk">${LOGO}</div><span class="bt">The Blockchain <span>Course</span></span></div>
-      <div class="links"><a data-go="#/" class="${active === "home" ? "on" : ""}">Home</a><a data-go="#/map" class="${active === "map" ? "on" : ""}">The Journey</a></div>
+      <div class="links"><a data-go="#/" class="${active === "home" ? "on" : ""}">Home</a><a data-go="#/map" class="${active === "map" ? "on" : ""}">The Journey</a><a data-go="#/live" class="${active === "live" ? "on" : ""}">Observatory</a></div>
       <div class="right">${progMini()}</div></nav>`;
   }
   function wireGo(scope) { (scope || document).querySelectorAll("[data-go]").forEach(e => e.onclick = (ev) => { ev.preventDefault(); go(e.dataset.go); }); }
@@ -37,46 +37,25 @@ window.VIEWS = (function () {
       <div class="scroll-hint">scroll</div>
       </section>
 
-      <section class="section" id="try">
-        <div class="tryrow">
-          <div class="trycopy">
-            <h2>Your first sixty seconds</h2>
-            <p>This whole machine — blocks, mining, immutability — rests on one tool: a function that turns anything into a fixed 64-character fingerprint. Type below. You are already doing lesson six.</p>
-          </div>
-          <div class="trybox">
-            <div class="flabel"><span class="pin"></span>SHA-256, live</div>
-            <input class="in big-in" id="tryIn" value="hello" aria-label="Text to hash">
-            <div class="tryarrow">↓</div>
-            <div class="hashout" id="tryOut"></div>
-            <div class="note" id="tryNote" style="margin-top:10px;text-align:center"></div>
-          </div>
+      <section class="obs-tease" data-go="#/live">
+        <canvas id="obsTease"></canvas>
+        <div class="obs-tease-in">
+          <h2>The Observatory</h2>
+          <p>A whole blockchain network, alive on one screen. Transactions ripple node to node, miners race real SHA-256, forks split the map and heal — and you can reach in and touch any of it.</p>
+          <span class="obs-enter">Enter the Observatory →</span>
         </div>
       </section>
 
       <section class="section">
         <div class="section-h"><h2>The journey</h2><p>Problem first, machinery second. Each chapter exists to answer the question the previous one leaves open.</p></div>
         <div class="jlist">${S.WORLDS.map(jRow).join("")}</div>
-      </section>
-
-      <section class="section how">
-        <div class="section-h"><h2>How this course teaches</h2></div>
-        <div class="howlist">
-          <div class="howrow"><span class="hn">Play before names.</span><span class="hd">You break a chain with your own edit before the word “immutability” ever appears. Terms land after the experience, never before.</span></div>
-          <div class="howrow"><span class="hn">Real cryptography.</span><span class="hd">The hashes are real SHA-256. The signatures are real ECDSA, running in your browser. Nothing is faked to look convincing.</span></div>
-          <div class="howrow"><span class="hn">Honest about trade-offs.</span><span class="hd">The 51% attack, dead algorithmic stablecoins, rug-pulls, the surveillance potential of CBDCs — the failures are lessons, not footnotes.</span></div>
-        </div>
         <div class="endcta"><button class="btn primary lg" data-go="#/lesson/${startId}">${resume ? "Continue the course" : "Begin with lesson one"} →</button>
         ${done > 0 ? `<button class="btn lg ghost" id="restart">Start over</button>` : ""}</div>
       </section>
       <footer>Built as an open teaching tool · real SHA-256 &amp; ECDSA in your browser · no accounts, progress stays on this device</footer>`;
     wireGo();
-    // live hash teaser
-    const ti = document.getElementById("tryIn"), to = document.getElementById("tryOut"), tn = document.getElementById("tryNote");
-    if (ti && window.sha256) {
-      const render = () => { const h = sha256(ti.value); let z = 0; while (h[z] === "0") z++; to.innerHTML = `<span class="go">${h.slice(0, z)}</span>${h.slice(z)}`; tn.textContent = `${ti.value.length} characters in · always 64 out · change one letter and watch it scramble`; };
-      ti.oninput = render; render();
-    }
     const rb = document.getElementById("restart"); if (rb) rb.onclick = () => { if (confirm("Clear your progress and start from the beginning?")) { S.reset(); home(); } };
+    if (window.OBS) window.OBS.tease("obsTease");
     if (window.APP) window.APP.heroCanvas();
   }
 
