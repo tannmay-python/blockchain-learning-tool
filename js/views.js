@@ -14,7 +14,7 @@ window.VIEWS = (function () {
     return `<div class="progmini"><span>${d} / ${t}</span><div class="bar"><i style="width:${(d / t * 100).toFixed(0)}%"></i></div></div>`;
   }
   function nav(active) {
-    return `<nav class="nav"><div class="brand" data-go="#/" title="Home"><div class="mk">${LOGO}</div></div>
+    return `<nav class="nav"><div class="brand" data-go="#/" title="Home"><div class="mk">${LOGO}</div><span class="bt">The Blockchain <span>Course</span></span></div>
       <div class="links"><a data-go="#/" class="${active === "home" ? "on" : ""}">Home</a><a data-go="#/map" class="${active === "map" ? "on" : ""}">The Journey</a></div>
       <div class="right">${progMini()}</div></nav>`;
   }
@@ -23,25 +23,70 @@ window.VIEWS = (function () {
   /* ---------------- HOME ---------------- */
   function home() {
     const done = S.totalDone(), total = S.lessonsTotal, resume = done > 0 && done < total, startId = S.firstUndone();
+    const beatsTotal = S.ORDER.reduce((a, id) => a + (L[id] ? L[id].beats.length : 0), 0);
     root().innerHTML = nav("home") + `
       <section class="hero hero-full"><canvas id="heroCanvas"></canvas><div class="hero-in">
-        <div class="eyebrow">A visual experience</div>
         <h1>Learn Blockchain<br>by <em>doing</em>.</h1>
+        <p class="sub">No slides, no jargon-first lectures. You mine the blocks, forge the signatures, trigger the forks — and the ideas stick because your hands built them.</p>
         <div class="cta">
-          <button class="btn primary lg" data-go="#/lesson/${startId}">${resume ? "Continue where you left off" : "Start exploring"} →</button>
-          ${done > 0 ? `<button class="btn lg ghost" id="restart">Start over</button>` : ""}
-        </div></div>
-      </section>`;
+          <button class="btn primary lg" data-go="#/lesson/${startId}">${resume ? "Continue where you left off" : "Start the course"} →</button>
+          <button class="btn lg ghost" data-go="#/map">Browse the journey</button>
+        </div>
+        <div class="herostats"><span><b>${S.WORLDS.length}</b> chapters</span><span class="dot"></span><span><b>${total}</b> lessons</span><span class="dot"></span><span><b>${beatsTotal}</b> hands-on demos</span></div>
+      </div>
+      <div class="scroll-hint">scroll</div>
+      </section>
+
+      <section class="section" id="try">
+        <div class="tryrow">
+          <div class="trycopy">
+            <h2>Your first sixty seconds</h2>
+            <p>This whole machine — blocks, mining, immutability — rests on one tool: a function that turns anything into a fixed 64-character fingerprint. Type below. You are already doing lesson six.</p>
+          </div>
+          <div class="trybox">
+            <div class="flabel"><span class="pin"></span>SHA-256, live</div>
+            <input class="in big-in" id="tryIn" value="hello" aria-label="Text to hash">
+            <div class="tryarrow">↓</div>
+            <div class="hashout" id="tryOut"></div>
+            <div class="note" id="tryNote" style="margin-top:10px;text-align:center"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-h"><h2>The journey</h2><p>Problem first, machinery second. Each chapter exists to answer the question the previous one leaves open.</p></div>
+        <div class="jlist">${S.WORLDS.map(jRow).join("")}</div>
+      </section>
+
+      <section class="section how">
+        <div class="section-h"><h2>How this course teaches</h2></div>
+        <div class="howlist">
+          <div class="howrow"><span class="hn">Play before names.</span><span class="hd">You break a chain with your own edit before the word “immutability” ever appears. Terms land after the experience, never before.</span></div>
+          <div class="howrow"><span class="hn">Real cryptography.</span><span class="hd">The hashes are real SHA-256. The signatures are real ECDSA, running in your browser. Nothing is faked to look convincing.</span></div>
+          <div class="howrow"><span class="hn">Honest about trade-offs.</span><span class="hd">The 51% attack, dead algorithmic stablecoins, rug-pulls, the surveillance potential of CBDCs — the failures are lessons, not footnotes.</span></div>
+        </div>
+        <div class="endcta"><button class="btn primary lg" data-go="#/lesson/${startId}">${resume ? "Continue the course" : "Begin with lesson one"} →</button>
+        ${done > 0 ? `<button class="btn lg ghost" id="restart">Start over</button>` : ""}</div>
+      </section>
+      <footer>Built as an open teaching tool · real SHA-256 &amp; ECDSA in your browser · no accounts, progress stays on this device</footer>`;
     wireGo();
+    // live hash teaser
+    const ti = document.getElementById("tryIn"), to = document.getElementById("tryOut"), tn = document.getElementById("tryNote");
+    if (ti && window.sha256) {
+      const render = () => { const h = sha256(ti.value); let z = 0; while (h[z] === "0") z++; to.innerHTML = `<span class="go">${h.slice(0, z)}</span>${h.slice(z)}`; tn.textContent = `${ti.value.length} characters in · always 64 out · change one letter and watch it scramble`; };
+      ti.oninput = render; render();
+    }
     const rb = document.getElementById("restart"); if (rb) rb.onclick = () => { if (confirm("Clear your progress and start from the beginning?")) { S.reset(); home(); } };
     if (window.APP) window.APP.heroCanvas();
   }
-  function worldCard(w) {
-    const d = S.worldDone(w), t = w.lessons.length, pct = d / t * 100, complete = d === t;
-    return `<div class="wcard"><div class="orb" style="background:${w.color}"></div>
-      ${complete ? `<div class="wdone" style="background:${w.color}22;color:${w.color}">✓</div>` : ""}
-      <div class="wnum" style="color:${w.color}">WORLD ${w.n}</div><h3>${w.title}</h3><div class="wsub">${w.sub}</div>
-      <div class="wmeta"><div class="wbar"><i style="width:${pct}%;background:${w.color}"></i></div><span>${d}/${t}</span></div></div>`;
+
+  function jRow(w) {
+    const d = S.worldDone(w), t = w.lessons.length, complete = d === t;
+    return `<div class="jrow" data-go="#/map">
+      <span class="jnum" style="color:${w.color}">${w.n}</span>
+      <span class="jbody"><span class="jt">${w.title}${complete ? ` <span class="jdone" style="color:${w.color}">✓ done</span>` : ""}</span><span class="js">${w.sub}</span></span>
+      <span class="jmeta"><span class="jl">${t} lesson${t === 1 ? "" : "s"}</span><span class="jbar"><i style="width:${(d / t * 100)}%;background:${w.color}"></i></span></span>
+    </div>`;
   }
 
   /* ---------------- MAP ---------------- */
@@ -51,13 +96,13 @@ window.VIEWS = (function () {
       ${S.WORLDS.map(mapWorld).join("")}</div>
       <footer>${S.totalDone()} of ${S.lessonsTotal} explored</footer>`;
     wireGo();
-    root().querySelectorAll(".lnode").forEach(n => n.onclick = () => go("#/lesson/" + n.dataset.id));
+    root().querySelectorAll(".lnode").forEach(n => { const open = () => go("#/lesson/" + n.dataset.id); n.onclick = open; n.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }; });
   }
   function mapWorld(w) {
     const cur = S.firstUndone();
     const nodes = w.lessons.map(id => {
       const l = L[id], done = S.isDone(id), isCur = id === cur && !done;
-      return `<div class="lnode ${done ? "done" : ""} ${isCur ? "cur" : ""}" data-id="${id}">
+      return `<div class="lnode ${done ? "done" : ""} ${isCur ? "cur" : ""}" data-id="${id}" role="link" tabindex="0" aria-label="${l.title}">
         ${done ? '<div class="check">✓</div>' : ""}
         <div class="ic" style="background:${w.color}1c;color:${w.color}">${l.icon}</div>
         <div class="lt">${l.title}</div><div class="lo">${l.oneliner}</div>
@@ -76,7 +121,8 @@ window.VIEWS = (function () {
         <span class="wchip" style="background:${w.color}1c;color:${w.color}">${w.title}</span>
         <span class="lttl">${l.title}</span>
         <span class="nums">${gpos + 1} / ${S.lessonsTotal}</span>
-        <div class="barnav"><button class="lbtn" id="lPrev" ${prev ? "" : "disabled"}>←</button><button class="lbtn next" id="lNext">${next ? "Next →" : "Done"}</button></div>
+        <div class="barnav"><button class="lbtn" id="lPrev" ${prev ? "" : "disabled"} aria-label="Previous lesson">←</button><button class="lbtn next" id="lNext">${next ? "Next →" : "Done"}</button></div>
+        <div class="lprog"><i id="lprogFill" style="background:${w.color}"></i></div>
       </div>
       <div class="explorable">
         <div class="lesson-hero"><div class="icbig" style="background:${w.color}1c;color:${w.color}">${l.icon}</div><h1>${l.title}</h1><p>${l.hero}</p></div>
@@ -84,6 +130,7 @@ window.VIEWS = (function () {
         ${l.deeper ? `<details class="deeper"><summary>Go deeper — the technical detail</summary><div class="dbody">${l.deeper}</div></details>` : ""}
         <div class="lesson-end">
           <div class="btn-row" style="justify-content:center">${prev ? `<button class="btn ghost" data-go="#/lesson/${prev}">← ${L[prev].title}</button>` : ""}${next ? `<button class="btn primary" id="endNext">${L[next].title} →</button>` : `<button class="btn primary" data-go="#/map">Back to the map</button>`}</div>
+          <div class="kbd-hint">tip: <kbd>←</kbd> <kbd>→</kbd> move between lessons</div>
         </div>
       </div>`;
     wireGo();
@@ -91,13 +138,18 @@ window.VIEWS = (function () {
     const beatsEl = document.getElementById("beats");
     l.beats.forEach((b, i) => {
       const beat = document.createElement("div"); beat.className = "beat reveal";
-      beat.innerHTML = `<div class="beat-cap"><span class="bn">BEAT ${b.n || String(i + 1).padStart(2, "0")}</span><h3>${b.h}</h3><p>${b.cap}</p></div><div class="beat-viz"></div>`;
+      beat.innerHTML = `<div class="beat-cap"><span class="bn">${b.n || String(i + 1).padStart(2, "0")}</span><h3>${b.h}</h3><p>${b.cap}</p></div><div class="beat-viz"></div>`;
       beatsEl.appendChild(beat);
       try { b.build(beat.querySelector(".beat-viz")); } catch (e) { console.error("beat", id, i, e); beat.querySelector(".beat-viz").innerHTML = `<div class="sig-state bad">This demo hit an error: ${e.message}</div>`; }
     });
     // reveal on scroll
     const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.12 });
     root().querySelectorAll(".reveal").forEach(r => io.observe(r));
+    // reading progress in the lesson bar
+    const fill = document.getElementById("lprogFill");
+    const onScroll = () => { if (!fill || !document.contains(fill)) { removeEventListener("scroll", onScroll); return; }
+      const h = document.documentElement, max = h.scrollHeight - innerHeight; fill.style.width = (max > 0 ? Math.min(100, h.scrollTop / max * 100) : 0) + "%"; };
+    addEventListener("scroll", onScroll, { passive: true }); onScroll();
     // silently mark done when the learner moves on
     const markDone = () => { if (!S.isDone(id)) { S.setDone(id, true); document.querySelectorAll(".progmini").forEach(p => { p.outerHTML = progMini(); }); } };
     document.getElementById("lPrev").onclick = () => prev && go("#/lesson/" + prev);

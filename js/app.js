@@ -11,9 +11,11 @@ window.APP = (function () {
     const h = location.hash || "#/";
     const m = h.match(/^#\/lesson\/(.+)$/);
     window.scrollTo(0, 0);
-    if (m) { V.lesson(m[1]); const L = window.LESSONS[m[1]]; document.title = (L ? L.title : "Lesson") + " · ChainWorld"; }
-    else if (h === "#/map") { V.map(); document.title = "The Journey · ChainWorld"; }
-    else { V.home(); document.title = "ChainWorld — learn blockchain by doing"; }
+    if (m) { V.lesson(m[1]); const L = window.LESSONS[m[1]]; document.title = (L ? L.title : "Lesson") + " · The Blockchain Course"; }
+    else if (h === "#/map") { V.map(); document.title = "The Journey · The Blockchain Course"; }
+    else { V.home(); document.title = "The Blockchain Course — learn blockchain by doing"; }
+    // gentle crossfade between views (skipped under reduced motion)
+    if (!RM) { const r = document.getElementById("root"); r.classList.remove("viewin"); void r.offsetWidth; r.classList.add("viewin"); }
   }
 
   /* ambient drifting dots — subtle on a light page */

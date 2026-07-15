@@ -3,22 +3,30 @@
    ============================================================ */
 window.STORE = (function () {
   "use strict";
-  const LS = "chainworld_v2";
+  const LS = "blockcourse_v1";
+  const LEGACY = "chainworld_v2";
 
   const WORLDS = [
     { id: "primer", n: "00", title: "Start here", sub: "Money, trust, and the core problem", color: "#9c2a5a", lessons: ["ledger", "why", "doublespend"] },
     { id: "foundations", n: "01", title: "The big idea", sub: "What a blockchain actually is", color: "#620d3c", lessons: ["whatis", "tour"] },
     { id: "crypto", n: "02", title: "Cryptography", sub: "The two tools everything is built from", color: "#f1a222", lessons: ["hashing", "keys"] },
-    { id: "chain", n: "03", title: "Building the chain", sub: "Bundling, mining, and locking the past", color: "#8a2057", lessons: ["block", "merkle", "nonce", "chainlink"] },
-    { id: "consensus", n: "04", title: "Consensus & security", sub: "Agreeing with no one in charge", color: "#d2384f", lessons: ["forks", "attack", "pos"] },
-    { id: "frontier", n: "05", title: "The ecosystem", sub: "Contracts, tokens, wallets, scaling, money", color: "#2e9e6b", lessons: ["contracts", "tokens", "wallets", "zk", "layer2", "money"] },
+    { id: "chain", n: "03", title: "Building the chain", sub: "Bundling, mining, and locking the past", color: "#8a2057", lessons: ["block", "nonce", "incentives", "chainlink", "merkle"] },
+    { id: "consensus", n: "04", title: "The network agrees", sub: "Thousands of strangers, one history", color: "#d2384f", lessons: ["gossip", "forks", "attack", "pos"] },
+    { id: "frontier", n: "05", title: "The ecosystem", sub: "Contracts, tokens, wallets, scaling, safety", color: "#2e9e6b", lessons: ["contracts", "tokens", "wallets", "layer2", "zk", "money", "safety"] },
     { id: "capstone", n: "06", title: "The whole machine", sub: "Watch every piece work together", color: "#d98908", lessons: ["recap"] },
   ];
   const ORDER = WORLDS.flatMap(w => w.lessons);
   const worldOf = {}; WORLDS.forEach(w => w.lessons.forEach(id => worldOf[id] = w));
 
   let completed = new Set();
-  try { (JSON.parse(localStorage.getItem(LS) || "[]")).forEach(id => completed.add(id)); } catch (e) {}
+  try {
+    const cur = JSON.parse(localStorage.getItem(LS) || "null");
+    if (cur) { cur.forEach(id => completed.add(id)); }
+    else {
+      // one-time migration from the old ChainWorld progress key
+      (JSON.parse(localStorage.getItem(LEGACY) || "[]")).forEach(id => completed.add(id));
+    }
+  } catch (e) {}
   function save() { try { localStorage.setItem(LS, JSON.stringify([...completed])); } catch (e) {} }
 
   function isDone(id) { return completed.has(id); }

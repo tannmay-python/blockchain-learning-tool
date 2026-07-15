@@ -1,60 +1,57 @@
-# Blockchain Live — operate a real blockchain, learn how it works
+# The Blockchain Course — learn blockchain by doing
 
-Not slides, not a list of mini-games. **One persistent, live Proof-of-Work blockchain** running in
-the browser — real SHA-256 mining, real ECDSA transactions, a real mempool and account ledger — with
-a **guided teaching layer** that walks you from "what is this?" to genuinely ultra-technical, all by
-operating the *same* network.
+An interactive course that teaches blockchain from absolute first principles. No slides, no
+jargon-first lectures: every idea is a thing you **do** — you mine the blocks, forge the
+signatures, trigger the forks, run the 51% attack — and the terms land only after your hands
+have built the experience.
 
-You build an identity, broadcast money, become a miner, trigger a fork, attack the chain, and switch
-the consensus engine — and the network reacts live the whole time.
+**Live:** https://tannmay-python.github.io/blockchain-learning-tool/
+
+## The journey (7 chapters · 24 lessons · ~60 hands-on demos)
+
+| # | Chapter | What it answers |
+|---|---------|-----------------|
+| 00 | **Start here** | Money is a list. Who keeps the list? Why digital money is hard (double-spend). |
+| 01 | **The big idea** | What a blockchain actually is, and the life of one payment end to end. |
+| 02 | **Cryptography** | Hashing (the fingerprint) and keys & signatures (ownership without trust). |
+| 03 | **Building the chain** | Build a block, mine the nonce, earn the reward, chain the past shut, Merkle-prove inclusion. |
+| 04 | **The network agrees** | Gossip propagation, forks, the 51% attack, Proof of Stake. |
+| 05 | **The ecosystem** | Smart contracts, tokens & NFTs, wallets & custody, Layer 2, zero-knowledge, stablecoins & CBDCs, staying safe from scams. |
+| 06 | **The whole machine** | Everything you built, running together. |
+
+Most lessons end with a **checkpoint** — a short quiz that explains *why* every option is
+right or wrong, not just which one to click.
+
+## What's actually real here
+
+- **Real SHA-256** (pure JS, verified against test vectors) powers every hash you see — the
+  avalanche demo, the mining loops, the Merkle trees.
+- **Real ECDSA P-256** (Web Crypto) — the signature lesson generates a genuine key pair;
+  tampering with the signed message really breaks verification.
+- **Satoshi's actual math** — the 51% attack odds are the whitepaper's gambler's-ruin
+  formula, computed live as you drag the sliders.
+- **No accounts, no backend.** Progress lives in `localStorage` on the learner's device.
 
 ## Run it
 
 ```bash
-cd blockchainResearchSeminar
+cd blockchain-learning-tool
 python3 -m http.server 4321      # then open http://localhost:4321
 ```
 
-Live demo: **https://tannmay-python.github.io/blockchain-seminar/**
-
-Controls: **space** play/pause · the speed buttons (0.5×–4×) and **⏭** step in the top bar · click any
-block to open the **inspector** · **Esc** closes it. The guide on the right has **Back / Next**.
-
-## What's actually real here
-
-- **Real Proof of Work.** The mining loop runs real SHA-256 over real block headers searching for a
-  nonce that meets the difficulty target. The "Mining" spotlight shows the actual candidate hash being
-  tried. Which miner wins is weighted by hash power, exactly like a real network.
-- **Real cryptography.** Your wallet is a genuine **ECDSA P-256** key pair (Web Crypto). Your
-  transactions are really signed; tampering really invalidates them.
-- **A real ledger.** Accounts have balances and nonces; mining a block applies its transactions, pays
-  the miner the reward + fees, and drains the mempool. Send 25 coins and your balance really drops.
-- **Real Merkle roots, real chaining.** The inspector lets you recompute a block's Merkle root and
-  re-hash its header to verify it — change anything and it breaks.
-
-## The guided journey (8 chapters, one network)
-
-1. **The living ledger** — orient: what you're watching is a live distributed ledger.
-2. **Anatomy of a block** — freeze it, open the inspector, dissect the header; SHA-256 deep-dive.
-3. **Your identity & money** — generate your ECDSA wallet; keys, addresses, the account model.
-4. **Sending value** — sign & broadcast a transaction; the fee market; watch it get confirmed.
-5. **Proof of Work** — become a miner, set your hash power & difficulty, mine a block yourself.
-6. **Consensus & forks** — trigger a fork, resolve it by the longest-chain rule; confirmations.
-7. **The 51% attack** — Nakamoto's whitepaper-§11 probability + a live stochastic attack race.
-8. **Beyond Proof of Work** — switch the network to Proof of Stake; tour the frontier.
+Any static file server works; there is no build step and no dependency.
 
 ## Files
 
 ```
-index.html      shell: top bar + stage (miners, mining spotlight, chain, mempool) + guide rail + inspector
-css/app.css      light, rich "live network" design system
-js/sha256.js     pure-JS SHA-256 (verified against test vectors)
-js/chain.js      the blockchain engine — real PoW, ECDSA txs, ledger, miners, events (window.CHAIN)
-js/viz.js        renders the live chain/miners/mempool/spotlight + the block inspector (window.VIZ)
-js/guide.js      the 8 deep technical chapters that drive & explain the one network (window.GUIDE)
-js/app.js        boot + top-bar controls
+index.html            shell — loads the scripts below
+css/app.css           the whole design system (plum & marigold, Fraunces/Inter/JetBrains Mono)
+js/sha256.js          pure-JS SHA-256 (verified against test vectors)
+js/store.js           curriculum structure + progress (localStorage)
+js/lessons.js         the core lessons — each one a vertical "explorable" of interactive beats
+js/lessons-extra.js   checkpoint quizzes + the incentives / network / safety lessons
+js/views.js           home, journey map, and lesson renderer
+js/app.js             hash router + ambient canvas backdrops
 ```
 
-The engine emits events (`block`, `tx`, `mempool`, `tick`, `fork`, …); the visualization and the guide
-both subscribe. The guide chapters drive the same engine (play/pause, difficulty, fork, mode) and
-detect completion from real engine events — so the teaching and the simulation are never out of sync.
+Keyboard: **← / →** move between lessons.
