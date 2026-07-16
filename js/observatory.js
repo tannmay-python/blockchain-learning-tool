@@ -77,6 +77,8 @@ window.OBS = (function () {
       forceForkNext: false,
       selNode: null, selBlock: null,
       diff: 3,
+      attack: null,                 // {minerI, share, priv:[], base, pub}
+      reorgs: 0,
       onEvent: null,
     };
     const tip = () => S.chain[S.chain.length - 1];
@@ -161,7 +163,63 @@ window.OBS = (function () {
       relay(block.miner, { kind: "block", block }, null);
     }
 
+    // synchronous real-PoW mine (small difficulty — a few thousand hashes)
+    function mineSync(minerI, prevBlock, salt) {
+      const mn = nodes[minerI];
+      const txs = mn.mempool.slice().sort((a, b) => b.fee - a.fee).slice(0, 4);
+      const merkle = merkleOf(txs);
+      const body = txs.map(t => t.label).join("|") + prevBlock.hash + merkle + (salt || "");
+      let n = 0, h = "";
+      while (!(h = sha256(body + n)).startsWith("0".repeat(S.diff))) n++;
+      return { height: prevBlock.height + 1, prev: prevBlock.hash, merkle, txs, nonce: n, hash: h, miner: minerI };
+    }
+
+    function attackReorg() {
+      const at = S.attack;
+      const idx = S.chain.indexOf(at.base);
+      const doomed = S.chain.slice(idx + 1);
+      doomed.forEach(b => S.orphans.push({ block: b, at: Date.now() }));
+      at.priv.forEach(b => b.evil = true);
+      S.chain = S.chain.slice(0, idx + 1).concat(at.priv);
+      nodes.forEach(n => { n.tip = tip().hash; n.badFlash = 1; });
+      const an = nodes[at.minerI];
+      S.waves.push({ x: an.x, y: an.y, r: 6, max: Math.max(W, H), col: "r", a: 1 });
+      logline(`☠ ATTACKER REVEALS a ${at.priv.length}-block secret chain — longer, so by the rules it WINS`, "bad");
+      logline(`⚠ ${doomed.length} honest block${doomed.length === 1 ? "" : "s"} erased. Every payment inside just un-happened.`, "bad");
+      logline(`✦ the only defence: confirmations. Deeper burial = a longer race the attacker must win.`, "info");
+      an.evil = false; S.attack = null; S.reorgs++;
+    }
+    function attackGiveUp() {
+      const at = S.attack;
+      logline(`☠ attacker gave up ${at.pub - at.priv.length} blocks behind — below 50%, the gap only grows. Gambler's ruin.`, "ok");
+      nodes[at.minerI].evil = false; S.attack = null;
+    }
+
     function onBlockFound(block) {
+      // hostile takeover: every block interval becomes a weighted coin flip
+      if (S.attack) {
+        const at = S.attack;
+        if (Math.random() < at.share) {
+          const prev = at.priv.length ? at.priv[at.priv.length - 1] : at.base;
+          const eb = mineSync(at.minerI, prev, "evil");
+          at.priv.push(eb);
+          const an = nodes[at.minerI];
+          an.flash = 1;
+          S.waves.push({ x: an.x, y: an.y, r: 4, max: 70, col: "r", a: 0.8 });
+          logline(`⛏ secret block at height ${eb.height} — hidden chain ${at.priv.length} vs public ${at.pub}`, "warn");
+        } else {
+          S.chain.push(block);
+          announce(block, null);
+          at.pub++;
+          logline(`◆ block ${block.height} mined honestly — public ${at.pub} vs hidden ${at.priv.length}`, "ok");
+        }
+        // reveal once the secret chain is ahead and the strike lands with weight:
+        // either real history gets erased (pub >= 2) or the lead is already crushing
+        if (at.priv.length > at.pub && (at.pub >= 2 || at.priv.length >= 4)) attackReorg();
+        else if (at.share < 0.5 && at.pub - at.priv.length >= 4) attackGiveUp();
+        S.sinceBlock = 0;
+        return;
+      }
       const t = tip();
       const makeFork = (S.forceForkNext || Math.random() < 0.13) && !S.pendingFork && S.chain.length > 2;
       if (makeFork) {
@@ -219,9 +277,12 @@ window.OBS = (function () {
       const dts = dt * S.speed;
       S.sinceBlock += dts;
 
-      // spawn transactions
+      // spawn transactions (ease off when mempools are saturated)
       txTimer -= dts;
-      if (txTimer <= 0) { newTx((Math.random() * N) | 0); txTimer = rnd(1.4, 3.4) / Math.sqrt(S.speed); }
+      if (txTimer <= 0) {
+        if (nodes.reduce((a, n) => a + n.mempool.length, 0) < 70) newTx((Math.random() * N) | 0);
+        txTimer = rnd(1.6, 3.6) / Math.sqrt(S.speed);
+      }
 
       // travelers advance
       for (let i = S.travelers.length - 1; i >= 0; i--) {
@@ -270,8 +331,17 @@ window.OBS = (function () {
       setTimeout(() => { n.tampered = false; }, 4200);
     }
     function userFork() { S.forceForkNext = true; logline(`⑂ forcing a tie on the next block…`, "warn"); }
+    function userAttack(share) {
+      if (S.attack) { attackGiveUp(); return; }
+      if (S.pendingFork) { logline(`⑂ wait for the current fork to settle first`, "warn"); return; }
+      const minerI = pick(minerIdx);
+      nodes[minerI].evil = true;
+      S.attack = { minerI, share, priv: [], base: tip(), pub: 0 };
+      logline(`☠ node ${minerI + 1} turns hostile with ${Math.round(share * 100)}% of all hashpower`, "bad");
+      logline(`…it mines in secret from height ${tip().height}, waiting to reveal a longer chain`, "warn");
+    }
 
-    return { S, tick, tip, userBroadcast, userTamper, userFork, W, H };
+    return { S, tick, tip, userBroadcast, userTamper, userFork, userAttack, W, H };
   }
 
   /* ---------------- renderer ---------------- */
@@ -319,7 +389,7 @@ window.OBS = (function () {
     // waves
     S.waves.forEach(w => {
       ctx.globalAlpha = Math.max(0, w.a) * 0.55;
-      ctx.strokeStyle = w.col === "a" ? COL.a : w.col === "b" ? COL.b : COL.gold;
+      ctx.strokeStyle = w.col === "a" ? COL.a : w.col === "b" ? COL.b : w.col === "r" ? COL.red : COL.gold;
       ctx.lineWidth = 1.6;
       ctx.beginPath(); ctx.arc(w.x, w.y, w.r, 0, TAU); ctx.stroke();
       ctx.globalAlpha = 1;
@@ -327,8 +397,8 @@ window.OBS = (function () {
     // nodes
     S.nodes.forEach(n => {
       const sel = S.selNode === n.i;
-      const col = n.tampered || n.badFlash > 0 ? COL.red : n.heardCol === "A" ? COL.a : n.heardCol === "B" ? COL.b : n.miner ? COL.gold : COL.nodeDim;
-      const r = (n.miner ? 7.5 : 5) + n.pulse * 3 + n.flash * 3.5;
+      const col = n.evil || n.tampered || n.badFlash > 0 ? COL.red : n.heardCol === "A" ? COL.a : n.heardCol === "B" ? COL.b : n.miner ? COL.gold : COL.nodeDim;
+      const r = (n.miner ? 7.5 : 5) + n.pulse * 3 + n.flash * 3.5 + (n.evil ? 3.5 + Math.sin(t / 220) * 1.5 : 0);
       // glow
       ctx.globalAlpha = 0.28 + n.flash * 0.5 + n.pulse * 0.3;
       ctx.fillStyle = col;
@@ -360,7 +430,7 @@ window.OBS = (function () {
       ${n.mempool.slice(0, 7).map(t => `<div class="obs-tx"><span>${t.label}</span><i>fee ${t.fee}</i></div>`).join("") || `<div class="obs-tx dim">empty — txs arrive by gossip</div>`}`;
   }
   function panelBlock(S, b) {
-    return `<div class="obs-panel-h"><b>Block ${b.height}</b><span class="obs-chip">${b.miner < 0 ? "genesis" : "mined by node " + (b.miner + 1)}</span><button class="obs-x" id="obsPX">✕</button></div>
+    return `<div class="obs-panel-h"><b>Block ${b.height}</b><span class="obs-chip${b.evil ? " evil" : ""}">${b.evil ? "☠ attacker's block" : b.miner < 0 ? "genesis" : "mined by node " + (b.miner + 1)}</span><button class="obs-x" id="obsPX">✕</button></div>
       <div class="obs-kv"><span>prev</span><b class="mono">${short(b.prev, 10, 8)}</b></div>
       <div class="obs-kv"><span>merkle root</span><b class="mono">${short(b.merkle, 10, 8)}</b></div>
       <div class="obs-kv"><span>nonce</span><b class="mono">${b.nonce.toLocaleString()}</b></div>
@@ -373,8 +443,8 @@ window.OBS = (function () {
   function ribbonHTML(S) {
     const tail = S.chain.slice(-8);
     const orph = S.orphans.slice(-1)[0];
-    return tail.map(b => `<button class="obs-blk${S.selBlock === b.hash ? " sel" : ""}${S.pendingFork && !S.pendingFork.resolved ? "" : ""}" data-h="${b.hash}">
-        <span class="bh">#${b.height}</span><span class="bx mono">${short(b.hash, 5, 4)}</span><span class="bt">${b.txs ? b.txs.length : 0} tx</span></button>`).join(`<span class="obs-link">—</span>`)
+    return tail.map(b => `<button class="obs-blk${S.selBlock === b.hash ? " sel" : ""}${b.evil ? " evil" : ""}" data-h="${b.hash}">
+        <span class="bh">#${b.height}</span><span class="bx mono">${short(b.hash, 5, 4)}</span><span class="bt">${b.evil ? "☠ " : ""}${b.txs ? b.txs.length : 0} tx</span></button>`).join(`<span class="obs-link">—</span>`)
       + (S.pendingFork && !S.pendingFork.resolved ? `<span class="obs-link">—</span><span class="obs-forkpair"><button class="obs-blk fa" data-h="${S.pendingFork.a.hash}"><span class="bh">#${S.pendingFork.a.height}</span><span class="bx mono">${short(S.pendingFork.a.hash, 5, 4)}</span><span class="bt">A</span></button><button class="obs-blk fb" data-h="${S.pendingFork.b.hash}"><span class="bh">#${S.pendingFork.b.height}</span><span class="bx mono">${short(S.pendingFork.b.hash, 5, 4)}</span><span class="bt">B</span></button></span>` : "")
       + (orph && Date.now() - orph.at < 6000 ? `<button class="obs-blk orphan" data-h="${orph.block.hash}"><span class="bh">#${orph.block.height}</span><span class="bx mono">${short(orph.block.hash, 5, 4)}</span><span class="bt">orphan</span></button>` : "");
   }
@@ -386,7 +456,15 @@ window.OBS = (function () {
       <span><b>${mem}</b> in mempools</span>
       <span><b>${S.hashrateEMA.toLocaleString()}</b> real H/s</span>
       <span><b>${S.forks}</b> forks seen</span>
-      <span><b>${ago}s</b> since block</span>`;
+      <span><b>${ago}s</b> since block</span>` +
+      (S.attack ? `<span class="atk">☠ <b>${Math.round(S.attack.share * 100)}%</b> attack under way</span>` : S.reorgs ? `<span class="atk"><b>${S.reorgs}</b> reorg${S.reorgs === 1 ? "" : "s"}</span>` : "");
+  }
+  function shadowHTML(S) {
+    if (!S.attack || !S.attack.priv.length) return "";
+    const at = S.attack;
+    return `<span class="obs-shadow-lab">hidden chain — only the attacker can see this</span>` +
+      at.priv.map(b => `<button class="obs-blk shadowb" data-h="${b.hash}"><span class="bh">#${b.height}</span><span class="bx mono">${short(b.hash, 5, 4)}</span><span class="bt">secret</span></button>`).join(`<span class="obs-link">—</span>`) +
+      `<span class="obs-shadow-lab">${at.priv.length > at.pub ? (at.pub >= 2 || at.priv.length >= 4 ? "LONGER — striking…" : "ahead — lying in wait") : at.priv.length === at.pub ? "tied with public" : (at.pub - at.priv.length) + " behind public"}</span>`;
   }
 
   function mount(rootEl) {
@@ -407,7 +485,14 @@ window.OBS = (function () {
         <div class="obs-tour-text" id="obsTourText"></div>
         <div class="obs-tour-foot"><div class="obs-tour-dots" id="obsTourDots"></div><button class="obs-btn" id="obsTourSkip">skip tour</button></div>
       </div>
+      <div class="obs-attack" id="obsAttackPanel" hidden>
+        <div class="obs-attack-h">☠ Hostile takeover</div>
+        <p>One miner goes rogue and mines a <b>secret chain</b>. Every block is a weighted coin flip: the attacker wins with the share below. Longer secret chain → it reveals, and honest history is erased. Below 50%, the gap only grows — Satoshi's gambler's ruin.</p>
+        <div class="obs-attack-row"><span>attacker hashpower</span><input type="range" id="obsAtkShare" min="30" max="75" value="60" step="5"><b id="obsAtkVal">60%</b></div>
+        <div class="obs-attack-row"><button class="obs-btn danger" id="obsAtkGo">launch the attack</button><button class="obs-btn" id="obsAtkClose">cancel</button></div>
+      </div>
       <div class="obs-bottom">
+        <div class="obs-ribbon obs-shadowrow" id="obsShadow" hidden></div>
         <div class="obs-ribbon" id="obsRibbon"></div>
         <div class="obs-controls">
           <button class="obs-btn" id="obsPause" title="space">⏸ pause</button>
@@ -416,6 +501,7 @@ window.OBS = (function () {
           <button class="obs-btn act" id="obsTx">broadcast a tx</button>
           <button class="obs-btn act" id="obsTamper">tamper a node</button>
           <button class="obs-btn act" id="obsFork">force a fork</button>
+          <button class="obs-btn danger" id="obsAttack">☠ hostile takeover</button>
           <span class="obs-sep"></span>
           <button class="obs-btn act" id="obsTourBtn">✦ guided tour</button>
         </div>
@@ -459,7 +545,7 @@ window.OBS = (function () {
       if (S.selNode == null && !S.selBlock) { panelEl.hidden = true; return; }
       panelEl.hidden = false;
       panelEl.innerHTML = S.selNode != null ? panelNode(S, S.selNode)
-        : panelBlock(S, S.chain.find(b => b.hash === S.selBlock) || (S.pendingFork && [S.pendingFork.a, S.pendingFork.b].find(b => b.hash === S.selBlock)) || S.orphans.map(o => o.block).find(b => b.hash === S.selBlock) || S.chain[0]);
+        : panelBlock(S, S.chain.find(b => b.hash === S.selBlock) || (S.pendingFork && [S.pendingFork.a, S.pendingFork.b].find(b => b.hash === S.selBlock)) || (S.attack && S.attack.priv.find(b => b.hash === S.selBlock)) || S.orphans.map(o => o.block).find(b => b.hash === S.selBlock) || S.chain[0]);
       const x = panelEl.querySelector("#obsPX"); if (x) x.onclick = () => { S.selNode = null; S.selBlock = null; renderPanel(); };
     }
 
@@ -474,15 +560,25 @@ window.OBS = (function () {
       S.selNode = best;
       renderPanel();
     });
-    ribEl.addEventListener("click", (e) => {
+    const onRibbonClick = (e) => {
       const b = e.target.closest(".obs-blk"); if (!b) return;
       sim.S.selNode = null; sim.S.selBlock = b.dataset.h; renderPanel();
-    });
+    };
+    ribEl.addEventListener("click", onRibbonClick);
+    host.querySelector("#obsShadow").addEventListener("click", onRibbonClick);
     $("#obsPause").onclick = () => { sim.S.paused = !sim.S.paused; $("#obsPause").textContent = sim.S.paused ? "▶ play" : "⏸ pause"; };
     $("#obsSpeed").onclick = () => { const seq = [1, 2, 4, 0.5]; sim.S.speed = seq[(seq.indexOf(sim.S.speed) + 1) % seq.length]; $("#obsSpeed").textContent = sim.S.speed + "×"; };
     $("#obsTx").onclick = () => sim.userBroadcast();
     $("#obsTamper").onclick = () => sim.userTamper();
     $("#obsFork").onclick = () => sim.userFork();
+    const atkPanel = $("#obsAttackPanel"), atkBtn = $("#obsAttack"), shadowEl = $("#obsShadow");
+    $("#obsAtkShare").oninput = (e) => { $("#obsAtkVal").textContent = e.target.value + "%"; };
+    $("#obsAtkClose").onclick = () => { atkPanel.hidden = true; };
+    $("#obsAtkGo").onclick = () => { atkPanel.hidden = true; sim.userAttack((+$("#obsAtkShare").value) / 100); };
+    atkBtn.onclick = () => {
+      if (sim.S.attack) { sim.userAttack(0); return; } // abort
+      atkPanel.hidden = !atkPanel.hidden;
+    };
     const onKey = (e) => { if (e.key === " " && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); $("#obsPause").click(); } };
     addEventListener("keydown", onKey);
     host._cleanup = () => { removeEventListener("keydown", onKey); removeEventListener("resize", onResize); };
@@ -545,14 +641,24 @@ window.OBS = (function () {
       if (!document.contains(host)) return;
       // wall-clock dt, clamped loosely: sim keeps real pace even where timers are throttled
       const dt = Math.min(0.5, (t - lastT) / 1000); lastT = t;
-      sim.tick(dt);
-      draw(cv, ctx, dpr, t);
+      try {
+        sim.tick(dt);
+        draw(cv, ctx, dpr, t);
+      } catch (err) {
+        // never let one bad frame kill the world — surface it and keep running
+        console.error("observatory frame error", err);
+        sim.S.log.unshift({ t: "⚠ frame error: " + (err && err.message), cls: "bad" });
+        window.__obsErr = err && (err.stack || err.message);
+      }
       uiTimer += dt;
       if (uiTimer > 0.25) {
         uiTimer = 0;
         onResize(); // self-heal if the stage changed size without a window resize event
         statsEl.innerHTML = statsHTML(sim.S);
         ribEl.innerHTML = ribbonHTML(sim.S);
+        const sh = shadowHTML(sim.S);
+        shadowEl.hidden = !sh; shadowEl.innerHTML = sh;
+        atkBtn.textContent = sim.S.attack ? "✕ call off the attack" : "☠ hostile takeover";
         const c = sim.S.candidate;
         candEl.innerHTML = `node ${c.miner + 1} trying nonce <b>${c.nonce.toLocaleString()}</b> → ${splitZ(c.hash)}`;
         if (!panelEl.hidden) renderPanel();

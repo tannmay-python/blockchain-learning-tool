@@ -528,6 +528,26 @@ body.obs-open { overflow: hidden; }
 .obs-btn:hover { border-color: rgba(246,231,238,.45); color: #fff; }
 .obs-btn.act { border-color: rgba(241,162,34,.4); color: var(--gold); }
 .obs-btn.act:hover { background: rgba(241,162,34,.12); border-color: var(--gold); }
+.obs-btn.danger { border-color: rgba(255,90,118,.45); color: #ff5a76; }
+.obs-btn.danger:hover { background: rgba(255,90,118,.12); border-color: #ff5a76; }
+
+/* hostile takeover */
+.obs-stats .atk { color: #ff5a76; } .obs-stats .atk b { color: #ff5a76; }
+.obs-attack { position: absolute; right: 22px; bottom: 128px; width: min(360px, calc(100vw - 44px)); z-index: 5; background: rgba(34,9,27,.94); border: 1px solid rgba(255,90,118,.4); border-radius: 16px; padding: 18px 20px; backdrop-filter: blur(12px); box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.obs-attack-h { font-family: var(--disp); font-size: 18px; font-weight: 500; color: #ff5a76; margin-bottom: 8px; }
+.obs-attack p { font-size: 12.5px; line-height: 1.6; color: #c9a3b6; }
+.obs-attack p b { color: #e8cfdc; }
+.obs-attack-row { display: flex; align-items: center; gap: 12px; margin-top: 12px; font-size: 12px; color: #96707f; }
+.obs-attack-row b { font-family: var(--mono); color: #ff5a76; min-width: 38px; text-align: right; }
+.obs-attack-row input[type=range] { flex: 1; background: rgba(246,231,238,.12); border-color: rgba(246,231,238,.1); }
+.obs-attack-row input[type=range]::-webkit-slider-thumb { background: #ff5a76; border-color: #2a0a1c; }
+.obs-shadowrow { opacity: .95; }
+.obs-blk.shadowb { border-color: rgba(255,90,118,.65); border-style: dashed; background: rgba(60,10,26,.85); }
+.obs-blk.shadowb .bt { color: #ff5a76; }
+.obs-blk.evil { border-color: rgba(255,90,118,.7); }
+.obs-blk.evil .bt { color: #ff5a76; }
+.obs-chip.evil { background: rgba(255,90,118,.16); color: #ff5a76; }
+.obs-shadow-lab { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #ff5a76; font-weight: 700; margin-right: 8px; white-space: nowrap; }
 .obs-sep { width: 1px; height: 18px; background: rgba(246,231,238,.14); }
 @media (max-width: 720px) { .obs-log { display: none; } .obs-candidate { display: none; } .obs-title .obs-sub2 { display: none; } }
 

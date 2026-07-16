@@ -16,7 +16,9 @@ forks genuinely split the network in two colours before the next block heals the
 the loser. Click any node to open its mempool; click any block on the ribbon to read its real
 header. A narrated **guided tour** plays on first visit — nine acts, each driven by real
 simulator events. Buttons let you broadcast a transaction, make a node announce an invalid
-block (its neighbours reject it), or force a fork.
+block (its neighbours reject it), force a fork — or launch a **hostile takeover**: hand one
+miner 30–75% of the hashpower and watch it mine a secret chain and, if it wins Satoshi's race,
+erase honest history in a live reorg. Below 50% you watch gambler's ruin instead.
 
 ## The journey (7 chapters · 24 lessons · ~60 hands-on demos)
 
