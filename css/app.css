@@ -641,10 +641,12 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .frk-split { display: flex; flex-direction: column; gap: 14px; }
 
 /* ===== connective tissue: chapter opener + bridge ===== */
-.chapter-open { max-width: var(--readw); margin: 0 auto 10px; text-align: center; }
-.co-n { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.co-i { font-family: var(--disp); font-weight: 400; font-size: clamp(17px, 2.4vw, 21px); line-height: 1.5; color: var(--ink-2); margin-top: 8px; text-wrap: balance; }
-.chapter-open + .lesson-hero { margin-top: 8px; }
+.chapter-open { max-width: 680px; margin: 32px auto 20px; padding: 32px 36px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--sh-sm); text-align: left; position: relative; overflow: hidden; }
+.co-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.co-n { position: relative; z-index: 1; display: block; font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 12px; }
+.co-i { position: relative; z-index: 1; font-family: var(--sans); font-size: 15.5px; line-height: 1.65; color: var(--ink-2); text-wrap: pretty; }
+.co-i strong, .co-i b { color: var(--ink); font-weight: 600; }
+.chapter-open + .lesson-hero { padding-top: 10px; margin-top: 0; }
 
 .bridge { max-width: var(--readw); margin: 32px auto 0; background: linear-gradient(180deg, var(--plum-tint), var(--surface)); border: 1px solid var(--plum-line); border-radius: var(--r-lg); padding: 22px 26px; }
 .bridge-lab { display: block; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 9px; }

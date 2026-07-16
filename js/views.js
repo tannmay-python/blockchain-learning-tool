@@ -94,7 +94,7 @@ window.VIEWS = (function () {
         <div class="lprog"><i id="lprogFill" style="background:${w.color}"></i></div>
       </div>
       <div class="explorable">
-        ${w.lessons[0] === id && w.intro ? `<div class="chapter-open"><span class="co-n" style="color:${w.color}">Chapter ${w.n} · ${w.title}</span><p class="co-i">${w.intro}</p></div>` : ""}
+        ${w.lessons[0] === id && w.intro ? `<div class="chapter-open" style="--c:${w.color}"><div class="co-bg" style="background:${w.color}0a"></div><span class="co-n" style="color:${w.color}">Chapter ${w.n} — ${w.title}</span><p class="co-i">${w.intro}</p></div>` : ""}
         <div class="lesson-hero"><div class="icbig" style="background:${w.color}1c;color:${w.color}">${l.icon}</div><h1>${l.title}</h1><p>${l.hero}</p></div>
         <div id="beats"></div>
         ${l.deeper ? `<details class="deeper"><summary>Go deeper — the technical detail</summary><div class="dbody">${l.deeper}</div></details>` : ""}
