@@ -139,7 +139,7 @@ window.LESSONS = (function () {
   const L = {};
 
   /* ===================== FOUNDATIONS ===================== */
-  L.ledger = { world: "foundations", title: "The ledger", oneliner: "What money really is", icon: "₿",
+  L.ledger = { world: "foundations", title: "The ledger", oneliner: "How a ledger tracks value", icon: "₿",
     hero: "Money isn't gold or paper. It's a list of who owns what. Everything starts here.",
     beats: [
       { n: "01", h: "Money is just a list", cap: "Press send and watch the entries change. The coins never move — only the <b>record</b> of who owns them.",
@@ -172,7 +172,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("Removing the trusted keeper is the whole point of a blockchain — but it creates a hard new problem. With no boss, how does everyone agree on the one true ledger, and in what order? That question — <b>consensus</b> — drives the rest of this course. The bank's strength (one authority) is also its weakness (one point of control and failure).") },
 
-  L.doublespend = { world: "foundations", title: "Double-spend", oneliner: "The problem digital money must solve", icon: "⊘",
+  L.doublespend = { world: "foundations", title: "Double-spend", oneliner: "Solving the digital double-spend problem", icon: "⊘",
     hero: "Cash can't be in two places at once. A digital file can. That's the problem.",
     beats: [
       { n: "01", h: "A coin is a file, and files copy", cap: "Click to copy the same coin to two people. Nothing physical stops you — so what does?",
@@ -196,7 +196,7 @@ window.LESSONS = (function () {
     deeper: P("The problem splits in two. <b>Authorisation</b> — proving you own the coin — is solved by a signature. <b>Ordering</b> — agreeing which payment came first — needs everyone to settle on one shared order of transactions. And you can't just vote on it, because identity online is free: one person can spin up a million fake nodes (a <b>Sybil attack</b>). So a vote must cost something real — electricity (Proof of Work) or staked capital (Proof of Stake). The network is secure because lying is expensive.") };
 
   /* ===================== CRYPTOGRAPHY ===================== */
-  L.hashing = { world: "crypto", title: "Hashing", oneliner: "The digital fingerprint", icon: "#",
+  L.hashing = { world: "crypto", title: "Hashing", oneliner: "Digital fingerprints that cannot be faked", icon: "#",
     hero: "Feed in anything, get back a short fingerprint. This one tool seals records, links blocks, and powers mining.",
     beats: [
       { n: "01", h: "The hashing machine", cap: "Type anything. SHA-256 turns it into exactly <b>64 characters</b> — the same length whether you type a word or a novel.",
@@ -223,7 +223,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("SHA-256 returns <b>256 bits</b> — 64 hex characters. Infinitely many inputs map to only 2²⁵⁶ outputs, so it <b>destroys information</b>: you can't run it backwards. Reversing a specific output would take longer than the age of the universe. Security rests on three guarantees: <b>preimage</b> resistance (can't find an input for an output), <b>second-preimage</b> (can't find another input matching one), and <b>collision</b> resistance (can't find any two that match). The birthday paradox means collisions take ~2¹²⁸ work, not 2²⁵⁶ — still astronomical, which is why SHA-256 holds while SHA-1 (2⁸⁰) is broken. Hashing is not encryption: encryption is two-way and keeps the data; hashing is one-way and throws it away.") };
 
-  L.keys = { world: "crypto", title: "Keys & signatures", oneliner: "Ownership without trust", icon: "⚿",
+  L.keys = { world: "crypto", title: "Keys & signatures", oneliner: "Proving ownership using digital signatures", icon: "⚿",
     hero: "No usernames, no passwords. A secret number is the only thing that proves something is yours.",
     beats: [
       { n: "01", h: "One secret, flowing one way", cap: "A private key gives a public key gives an address. You can walk this chain forwards — <b>never backwards</b>.",
@@ -245,7 +245,7 @@ window.LESSONS = (function () {
     deeper: P("This is <b>ECDSA</b>, the same elliptic-curve signatures Bitcoin and Ethereum use. The trapdoor: your public key is a fixed point added to itself a secret number of times; going forward is fast, going back (the discrete-log problem) is hopeless. Signing covers the <b>hash</b> of the transaction, so it proves authenticity and integrity at once — and the verifier learns only ‘this key signed this’, never your secret. Lose the key and the coins freeze forever; copy it and the thief simply is you.") };
 
   /* ===================== BUILDING THE CHAIN ===================== */
-  L.block = { world: "chain", title: "A block", oneliner: "Build one, then seal it", icon: "▦",
+  L.block = { world: "chain", title: "A block", oneliner: "Bundling and sealing network data", icon: "▦",
     hero: "A block is a box. Drag some transactions in, then mine it — and watch the fingerprint churn through thousands of guesses before it locks shut.",
     beats: [
       { n: "01", h: "Drag transactions in, then seal it", cap: "Grab the waiting transactions and drop them into the block (or tap them). When you are ready, hit <b>Mine</b> — the seal scrambles through guess after guess until it finally locks.",
@@ -255,7 +255,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("Each transaction is hashed; pairs of hashes are combined and hashed again, up a tree, until one <b>Merkle root</b> remains in the header. Hashing the whole header gives the block its ID — its seal. A block on its own isn't special; anyone can build one. What makes <i>adding</i> it costly, and the past unchangeable, is the lessons ahead: the nonce, the reward, and the chain.") };
 
-  L.nonce = { world: "chain", title: "The nonce", oneliner: "The one dial in a frozen block", icon: "⛏",
+  L.nonce = { world: "chain", title: "The nonce", oneliner: "Solving the Proof of Work puzzle", icon: "⛏",
     hero: "A finished block is frozen — the transactions, the link, the time. A miner can change exactly one thing: a throwaway number called the nonce. Mining is just turning that one dial.",
     beats: [
       { n: "01", h: "Everything is locked but one number", cap: "Look at the block below. The data, the link to the last block, the merkle root, the time — all <b>fixed</b>. The miner is only allowed to change the <span class='k'>nonce</span>. Turn the dial and watch: only it and the hash move. Nothing else can.",
@@ -299,7 +299,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("If <code>p = target / 2²⁵⁶</code> is the chance one hash qualifies, expected tries is <code>1/p</code>, and each extra zero of difficulty makes it 16× rarer (a hex digit has 16 values). Bitcoin runs about 10²³ hashes per block every ten minutes, re-tuning the target every two weeks to hold that pace. The winner mints new coins plus fees. The recurring theme: producing a block is staggeringly expensive, but <b>checking</b> it is a single hash — that asymmetry is what makes the whole thing work.") };
 
-  L.chainlink = { world: "chain", title: "The chain", oneliner: "Why the past locks", icon: "⛓",
+  L.chainlink = { world: "chain", title: "The chain", oneliner: "Cryptographically locking history in place", icon: "⛓",
     hero: "Line the blocks up. Each one writes down the fingerprint of the one before it — so the blocks are physically chained together by their own hashes.",
     beats: [
       { n: "01", h: "Follow the link between two blocks", cap: "Here is the single most important idea in this whole course: a block's <b>‘prev’</b> field holds the <b>exact fingerprint</b> of the block before it. Click any block to light up the link and see the two matching values for yourself.",
@@ -315,7 +315,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("Changing the past doesn't just edit one block — it invalidates everything built on top, in plain view. To repair it you'd have to re-mine that block <i>and every block after it</i>, winning the whole Proof-of-Work race again, while the honest network keeps extending the real chain with all its power. Below 50% of the hashrate, you fall further behind every ten minutes. Fingerprints make tampering visible; work makes fixing it a race you lose. That combination is immutability.") };
 
-  L.merkle = { world: "chain", title: "Merkle tree", oneliner: "Prove inclusion cheaply", icon: "⋔",
+  L.merkle = { world: "chain", title: "Merkle tree", oneliner: "Packing thousands of transactions efficiently", icon: "⋔",
     hero: "A block can hold thousands of transactions, but its header has room for just one fingerprint. A Merkle tree squeezes them all into that single hash — and still lets you prove any one of them is inside.",
     beats: [
       { n: "01", h: "Watch the root get built", cap: "We hash the transactions together <b>two at a time</b>, climbing a tree, until a single hash is left: the <b>Merkle root</b> that goes into the block header. Build it one pair at a time and watch each combination happen.",
@@ -331,7 +331,7 @@ window.LESSONS = (function () {
     deeper: P("The tree's height is <code>log₂(n)</code>, so a million transactions need ~20 sibling hashes, a billion ~30 — doubling the block adds just one hash to the proof. A fake sibling produces the wrong root, so the proof fails safely even from an untrusted source. This is what lets a phone wallet confirm a payment in milliseconds without ever downloading the chain.") };
 
   /* ===================== CONSENSUS ===================== */
-  L.forks = { world: "consensus", title: "Forks", oneliner: "How nodes agree", icon: "⑂",
+  L.forks = { world: "consensus", title: "Forks", oneliner: "How the decentralized network agrees", icon: "⑂",
     hero: "Two miners can win at the same instant. With no referee, which block is real?",
     beats: [
       { n: "01", h: "Longest chain wins", cap: "Trigger a fork, then pick which branch the next block builds on. The chain with more work wins; the loser is <b>orphaned</b>.",
@@ -350,7 +350,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("A recent block is never fully final — a deeper competing branch could replace it (a <b>reorg</b>). You get <b>probabilistic finality</b>: every block stacked on top makes reversal exponentially harder. ‘Wait for six confirmations’ — about an hour — is exactly this idea with a number on it. There is no moment of certainty, only certainty that grows.") };
 
-  L.attack = { world: "consensus", title: "The 51% attack", oneliner: "The security boundary", icon: "½",
+  L.attack = { world: "consensus", title: "The 51% attack", oneliner: "The anatomy of a 51% attack", icon: "½",
     hero: "The whole system rests on one bet: that no one controls most of the mining.",
     beats: [
       { n: "01", h: "A race you usually lose", cap: "You're trying to reverse a payment by secretly out-mining the network. Set your share and the confirmations waited — the odds are Satoshi's, computed live.",
@@ -369,7 +369,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("With a majority you <b>can</b> double-spend your own recent payments and censor transactions; you <b>cannot</b> forge signatures, steal coins you have no key for, or change the rules. Below 50%, catch-up probability decays exponentially with each confirmation (Satoshi's gambler's-ruin result). At 50% it becomes certain — a cliff, not a slope. Subtler threats: <b>selfish mining</b> pays off above ~⅓ of hashrate, and <b>pools</b> can quietly drift toward majority. Security is economic, not absolute — attacks are deterred by costing more than they're worth.") };
 
-  L.pos = { world: "consensus", title: "Proof of Stake", oneliner: "Capital, not electricity", icon: "◈",
+  L.pos = { world: "consensus", title: "Proof of Stake", oneliner: "Securing networks by staking capital", icon: "◈",
     hero: "Same defence, different cost. Instead of burning power, validators put money on the line.",
     beats: [
       { n: "01", h: "Stake, propose, or get slashed", cap: "Validators win blocks in proportion to their stake. Make one cheat and the protocol <b>destroys its bond</b> — slashing.",
@@ -389,7 +389,7 @@ window.LESSONS = (function () {
     deeper: P("Faking a thousand validators means risking a thousand times the money — the same Sybil defence as mining, but the scarce resource is capital, not energy. Ethereum's 2022 switch cut its energy use ~99.9%. The debate is genuinely open: PoW's cost is external and physical (you can't fake electricity); PoS's attacker has their own stake slashed (the attack destroys their capital). The shared worry: wealth and staking pools concentrate control.") };
 
   /* ===================== THE ECOSYSTEM ===================== */
-  L.contracts = { world: "frontier", title: "Smart contracts", oneliner: "Code as the middleman", icon: "ƒ",
+  L.contracts = { world: "frontier", title: "Smart contracts", oneliner: "Unstoppable code acting as the middleman", icon: "ƒ",
     hero: "Once a chain can store data and agree, it can run programs — with no off switch.",
     beats: [
       { n: "01", h: "A vending machine, on-chain", cap: "Call buy() with too little, then with enough. A failed <code>require</code> <b>reverts</b> the whole transaction, as if it never happened.",
@@ -412,7 +412,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("It isn't ‘smart’ and isn't a ‘contract’: it's a deterministic program every node runs in lockstep, agreeing on the result. <b>Gas</b> charges for each operation, rationing the shared computer and stopping infinite loops. This powers <b>DeFi</b>, <b>NFTs</b>, and <b>DAOs</b> — all just contracts moving tokens by rules. The catch: immutable code means immutable <b>bugs</b>, and the funds sit inside the contract. ‘Code is law’ collides with the law's need to reverse fraud — billions have been lost to contract exploits.") };
 
-  L.zk = { world: "frontier", title: "Zero-knowledge", oneliner: "Prove without revealing", icon: "◇",
+  L.zk = { world: "frontier", title: "Zero-knowledge", oneliner: "Proving facts without revealing secrets", icon: "◇",
     hero: "Prove you know a secret — without revealing the secret. The frontier of privacy and scaling.",
     beats: [
       { n: "01", h: "The cave game", cap: "Peggy claims she knows a secret word. Run rounds as an honest prover, then as a cheater — watch a bluffer's luck run out, while the word is never spoken.",
@@ -429,7 +429,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("Real <b>zk-SNARKs / zk-STARKs</b> compress this into a tiny proof that ‘I ran this computation correctly’, cheap to check even when the computation was huge. That powers private payments and <b>zk-rollups</b> — bundling thousands of transactions off-chain and posting one proof to settle them, scaling the chain without trusting anyone. Privacy-preserving compliance is the policy frontier: prove you're not on a sanctions list without revealing your identity.") };
 
-  L.money = { world: "frontier", title: "Money & the state", oneliner: "Stablecoins, CBDCs", icon: "$",
+  L.money = { world: "frontier", title: "Money & the state", oneliner: "Understanding stablecoins and CBDCs", icon: "$",
     hero: "The same technology can free money from the state — or hand the state perfect control. It's a spectrum.",
     beats: [
       { n: "01", h: "Slide from freedom to control", cap: "Drag from permissionless crypto to a state-issued CBDC. Same digital money, opposite valence.",
@@ -446,7 +446,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("<b>Stablecoins</b> hold a peg — fiat-backed (a dollar in reserve), crypto-backed (over-collateralised), or algorithmic (held by code, and fragile — Terra collapsed). A <b>CBDC</b> is a central bank's own digital currency, and technically the opposite of crypto: centralised, permissioned, fully controlled. The through-line of the whole course: take the referee out and you get money no state can freeze; hand the state the keys and you get the most controllable money in history. The policy question is never the tech — it's who holds the keys.") };
 
-  L.tokens = { world: "frontier", title: "Tokens & NFTs", oneliner: "Anything you can count or own", icon: "◎",
+  L.tokens = { world: "frontier", title: "Tokens & NFTs", oneliner: "Creating digital assets and NFTs", icon: "◎",
     hero: "Once a chain can run code, it can track more than coins. A token is just an entry in a contract's ledger — and an NFT is a token that is one of a kind.",
     beats: [
       { n: "01", h: "Mint and move tokens", cap: "A token is just a row in a contract saying how many you hold. Mint some and send them around — the contract keeps the count.",
@@ -461,7 +461,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("Most tokens follow standards (ERC-20 for fungible, ERC-721 for NFTs) so any wallet or exchange can handle them the same way. The token itself is just bookkeeping inside a contract; an NFT usually <i>points</i> to an image or asset stored elsewhere — which is why ‘what exactly do you own’ is a real and often misunderstood question.") };
 
-  L.wallets = { world: "frontier", title: "Wallets & custody", oneliner: "Who holds the keys", icon: "❖",
+  L.wallets = { world: "frontier", title: "Wallets & custody", oneliner: "Holding and protecting your own keys", icon: "❖",
     hero: "A wallet does not hold coins. It holds keys. The coins are entries on the chain — your key is just what proves they are yours.",
     beats: [
       { n: "01", h: "A wallet is a key, not a vault", cap: "From one secret phrase, a wallet derives all your keys and addresses. The balance lives on the chain; the wallet just unlocks it.",
@@ -477,7 +477,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("This is the trade-off behind ‘not your keys, not your coins’. Self-custody gives you sovereignty and full responsibility; custodial services give you convenience and a recovery path, at the cost of trusting them — the very intermediary blockchains were built to remove. Most regulation targets these custodians, because they are the one place a government can actually apply pressure.") };
 
-  L.layer2 = { world: "frontier", title: "Layer 2 & scaling", oneliner: "Doing more without breaking it", icon: "⏫",
+  L.layer2 = { world: "frontier", title: "Layer 2 & scaling", oneliner: "Scaling the network for global use", icon: "⇈",
     hero: "A secure, decentralised chain is slow on purpose — every computer re-checks every transaction. Layer 2 buys back the speed without giving that up.",
     beats: [
       { n: "01", h: "The base chain is slow on purpose", cap: "Because thousands of computers each verify every transaction, throughput stays low. Here is the gap Layer 2 has to close.",
@@ -494,7 +494,7 @@ window.LESSONS = (function () {
     deeper: P("Two main flavours. <b>Optimistic rollups</b> assume each batch is valid and allow a challenge window to prove fraud. <b>zk-rollups</b> attach a cryptographic proof that the batch is valid (the zero-knowledge maths from the previous lesson), so there is nothing to dispute. Either way the heavy work happens off-chain and only a tiny summary touches the expensive, secure base layer — buying scale without selling decentralisation or security.") };
 
   /* ===================== PRIMER (start here) ===================== */
-  L.whatis = { world: "primer", title: "What is a blockchain?", oneliner: "The whole idea, in one screen", icon: "◧",
+  L.whatis = { world: "primer", title: "What is a blockchain?", oneliner: "The entire concept in one screen", icon: "◧",
     hero: "Forget the buzzwords. A blockchain is a list of blocks, copied across many computers, that nobody can quietly rewrite. Let us build that picture.",
     beats: [
       { n: "01", h: "A block holds records", cap: "Start with one <b>block</b> — just a box that holds a list of records, like a page in a notebook. Add a few and watch its fingerprint at the bottom change.",
@@ -517,7 +517,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("That is the entire mental model: <b>blocks</b> of records, <b>chained</b> by fingerprints, <b>copied</b> across a whole network. The clever part is not any single piece — it is that together they let strangers keep one shared, tamper-proof record without trusting anyone in charge. Everything else in this course is just <i>how</i> each of those three words actually works.") };
 
-  L.why = { world: "primer", title: "Why do we need it?", oneliner: "The problem it solves", icon: "?",
+  L.why = { world: "primer", title: "Why do we need it?", oneliner: "Why we actually need a blockchain", icon: "?",
     hero: "Why go to all this trouble? Because handing your records to a single keeper has real costs — and sometimes you cannot.",
     beats: [
       { n: "01", h: "Today, a middleman holds the record", cap: "To send money, it runs through a bank. You trust them to keep the ledger honest, available, and yours.",
@@ -537,7 +537,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("This is the real pitch, stripped of hype: blockchain trades a <i>trusted</i> keeper for a <i>trustless</i> system. You give up the convenience of someone to call when things go wrong, and in return you get money — or records — that no single party can censor, freeze, or quietly alter. Whether that trade is worth it depends entirely on the use case, which is the honest question to ask of any blockchain pitch.") };
 
-  L.tour = { world: "primer", title: "The life of a payment", oneliner: "How it all fits together", icon: "↗",
+  L.tour = { world: "primer", title: "The life of a payment", oneliner: "The lifecycle of a single payment", icon: "↗",
     hero: "Before the details, watch the whole machine work. Follow one payment from your fingertips to the permanent record, in five steps.",
     beats: [
       { n: "01", h: "Step through it", cap: "Click through the journey of a single payment. Each step is its own lesson later — this is just the map.",
@@ -557,7 +557,7 @@ window.LESSONS = (function () {
     deeper: P("Those five steps map onto the rest of this course: <b>signing</b> is the Cryptography world, <b>packing a block</b> and <b>sealing it with work</b> are Building the Chain, and <b>every copy agreeing</b> is the Consensus world. If you remember nothing else, remember this loop — sign, pool, seal, link, agree — repeating roughly every ten minutes, forever.") };
 
   /* ===================== CAPSTONE ===================== */
-  L.recap = { world: "capstone", title: "The whole machine", oneliner: "Everything, running together", icon: "★",
+  L.recap = { world: "capstone", title: "The whole machine", oneliner: "The complete blockchain machine in motion", icon: "★",
     hero: "You have built every part by hand. Here is the finished machine — keep mining blocks and watch the chain you understand grow.",
     beats: [
       { n: "01", h: "Run the chain", cap: "Mine block after block. You now know exactly what each one means: bundled records, sealed by work, linked to the past, copied to all.",

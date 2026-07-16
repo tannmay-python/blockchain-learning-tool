@@ -78,7 +78,7 @@
   }
 
   /* ===================== TRANSACTION — the atomic unit ===================== */
-  L.tx = { world: "chain", title: "Inside a transaction", oneliner: "The atomic unit that moves value", icon: "⇄",
+  L.tx = { world: "chain", title: "Inside a transaction", oneliner: "The core unit that moves value", icon: "⇄",
     hero: "You just signed a payment. That signed bundle has a proper name — a <b>transaction</b> — and it is the only thing a blockchain ever really moves. Before it can be packed into a block, look at what it is made of, and where it waits its turn.",
     beats: [
       { n: "01", h: "What a transaction is actually made of", cap: "It isn't a coin changing hands — it's a tiny <b>signed record</b>. Nudge the amount and the signature re-seals to match it. Then tamper with it, and watch the seal break.",
@@ -195,7 +195,7 @@
     deeper: P("A transaction is the blockchain's atomic unit: a signed instruction, not a moving object. Bitcoin models it as <b>inputs and outputs</b> (you consume whole previous outputs and create new ones — the “UTXO” model); Ethereum uses running <b>account balances</b> instead. Either way, nodes first check the signature and the rules, then hold it in the <b>mempool</b> until a miner includes it. The <b>nonce</b> stops replay — the same signed payment can't be submitted twice — and the <b>fee</b> is a live auction for scarce block space, which is why fees spike when the network is busy. Nothing is final until it's in a block, and buried under a few more.") };
 
   /* ===================== INCENTIVES — why anyone mines ===================== */
-  L.incentives = { world: "chain", title: "Mining rewards", oneliner: "Why anyone bothers", icon: "¤",
+  L.incentives = { world: "chain", title: "Mining rewards", oneliner: "How mining rewards incentivize honesty", icon: "¤",
     hero: "Mining burns real electricity on trillions of useless guesses. So why does anyone do it? Because the block itself pays the winner — and that payment is what keeps the whole network honest.",
     beats: [
       { n: "01", h: "The block pays its own miner", cap: "Every block's first entry is special: the <b>coinbase</b>, a payment to the winning miner created out of thin air, plus every <b>fee</b> attached to the transactions inside. Pick transactions from the pool and mine — greedy is allowed.",
@@ -296,7 +296,7 @@
     deeper: P("The reward is not a bonus bolted on — it <b>is</b> the security model. Honest mining pays steadily; attacking the chain means forfeiting those rewards and burning electricity on a losing race. Satoshi's insight was economic, not cryptographic: make honesty the most profitable strategy and strangers will secure each other's money out of pure self-interest. The <b>halving</b> (every 210,000 blocks) enforces the 21-million cap, and the open question economists argue about: when the subsidy is gone, will fees alone fund enough mining to keep attacks unprofitable?") };
 
   /* ===================== GOSSIP — the network itself ===================== */
-  L.gossip = { world: "consensus", title: "The network", oneliner: "How news spreads with no centre", icon: "◍",
+  L.gossip = { world: "consensus", title: "The network", oneliner: "How information spreads without a center", icon: "◍",
     hero: "There is no server. When you broadcast a payment, you tell a few computers, they tell a few more, and in seconds the whole planet knows. Watch it ripple — and see where forks really come from.",
     beats: [
       { n: "01", h: "Gossip, hop by hop", cap: "Every node knows only its neighbours. Click <b>any node</b> to broadcast a transaction from it and watch the news spread like a rumour — no coordinator, no master list of who to tell.",
@@ -384,7 +384,7 @@
     deeper: P("Real nodes connect to a handful of peers and relay whatever checks out — <b>gossip protocol</b>. A transaction crosses the globe in a couple of seconds; a block takes a few more because nodes verify before relaying. That delay fixes a design constant: if blocks came every two seconds, ties would be constant and the chain would fray into forks. Bitcoin's ten-minute rhythm makes the network's propagation delay a rounding error. It also explains why each node's <b>mempool</b> — its waiting room of unconfirmed transactions — is slightly different from its neighbour's: everyone hears the news in a slightly different order.") };
 
   /* ===================== SAFETY — practical literacy ===================== */
-  L.safety = { world: "frontier", title: "Staying safe", oneliner: "Scams, and how to spot them", icon: "‼",
+  L.safety = { world: "frontier", title: "Staying safe", oneliner: "Recognizing scams and protecting your funds", icon: "‼",
     hero: "Everything you've learned protects the chain. Nothing protects you from being talked out of your own keys. Scams steal more crypto than hacks ever have — here is the pattern-recognition, by drill.",
     beats: [
       { n: "01", h: "Scam or normal? You decide", cap: "Each card is a real situation. Call it — the pattern matters more than the example.",
