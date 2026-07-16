@@ -11,8 +11,18 @@ Resume ritual: read this file, then `git log --oneline -5`, `git status`.
 - CSS class `.in` is the global input style — never reuse as a state class (caused white tour caption).
 - ECC GateGuard stays off via `~/.claude/settings.json` env.
 
-## Next (Tannmay's standing feedback: copy "subpar", some lessons dry)
-1. Copy pass on flattest lessons — tokens, wallets, money, layer2 heroes/captions.
-2. Upgrade driest interactives toward Network-sim quality (layer2 rollup funnel animation, tokens as living ledger).
+## Course upgrade — DONE (v33, commits …40d9f92)
+`js/lessons-plus.js` = override module (loads after lessons.js + lessons-extra.js, mutates window.LESSONS; leaves strong interactives intact). Upgraded the dry beats into living/animated ones + sharpened copy:
+- tour: animated 5-station payment pipeline (real signed/hashed coin travels)
+- tokens: coins physically fly between accounts
+- layer2: swarm of tx dots funnels into one L1 proof block
+- wallets: animated seed→keys derivation cascade
+- why: 12-node network you can freeze / knock offline
+- pos beat2: animated energy draw-down meter (setTimeout-driven, pane-throttle-proof)
+- sharper heroes/captions across ~15 lessons
+All 24 lessons verified: 0 build errors, 0 console errors.
+
+## Next (parked ideas)
+1. The remaining "card"-style beats (attack can/cannot grid, zk/money reference cards, NFT claim grid) are legit summaries — left as-is.
 3. ~~51% "hostile takeover" mode~~ — DONE in v8 (a16d607): slider 30–75%, secret shadow chain, live multi-block reorg with skull-marked canonical blocks, gambler's-ruin give-up below 50%. Verified end-to-end in browser.
 4. Ideas parked: dark-mode toggle for course layer using Observatory palette; tour act for the takeover.
