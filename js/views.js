@@ -15,7 +15,7 @@ window.VIEWS = (function () {
   }
   function nav(active) {
     return `<nav class="nav"><div class="brand" data-go="#/" title="Home"><div class="mk">${LOGO}</div><span class="bt">The Blockchain <span>Course</span></span></div>
-      <div class="links"><a data-go="#/" class="${active === "home" ? "on" : ""}">Home</a><a data-go="#/map" class="${active === "map" ? "on" : ""}">The Journey</a><a data-go="#/live" class="${active === "live" ? "on" : ""}">Observatory</a></div>
+      <div class="links"><a data-go="#/" class="${active === "home" ? "on" : ""}">Home</a><a data-go="#/map" class="${active === "map" ? "on" : ""}">The Journey</a></div>
       <div class="right">${progMini()}</div></nav>`;
   }
   function wireGo(scope) { (scope || document).querySelectorAll("[data-go]").forEach(e => e.onclick = (ev) => { ev.preventDefault(); go(e.dataset.go); }); }
@@ -37,15 +37,6 @@ window.VIEWS = (function () {
       <div class="scroll-hint">scroll</div>
       </section>
 
-      <section class="obs-tease" data-go="#/live">
-        <canvas id="obsTease"></canvas>
-        <div class="obs-tease-in">
-          <h2>The Observatory</h2>
-          <p>A whole blockchain network, alive on one screen. Transactions ripple node to node, miners race real SHA-256, forks split the map and heal — and you can reach in and touch any of it.</p>
-          <span class="obs-enter">Enter the Observatory →</span>
-        </div>
-      </section>
-
       <section class="section">
         <div class="section-h"><h2>The journey</h2><p>Problem first, machinery second. Each chapter exists to answer the question the previous one leaves open.</p></div>
         <div class="jlist">${S.WORLDS.map(jRow).join("")}</div>
@@ -55,7 +46,6 @@ window.VIEWS = (function () {
       <footer>Built as an open teaching tool · real SHA-256 &amp; ECDSA in your browser · no accounts, progress stays on this device</footer>`;
     wireGo();
     const rb = document.getElementById("restart"); if (rb) rb.onclick = () => { if (confirm("Clear your progress and start from the beginning?")) { S.reset(); home(); } };
-    if (window.OBS) window.OBS.tease("obsTease");
     if (window.APP) window.APP.heroCanvas();
   }
 

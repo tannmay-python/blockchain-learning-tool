@@ -11,8 +11,6 @@ window.APP = (function () {
     const h = location.hash || "#/";
     const m = h.match(/^#\/lesson\/(.+)$/);
     window.scrollTo(0, 0);
-    if (window.OBS) window.OBS.unmount();
-    if (h === "#/live") { document.getElementById("root").innerHTML = ""; window.OBS.mount(document.getElementById("root")); document.title = "The Observatory · The Blockchain Course"; return; }
     if (m) { V.lesson(m[1]); const L = window.LESSONS[m[1]]; document.title = (L ? L.title : "Lesson") + " · The Blockchain Course"; }
     else if (h === "#/map") { V.map(); document.title = "The Journey · The Blockchain Course"; }
     else { V.home(); document.title = "The Blockchain Course — learn blockchain by doing"; }
