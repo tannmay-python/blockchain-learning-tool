@@ -14,4 +14,5 @@ Resume ritual: read this file, then `git log --oneline -5`, `git status`.
 ## Next (Tannmay's standing feedback: copy "subpar", some lessons dry)
 1. Copy pass on flattest lessons — tokens, wallets, money, layer2 heroes/captions.
 2. Upgrade driest interactives toward Network-sim quality (layer2 rollup funnel animation, tokens as living ledger).
-3. Ideas parked: 51% "hostile takeover" mode in Observatory (red miner with power slider, live reorgs); dark-mode toggle for course layer using Observatory palette.
+3. ~~51% "hostile takeover" mode~~ — DONE in v8 (a16d607): slider 30–75%, secret shadow chain, live multi-block reorg with skull-marked canonical blocks, gambler's-ruin give-up below 50%. Verified end-to-end in browser.
+4. Ideas parked: dark-mode toggle for course layer using Observatory palette; tour act for the takeover.
