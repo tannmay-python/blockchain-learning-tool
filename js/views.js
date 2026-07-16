@@ -30,12 +30,15 @@ window.VIEWS = (function () {
         <div class="cta">
           <button class="btn primary lg" data-go="#/lesson/${startId}">${resume ? "Continue where you left off" : "Start the course"} →</button>
           <button class="btn lg ghost" data-go="#/map">Open the map</button>
+          ${done > 0 ? `<button class="btn lg danger" id="restartHome">Restart course</button>` : ""}
         </div>
         <div class="herostats"><span><b>${S.WORLDS.length}</b> chapters</span><span class="dot"></span><span><b>${total}</b> lessons</span><span class="dot"></span><span><b>${beatsTotal}</b> hands-on demos</span></div>
       </div>
       </section>
       <footer>Built by Tannmay Kumarr Baid</footer>`;
     wireGo();
+    const rh = document.getElementById("restartHome");
+    if (rh) rh.onclick = () => { if (confirm("Clear your progress and start from the beginning?")) { S.reset(); go("#/lesson/" + S.ORDER[0]); } };
     if (window.APP) window.APP.heroCanvas();
   }
 
