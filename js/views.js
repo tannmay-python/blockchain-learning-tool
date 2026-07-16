@@ -15,7 +15,7 @@ window.VIEWS = (function () {
   }
   function nav(active) {
     return `<nav class="nav"><div class="brand" data-go="#/" title="Home"><div class="mk">${LOGO}</div><span class="bt">The Blockchain <span>Course</span></span></div>
-      <div class="links"><a data-go="#/" class="${active === "home" ? "on" : ""}">Home</a><a data-go="#/map" class="${active === "map" ? "on" : ""}">The Journey</a></div>
+      <div class="links"><a data-go="#/" class="${active === "home" ? "on" : ""}">Home</a><a data-go="#/map" class="${active === "map" ? "on" : ""}">Map</a></div>
       <div class="right">${progMini()}</div></nav>`;
   }
   function wireGo(scope) { (scope || document).querySelectorAll("[data-go]").forEach(e => e.onclick = (ev) => { ev.preventDefault(); go(e.dataset.go); }); }
@@ -27,44 +27,27 @@ window.VIEWS = (function () {
     root().innerHTML = nav("home") + `
       <section class="hero hero-full"><canvas id="heroCanvas"></canvas><div class="hero-in">
         <h1>Learn Blockchain<br>by <em>doing</em>.</h1>
-        <p class="sub">No slides, no jargon-first lectures. You mine the blocks, forge the signatures, trigger the forks — and the ideas stick because your hands built them.</p>
         <div class="cta">
           <button class="btn primary lg" data-go="#/lesson/${startId}">${resume ? "Continue where you left off" : "Start the course"} →</button>
-          <button class="btn lg ghost" data-go="#/map">Browse the journey</button>
+          <button class="btn lg ghost" data-go="#/map">Open the map</button>
         </div>
         <div class="herostats"><span><b>${S.WORLDS.length}</b> chapters</span><span class="dot"></span><span><b>${total}</b> lessons</span><span class="dot"></span><span><b>${beatsTotal}</b> hands-on demos</span></div>
       </div>
-      <div class="scroll-hint">scroll</div>
       </section>
-
-      <section class="section">
-        <div class="section-h"><h2>The journey</h2><p>Problem first, machinery second. Each chapter exists to answer the question the previous one leaves open.</p></div>
-        <div class="jlist">${S.WORLDS.map(jRow).join("")}</div>
-        <div class="endcta"><button class="btn primary lg" data-go="#/lesson/${startId}">${resume ? "Continue the course" : "Begin with lesson one"} →</button>
-        ${done > 0 ? `<button class="btn lg ghost" id="restart">Start over</button>` : ""}</div>
-      </section>
-      <footer>Built as an open teaching tool · real SHA-256 &amp; ECDSA in your browser · no accounts, progress stays on this device</footer>`;
+      <footer>Built by Tannmay Kumarr Baid</footer>`;
     wireGo();
-    const rb = document.getElementById("restart"); if (rb) rb.onclick = () => { if (confirm("Clear your progress and start from the beginning?")) { S.reset(); home(); } };
     if (window.APP) window.APP.heroCanvas();
-  }
-
-  function jRow(w) {
-    const d = S.worldDone(w), t = w.lessons.length, complete = d === t;
-    return `<div class="jrow" data-go="#/map">
-      <span class="jnum" style="color:${w.color}">${w.n}</span>
-      <span class="jbody"><span class="jt">${w.title}${complete ? ` <span class="jdone" style="color:${w.color}">✓ done</span>` : ""}</span><span class="js">${w.sub}</span></span>
-      <span class="jmeta"><span class="jl">${t} lesson${t === 1 ? "" : "s"}</span><span class="jbar"><i style="width:${(d / t * 100)}%;background:${w.color}"></i></span></span>
-    </div>`;
   }
 
   /* ---------------- MAP ---------------- */
   function map() {
+    const done = S.totalDone();
     root().innerHTML = nav("map") + `
-      <div class="map-wrap"><div class="map-head"><h1>The Journey</h1><p>Pick any stop. The path runs simple to deep — but you can wander.</p></div>
+      <div class="map-wrap"><div class="map-head"><h1>Map</h1><p>Pick any stop. The path runs simple to deep — but you can wander.</p></div>
       ${S.WORLDS.map(mapWorld).join("")}</div>
-      <footer>${S.totalDone()} of ${S.lessonsTotal} explored</footer>`;
+      <footer>${done} of ${S.lessonsTotal} explored${done > 0 ? ` · <a id="restart" style="cursor:pointer;border-bottom:1px solid var(--line-2)">start over</a>` : ""}</footer>`;
     wireGo();
+    const rb = document.getElementById("restart"); if (rb) rb.onclick = () => { if (confirm("Clear your progress and start from the beginning?")) { S.reset(); map(); } };
     root().querySelectorAll(".lnode").forEach(n => { const open = () => go("#/lesson/" + n.dataset.id); n.onclick = open; n.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }; });
   }
   function mapWorld(w) {
@@ -94,9 +77,11 @@ window.VIEWS = (function () {
         <div class="lprog"><i id="lprogFill" style="background:${w.color}"></i></div>
       </div>
       <div class="explorable">
+        ${w.lessons[0] === id && w.intro ? `<div class="chapter-open"><span class="co-n" style="color:${w.color}">Chapter ${w.n} · ${w.title}</span><p class="co-i">${w.intro}</p></div>` : ""}
         <div class="lesson-hero"><div class="icbig" style="background:${w.color}1c;color:${w.color}">${l.icon}</div><h1>${l.title}</h1><p>${l.hero}</p></div>
         <div id="beats"></div>
         ${l.deeper ? `<details class="deeper"><summary>Go deeper — the technical detail</summary><div class="dbody">${l.deeper}</div></details>` : ""}
+        ${l.bridge ? `<div class="bridge"><span class="bridge-lab" style="color:${w.color}">▸ where this leads</span><p class="bridge-txt">${l.bridge}</p>${next ? `<div class="bridge-next">Next up — <b>${L[next].title}</b></div>` : ""}</div>` : ""}
         <div class="lesson-end">
           <div class="btn-row" style="justify-content:center">${prev ? `<button class="btn ghost" data-go="#/lesson/${prev}">← ${L[prev].title}</button>` : ""}${next ? `<button class="btn primary" id="endNext">${L[next].title} →</button>` : `<button class="btn primary" data-go="#/map">Back to the map</button>`}</div>
           <div class="kbd-hint">tip: <kbd>←</kbd> <kbd>→</kbd> move between lessons</div>
