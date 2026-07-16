@@ -55,7 +55,7 @@ window.APP = (function () {
     if (newTheme === "dark") document.documentElement.dataset.theme = "dark";
     else document.documentElement.removeAttribute("data-theme");
     localStorage.setItem("theme", newTheme);
-    document.querySelectorAll(".theme-toggle").forEach(btn => btn.innerHTML = newTheme === "dark" ? "☀️" : "🌙");
+    document.querySelectorAll(".theme-switch input").forEach(cb => cb.checked = newTheme === "dark");
   }
 
   function boot() {
