@@ -9,6 +9,8 @@
   const L = window.LESSONS;
   const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
   const fmt = (n) => Math.round(n).toLocaleString();
+  const short = (s, a = 8, b = 6) => s && s.length > a + b + 1 ? s.slice(0, a) + "…" + s.slice(-b) : (s || "");
+  const RM = matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const P = (t) => `<p>${t}</p>`;
 
   /* ---------- checkpoint quiz primitive ----------
@@ -46,6 +48,123 @@
     }
     draw();
   }
+
+  /* ===================== TRANSACTION — the atomic unit ===================== */
+  L.tx = { world: "chain", title: "Inside a transaction", oneliner: "The atomic unit that moves value", icon: "⇄",
+    hero: "You just signed a payment. That signed bundle has a proper name — a <b>transaction</b> — and it is the only thing a blockchain ever really moves. Before it can be packed into a block, look at what it is made of, and where it waits its turn.",
+    beats: [
+      { n: "01", h: "What a transaction is actually made of", cap: "It isn't a coin changing hands — it's a tiny <b>signed record</b>. Nudge the amount and the signature re-seals to match it. Then tamper with it, and watch the seal break.",
+        build(s) {
+          const FROM = "0x" + sha256("you-wallet-v1").slice(-16), TO = "0x" + sha256("bob-wallet-v1").slice(-16);
+          let amt = 5, nonce = 12, sig = null, tampered = false;
+          const compute = () => sha256(FROM + TO + amt + nonce + "your-secret-key");
+          const sign = () => { sig = compute(); tampered = false; };
+          const valid = () => sig === compute();
+          sign();
+          const rows = () => [
+            ["from", short(FROM, 8, 6), "your address — where the coins leave"],
+            ["to", short(TO, 8, 6), "Bob's address — where they land"],
+            ["amount", `${amt} coins`, "how much value this one record moves"],
+            ["fee", `0.3 coins`, "a tip that makes a miner want to include you"],
+            ["nonce", `#${nonce}`, "a counter, so this exact payment can't be replayed twice"],
+          ];
+          const wrap = el("div", "fcard");
+          wrap.innerHTML = `<div class="flabel"><span class="pin"></span>one transaction · you → Bob</div>
+            <div class="txp" id="txp"></div>
+            <div class="txsig" id="txsig"></div>
+            <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn" id="dec">− amount</button><button class="btn" id="inc">+ amount</button><button class="btn danger" id="tam">Tamper after signing</button><button class="btn" id="rst">Reset</button></div>
+            <div class="note" id="msg" style="text-align:center;margin-top:10px">The signature covers <b>every field above</b> — change any of them and it stops matching.</div>`;
+          s.appendChild(wrap);
+          function draw() {
+            wrap.querySelector("#txp").innerHTML = rows().map(([k, v, note]) => `<div class="txrow"><div class="txrow-top"><span class="txk">${k}</span><span class="txv">${v}</span></div><span class="txn">${note}</span></div>`).join("");
+            const ok = valid();
+            wrap.querySelector("#txsig").innerHTML = `<div class="txsig-in ${ok ? "ok" : "bad"}"><div class="txrow-top"><span class="txk">signature</span><span class="txv">${short(sig, 12, 10)}</span></div><span class="txn">${ok ? "✓ seals these exact fields — only your secret key could have produced it" : "✕ the amount changed after signing, so the signature no longer matches. Every node rejects it as a forgery."}</span></div>`;
+          }
+          const reseal = (d) => { amt = Math.max(1, amt + d); nonce++; sign(); draw(); wrap.querySelector("#msg").innerHTML = `You changed the amount and <b>re-signed</b> — a fresh, valid transaction. This is the normal case.`; };
+          wrap.querySelector("#inc").onclick = () => reseal(1);
+          wrap.querySelector("#dec").onclick = () => reseal(-1);
+          wrap.querySelector("#tam").onclick = () => { amt += 1000; draw(); wrap.querySelector("#msg").innerHTML = `<span style="color:var(--red)">An attacker bumped 5 → ${amt} but couldn't re-sign without your key.</span> The stored signature was made over the old amount, so it fails — the tampering is caught instantly.`; };
+          wrap.querySelector("#rst").onclick = () => { amt = 5; nonce = 12; sign(); draw(); wrap.querySelector("#msg").innerHTML = `The signature covers <b>every field above</b> — change any of them and it stops matching.`; };
+          draw();
+        } },
+      { n: "02", h: "Where it waits: the mempool", cap: "A broadcast transaction doesn't drop straight into the chain. It lands in the <b>mempool</b> — a shared waiting room every node keeps — and sits there until a miner picks it up. Blocks are small, so miners take the <b>highest fees first</b>.",
+        build(s) {
+          const BLK = 4;
+          const OTHERS = [
+            { who: "Carol → Dan", fee: 0.9 }, { who: "Eve → Finn", fee: 0.2 },
+            { who: "Gail → Hank", fee: 1.6 }, { who: "Ivy → Jo", fee: 0.5 }, { who: "Ken → Lee", fee: 1.1 },
+          ];
+          let pool, yourFee, broadcast, lastBlock, done, mining, miningToken = 0;
+          function reset() { pool = OTHERS.map(x => ({ ...x, mine: false })); yourFee = 0.3; broadcast = false; lastBlock = false; done = false; mining = false; miningToken++; }
+          reset();
+          const wrap = el("div", "fcard");
+          wrap.innerHTML = `<div class="flabel"><span class="pin"></span>the mempool — everyone's pending transactions</div>
+            <div class="mpool"><div class="mpool-h"><span>waiting room</span><span class="mono" id="mpc"></span></div><div class="mpgrid" id="mpg"></div></div>
+            <div class="mpblk"><div class="mpblk-h"><span class="lk">⛏</span> the next block · fits ${BLK}</div><div class="mpslots" id="mps"></div></div>
+            <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn primary" id="bc">Broadcast your transaction</button><button class="btn gold" id="raise">Raise your fee +0.5</button><button class="btn" id="mine">⛏ Mine the next block</button><button class="btn" id="rst">Reset</button></div>
+            <div class="note" id="msg" style="text-align:center;margin-top:10px">Your payment to Bob is signed and ready. Broadcast it into the mempool.</div>`;
+          s.appendChild(wrap);
+          const yourTx = () => ({ who: "★ You → Bob", fee: yourFee, mine: true });
+          function full() { return broadcast ? [...pool, yourTx()] : pool.slice(); }
+          function draw(leaving) {
+            const list = full();
+            wrap.querySelector("#mpc").textContent = list.length + " waiting";
+            wrap.querySelector("#mpg").innerHTML = list.length ? list.map((t, i) =>
+              `<div class="mptx${t.mine ? " mine" : ""}${leaving && leaving.includes(t.who) ? " picked" : ""}"><span class="who">${t.who}</span><span class="fee">fee ${t.fee.toFixed(1)}</span></div>`).join("")
+              : `<div class="mpempty">empty — every pending transaction has been mined</div>`;
+            wrap.querySelector("#mps").innerHTML = Array.from({ length: BLK }, (_, i) => {
+              const c = lastBlock && lastBlock[i];
+              return `<div class="mpslot${c ? " full" + (c.mine ? " mine" : "") : ""}">${c ? `<span class="who">${c.who}</span><span class="fee">${c.fee.toFixed(1)}</span>` : "empty"}</div>`;
+            }).join("");
+            wrap.querySelector("#bc").disabled = broadcast || done;
+            wrap.querySelector("#raise").disabled = !broadcast || done || mining;
+            wrap.querySelector("#mine").disabled = done || mining || full().length === 0;
+          }
+          wrap.querySelector("#bc").onclick = () => { if (broadcast || done) return; broadcast = true; draw(); wrap.querySelector("#msg").innerHTML = `Your transaction joined the pool at fee <b>${yourFee.toFixed(1)}</b> — now it competes with everyone else's for a spot in the next block.`; };
+          wrap.querySelector("#raise").onclick = () => { if (!broadcast || done || mining) return; yourFee += 0.5; draw(); wrap.querySelector("#msg").innerHTML = `You bumped your fee to <b>${yourFee.toFixed(1)}</b>. A higher tip pushes you up the miner's list.`; };
+          wrap.querySelector("#rst").onclick = () => { reset(); draw(); wrap.querySelector("#msg").innerHTML = `Your payment to Bob is signed and ready. Broadcast it into the mempool.`; };
+          wrap.querySelector("#mine").onclick = () => {
+            const list = full(); if (!list.length || done || mining) return;
+            const myToken = ++miningToken; mining = true;
+            const ranked = list.slice().sort((a, b) => b.fee - a.fee);
+            const picked = ranked.slice(0, BLK), pickedNames = picked.map(t => t.who);
+            const hadYours = list.some(t => t.mine);
+            draw(pickedNames);
+            const finish = () => {
+              if (myToken !== miningToken) return; // reset or re-mined mid-flight
+              mining = false;
+              lastBlock = picked.slice();
+              const yoursIn = picked.some(t => t.mine);
+              pool = pool.filter(t => !pickedNames.includes(t.who));
+              if (yoursIn) { broadcast = false; done = true; } // yours left the pool, demo complete
+              draw();
+              wrap.querySelector("#msg").innerHTML = yoursIn
+                ? `<span style="color:var(--green)">Your transaction made the block — confirmed.</span> It paid a competitive fee, so the miner picked it up.`
+                : hadYours
+                  ? `The miner took the top ${BLK} fees; your <b>${yourFee.toFixed(1)}</b> lost the auction and is <b>still waiting</b>. Raise your fee and mine again.`
+                  : `Block sealed with the top ${BLK} fees. Broadcast yours and try again.`;
+            };
+            RM ? finish() : setTimeout(finish, 620);
+          };
+          draw();
+        } },
+      { n: "03", h: "Check yourself", cap: "Two quick questions.",
+        build(s) { quiz(s, [
+          { ask: "What is a “transaction” on a blockchain?",
+            opts: [
+              { t: "A small signed record that moves value from one address to another", ok: true, why: "That's it — from, to, amount, fee, nonce, and a signature over all of them. Blocks are just bundles of these." },
+              { t: "A coin object that physically travels between wallets", ok: false, why: "Nothing physical moves. A transaction is a signed record; balances are just the running total of everyone's records." },
+              { t: "A password that unlocks your account", ok: false, why: "There are no accounts or passwords. A transaction is a signed record; your private key is what signs it." },
+            ] },
+          { ask: "Your transaction has been sitting in the mempool for a while, unconfirmed. The most likely reason?",
+            opts: [
+              { t: "Your fee is too low, so miners keep picking higher-fee transactions first", ok: true, why: "Block space is limited and miners are paid by fees, so they take the highest bids first. Raise the fee to jump the queue." },
+              { t: "The network deleted it", ok: false, why: "It isn't deleted — it waits in the pool. Miners simply prioritise higher fees when block space is scarce." },
+              { t: "You need to sign it again", ok: false, why: "It's already validly signed and waiting. What it lacks is a fee high enough to beat the competition for a block slot." },
+            ] },
+        ]); } },
+    ],
+    deeper: P("A transaction is the blockchain's atomic unit: a signed instruction, not a moving object. Bitcoin models it as <b>inputs and outputs</b> (you consume whole previous outputs and create new ones — the “UTXO” model); Ethereum uses running <b>account balances</b> instead. Either way, nodes first check the signature and the rules, then hold it in the <b>mempool</b> until a miner includes it. The <b>nonce</b> stops replay — the same signed payment can't be submitted twice — and the <b>fee</b> is a live auction for scarce block space, which is why fees spike when the network is busy. Nothing is final until it's in a block, and buried under a few more.") };
 
   /* ===================== INCENTIVES — why anyone mines ===================== */
   L.incentives = { world: "chain", title: "Mining rewards", oneliner: "Why anyone bothers", icon: "¤",
