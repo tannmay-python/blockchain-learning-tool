@@ -60,7 +60,7 @@ window.VIEWS = (function () {
   function map() {
     const done = S.totalDone();
     root().innerHTML = nav("map") + `
-      <div class="map-wrap"><div class="map-head"><h1>Map</h1><p>Pick any stop. The path runs simple to deep — but you can wander.</p></div>
+      <div class="map-wrap"><div class="map-head"><h1>Map</h1></div>
       ${S.WORLDS.map(mapWorld).join("")}</div>
       <footer>${done} of ${S.lessonsTotal} explored${done > 0 ? ` · <a id="restart" style="cursor:pointer;border-bottom:1px solid var(--line-2)">start over</a>` : ""}</footer>`;
     wireGo();
