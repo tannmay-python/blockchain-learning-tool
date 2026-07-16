@@ -7,13 +7,20 @@ window.STORE = (function () {
   const LEGACY = "chainworld_v2";
 
   const WORLDS = [
-    { id: "primer", n: "00", title: "Start here", sub: "Money, trust, and the core problem", color: "#9c2a5a", lessons: ["ledger", "why", "doublespend"] },
-    { id: "foundations", n: "01", title: "The big idea", sub: "What a blockchain actually is", color: "#620d3c", lessons: ["whatis", "tour"] },
-    { id: "crypto", n: "02", title: "Cryptography", sub: "The two tools everything is built from", color: "#f1a222", lessons: ["hashing", "keys"] },
-    { id: "chain", n: "03", title: "Building the chain", sub: "Bundling, mining, and locking the past", color: "#8a2057", lessons: ["tx", "block", "merkle", "nonce", "incentives", "chainlink"] },
-    { id: "consensus", n: "04", title: "The network agrees", sub: "Thousands of strangers, one history", color: "#d2384f", lessons: ["gossip", "forks", "attack", "pos"] },
-    { id: "frontier", n: "05", title: "The ecosystem", sub: "Contracts, tokens, wallets, scaling, safety", color: "#2e9e6b", lessons: ["contracts", "tokens", "wallets", "layer2", "zk", "money", "safety"] },
-    { id: "capstone", n: "06", title: "The whole machine", sub: "Watch every piece work together", color: "#d98908", lessons: ["recap"] },
+    { id: "primer", n: "00", title: "Start here", sub: "Money, trust, and the core problem", color: "#9c2a5a", lessons: ["ledger", "why", "doublespend"],
+      intro: "Before any technology: what money actually is, why we hand it to middlemen, and the one problem that makes digital money genuinely hard." },
+    { id: "foundations", n: "01", title: "The big idea", sub: "What a blockchain actually is", color: "#620d3c", lessons: ["whatis", "tour"],
+      intro: "You know the problem now. This chapter shows you the shape of the whole solution — in plain sight — before we build any single piece of it." },
+    { id: "crypto", n: "02", title: "Cryptography", sub: "The two tools everything is built from", color: "#f1a222", lessons: ["hashing", "keys"],
+      intro: "Everything ahead is assembled from exactly two tools: a fingerprint that catches tampering, and a signature that proves ownership. Master these and the rest is plumbing." },
+    { id: "chain", n: "03", title: "Building the chain", sub: "Bundling, mining, and locking the past", color: "#8a2057", lessons: ["tx", "block", "merkle", "nonce", "incentives", "chainlink"],
+      intro: "Now you build the machine with your hands: package a payment, seal a batch of them with real work, pay the sealer, and lock each block to the last so the past can't be rewritten." },
+    { id: "consensus", n: "04", title: "The network agrees", sub: "Thousands of strangers, one history", color: "#d2384f", lessons: ["gossip", "forks", "attack", "pos"],
+      intro: "One computer keeping an honest chain is easy. The miracle is thousands of them — strangers, no referee — agreeing on a single history. This is how, and where it can break." },
+    { id: "frontier", n: "05", title: "The ecosystem", sub: "Contracts, tokens, wallets, scaling, safety", color: "#2e9e6b", lessons: ["contracts", "tokens", "wallets", "layer2", "zk", "money", "safety"],
+      intro: "The base layer works. Now everything it makes possible — programs that hold money, new kinds of assets, wallets, scaling, privacy, and the very real ways people lose it all." },
+    { id: "capstone", n: "06", title: "The whole machine", sub: "Watch every piece work together", color: "#d98908", lessons: ["recap"],
+      intro: "You've built every part by hand. Here they are, running together as one living machine." },
   ];
   const ORDER = WORLDS.flatMap(w => w.lessons);
   const worldOf = {}; WORLDS.forEach(w => w.lessons.forEach(id => worldOf[id] = w));
