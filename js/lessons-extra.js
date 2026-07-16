@@ -72,7 +72,10 @@
         <h4>${tier[0]}</h4><p>${tier[1]}</p>
         <div class="quiz-foot"><button class="btn" id="qretake">Retake checkpoint</button></div></div>`;
       wrap.querySelector("#qretake").onclick = restart;
-      if (!RM && score > 0) { const n = wrap.querySelector(".qr-n"); let c = 0; const t = setInterval(() => { c++; n.textContent = c; if (c >= score) clearInterval(t); }, 200); }
+      if (!RM && score > 0) { 
+        if (pct === 1 && window.APP && window.APP.confetti) window.APP.confetti();
+        const n = wrap.querySelector(".qr-n"); let c = 0; const t = setInterval(() => { c++; n.textContent = c; if (c >= score) clearInterval(t); }, 200); 
+      }
     }
     drawQ();
   }

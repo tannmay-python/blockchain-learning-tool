@@ -90,7 +90,7 @@ window.VIEWS = (function () {
         <div class="lt">${l.title}</div><div class="lo">${l.oneliner}</div>
         ${isCur ? '<div class="lx" style="color:' + w.color + '">start here</div>' : ""}</div>`;
     }).join("");
-    return `<div class="world-block"><div class="world-rail"><span class="wdot" style="background:${w.color}"></span><span class="wt">${w.title}</span><span class="ws">${w.sub}</span><span class="wprog">${S.worldDone(w)}/${w.lessons.length}</span></div><div class="nodes">${nodes}</div></div>`;
+    return `<div class="world-block"><div class="world-rail" data-go="#/chapter/${w.id}" style="cursor:pointer" title="Go to Chapter Intro"><span class="wdot" style="background:${w.color}"></span><span class="wt">${w.title}</span><span class="ws">${w.sub}</span><span class="wprog">${S.worldDone(w)}/${w.lessons.length}</span><span class="wgate-arr" style="margin-left:auto;color:var(--line-2);font-size:18px">→</span></div><div class="nodes">${nodes}</div></div>`;
   }
 
   /* ---------------- LESSON (vertical explorable) ---------------- */
@@ -108,15 +108,6 @@ window.VIEWS = (function () {
         <div class="lprog"><i id="lprogFill" style="background:${w.color}"></i></div>
       </div>
       <div class="explorable">
-        ${w.lessons[0] === id && w.intro ? `<div class="chapter-open" style="--c:${w.color}; border-left-color: var(--c);">
-          <div class="co-bg" style="background:${w.color}08"></div>
-          <div class="co-head">
-            <span class="co-num" style="color:${w.color}">Chapter ${w.n}</span>
-            <span class="co-sep">·</span>
-            <h2 class="co-title">${w.title}</h2>
-          </div>
-          <p class="co-i">${w.intro}</p>
-        </div>` : ""}
         <div class="lesson-hero"><div class="icbig" style="background:${w.color}1c;color:${w.color}">${l.icon}</div><h1>${l.title}</h1><p>${l.hero}</p></div>
         <div id="beats"></div>
         ${l.deeper ? `<details class="deeper"><summary>Go deeper — the technical detail</summary><div class="dbody">${l.deeper}</div></details>` : ""}
@@ -148,18 +139,49 @@ window.VIEWS = (function () {
     document.getElementById("lPrev").onclick = () => prev && go("#/lesson/" + prev);
     const isChapterEnd = !next || S.worldOf[next] !== w;
     const onNext = () => { 
-      const wasDone = S.isDone(id);
       markDone(); 
-      if (!wasDone && isChapterEnd && window.APP && window.APP.confetti) {
-        window.APP.confetti();
-        setTimeout(() => { next ? go("#/lesson/" + next) : go("#/map"); }, 750);
-      } else {
-        next ? go("#/lesson/" + next) : go("#/map"); 
-      }
+      if (isChapterEnd && next) go("#/chapter/" + S.worldOf[next].id);
+      else if (!next) go("#/map");
+      else go("#/lesson/" + next);
     };
     document.getElementById("lNext").onclick = onNext;
     const en = document.getElementById("endNext"); if (en) en.onclick = onNext;
   }
 
-  return { home, map, lesson };
+  function chapterGate(wId) {
+    teardown();
+    const w = S.WORLDS.find(x => x.id === wId);
+    if (!w) return go("#/map");
+    let html = nav("");
+    html += `<div class="ch-gate explorable fadein">
+      <div class="ch-gate-head">
+        <div class="cg-n">Chapter ${w.n}</div>
+        <h1 class="cg-title">${w.title}</h1>
+        <p class="cg-intro">${w.intro}</p>
+      </div>
+      <div class="cg-modules">`;
+    w.lessons.forEach((id, i) => {
+      const l = window.LESSONS[id];
+      if (!l) return;
+      const done = S.isDone(id);
+      html += `<a data-go="#/lesson/${id}" class="cg-mod ${done ? "done" : ""}">
+        <div class="cgm-icon" style="${done ? `background:${w.color};color:#fff;border:none` : ""}">${done ? "✓" : (l.icon || "•")}</div>
+        <div class="cgm-info">
+          <div class="cgm-title">${i + 1}. ${l.title}</div>
+          <div class="cgm-sub">${l.oneliner || ""}</div>
+        </div>
+        <div class="cgm-arrow">→</div>
+      </a>`;
+    });
+    html += `</div>
+      <div class="cg-start">
+        <button class="btn primary" style="font-size:16px;padding:14px 32px;background:${w.color};border-color:transparent;color:#fff" data-go="#/lesson/${w.lessons[0]}">Enter Chapter →</button>
+      </div>
+    </div>`;
+    root().innerHTML = html + footer();
+    wireGo();
+    if (window.APP) window.APP.heroCanvas();
+  }
+
+  return { home, map, lesson, chapterGate };
 })();
