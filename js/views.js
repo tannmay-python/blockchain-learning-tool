@@ -142,7 +142,17 @@ window.VIEWS = (function () {
     // silently mark done when the learner moves on
     const markDone = () => { if (!S.isDone(id)) { S.setDone(id, true); document.querySelectorAll(".progmini").forEach(p => { p.outerHTML = progMini(); }); } };
     document.getElementById("lPrev").onclick = () => prev && go("#/lesson/" + prev);
-    const onNext = () => { markDone(); next ? go("#/lesson/" + next) : go("#/map"); };
+    const isChapterEnd = !next || S.worldOf[next] !== w;
+    const onNext = () => { 
+      const wasDone = S.isDone(id);
+      markDone(); 
+      if (!wasDone && isChapterEnd && window.APP && window.APP.confetti) {
+        window.APP.confetti();
+        setTimeout(() => { next ? go("#/lesson/" + next) : go("#/map"); }, 750);
+      } else {
+        next ? go("#/lesson/" + next) : go("#/map"); 
+      }
+    };
     document.getElementById("lNext").onclick = onNext;
     const en = document.getElementById("endNext"); if (en) en.onclick = onNext;
   }

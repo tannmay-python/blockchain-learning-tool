@@ -17,14 +17,16 @@ window.APP = (function () {
     if (!RM) { const r = document.getElementById("root"); r.classList.remove("viewin"); void r.offsetWidth; r.classList.add("viewin"); }
   }
 
+  let triggerConfetti = () => {};
   /* ambient drifting dots — subtle on a light page */
   function starfield() {
     const cv = document.getElementById("starfield"); if (!cv) return;
     const ctx = cv.getContext("2d"); let W, H, dpr, dots = [];
     const cols = ["98,13,60", "241,162,34"];
     function size() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); dots = []; const n = Math.min(90, Math.round(W * H / 18000)); for (let i = 0; i < n; i++) dots.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.4 + .4, a: Math.random(), tw: Math.random() * .015 + .003, vy: Math.random() * .1 + .02, c: cols[(Math.random() * cols.length) | 0] }); }
-    function frame() { ctx.clearRect(0, 0, W, H); dots.forEach(s => { s.a += s.tw; const al = .08 + Math.abs(Math.sin(s.a)) * .22; s.y += s.vy; if (s.y > H) s.y = 0; ctx.fillStyle = `rgba(${s.c},${al})`; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill(); }); if (!RM) requestAnimationFrame(frame); }
+    function frame() { ctx.clearRect(0, 0, W, H); dots.forEach(s => { s.a += s.tw; const al = .08 + Math.abs(Math.sin(s.a)) * .22; s.y += s.vy; if (s.vx) s.x += s.vx; if (s.y > H) { s.y = 0; s.x = Math.random() * W; } ctx.fillStyle = `rgba(${s.c},${al})`; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill(); }); if (!RM) requestAnimationFrame(frame); }
     size(); addEventListener("resize", size); frame();
+    triggerConfetti = () => { for(let i=0; i<120; i++) dots.push({ x: Math.random()*W, y: -Math.random()*H, r: Math.random()*3+1, a: 1, tw: 0, vy: Math.random()*6+3, vx: (Math.random()-0.5)*2, c: cols[i%cols.length] }); };
   }
 
   /* hero constellation (plum + marigold on light) */
@@ -58,5 +60,5 @@ window.APP = (function () {
     });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
-  return { heroCanvas };
+  return { heroCanvas, confetti: () => triggerConfetti() };
 })();

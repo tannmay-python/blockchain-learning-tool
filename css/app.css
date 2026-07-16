@@ -24,8 +24,8 @@
   --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 
-  --sh-sm: 0 2px 6px rgba(98,13,60,.05), 0 6px 18px rgba(98,13,60,.05);
-  --sh: 0 10px 30px rgba(98,13,60,.08), 0 24px 60px rgba(98,13,60,.07);
+  --sh-sm: 0 1px 2px rgba(98,13,60,.02), 0 2px 4px rgba(98,13,60,.03), 0 4px 8px rgba(98,13,60,.04);
+  --sh: 0 2px 4px rgba(98,13,60,.02), 0 8px 16px rgba(98,13,60,.04), 0 24px 48px rgba(98,13,60,.08);
   --sh-plum: 0 8px 22px rgba(98,13,60,.22);
   --sh-gold: 0 8px 22px rgba(241,162,34,.3);
   --r: 16px; --r-lg: 22px; --r-xl: 30px;
@@ -78,7 +78,7 @@ button { font-family: var(--sans); cursor: pointer; }
 
 /* ============ buttons ============ */
 .btn { font-size: 14px; font-weight: 600; border-radius: 12px; padding: 12px 20px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); display: inline-flex; align-items: center; gap: 9px; justify-content: center; transition: transform .08s, background .16s, box-shadow .2s, border-color .16s; }
-.btn:hover { background: var(--surface-2); border-color: var(--ink-4); }
+.btn:hover { background: var(--surface-2); border-color: var(--ink-4); transform: scale(1.02); }
 .btn:active { transform: translateY(1px); }
 .btn.primary { background: var(--plum); border-color: transparent; color: #fff; box-shadow: var(--sh-plum); }
 .btn.primary:hover { background: var(--plum-2); }
@@ -173,8 +173,8 @@ button { font-family: var(--sans); cursor: pointer; }
 .lesson-bar .lprog { position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: transparent; }
 .lesson-bar .lprog i { display: block; height: 100%; width: 0; transition: width .15s linear; }
 @media (max-width: 640px) { .lesson-bar .lttl, .lesson-bar .nums { display: none; } }
-.lbtn { font-size: 13px; font-weight: 600; border-radius: 9px; padding: 8px 13px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); }
-.lbtn:hover:not(:disabled) { background: var(--surface-2); } .lbtn:disabled { opacity: .35; cursor: not-allowed; }
+.lbtn { font-size: 13px; font-weight: 600; border-radius: 9px; padding: 8px 13px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); transition: transform .2s, background .2s, border-color .2s; }
+.lbtn:hover:not(:disabled) { background: var(--surface-2); transform: scale(1.03); } .lbtn:disabled { opacity: .35; cursor: not-allowed; }
 .lbtn.next { background: var(--plum); color: #fff; border-color: transparent; }
 
 .explorable { max-width: var(--readw); margin: 0 auto; padding: 8px 26px 120px; }
@@ -703,4 +703,25 @@ footer { text-align: center; padding: 56px 24px; color: var(--ink-3); font-size:
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #140910;
+    --bg-2: #1e0e18;
+    --surface: #26111e;
+    --surface-2: #2e1525;
+    --surface-3: #3b1b30;
+    --line: #462039;
+    --line-2: #5c2b4c;
+    --plum-line: rgba(255,255,255,.1);
+
+    --plum: #c63b87; --plum-2: #a2296a; --plum-soft: #3b1b30; --plum-tint: #462039;
+    --gold: #f5b955; --gold-2: #f8c977; --gold-soft: #4a3411; --gold-tint: #3b280b;
+    --ink: #f2e9ee; --ink-2: #d6c1cc; --ink-3: #b097a4; --ink-4: #8a7180;
+    --sh-sm: 0 1px 2px rgba(0,0,0,.3), 0 2px 4px rgba(0,0,0,.3), 0 4px 8px rgba(0,0,0,.3);
+    --sh: 0 2px 4px rgba(0,0,0,.3), 0 8px 16px rgba(0,0,0,.4), 0 24px 48px rgba(0,0,0,.5);
+    --sh-plum: 0 8px 22px rgba(198,59,135,.3);
+    --sh-gold: 0 8px 22px rgba(245,185,85,.3);
+  }
 }
