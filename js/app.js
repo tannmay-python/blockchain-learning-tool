@@ -10,7 +10,6 @@ window.APP = (function () {
   function route() {
     const h = location.hash || "#/";
     const m = h.match(/^#\/lesson\/(.+)$/);
-    window.scrollTo(0, 0);
     if (m) { V.lesson(m[1]); const L = window.LESSONS[m[1]]; document.title = (L ? L.title : "Lesson") + " · The Blockchain Course"; }
     else if (h === "#/map") { V.map(); document.title = "The Journey · The Blockchain Course"; }
     else { V.home(); document.title = "The Blockchain Course — learn blockchain by doing"; }
@@ -38,12 +37,14 @@ window.APP = (function () {
       cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + "px"; cv.style.height = H + "px"; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (reseed || !nodes.length) { const n = Math.round(W * H / 26000); nodes = []; for (let i = 0; i < n; i++) nodes.push({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - .5) * .3, vy: (Math.random() - .5) * .3, r: Math.random() * 2 + 1 }); }
     }
-    function frame() { if (!document.getElementById("heroCanvas")) return; ctx.clearRect(0, 0, W, H); nodes.forEach(n => { n.x += n.vx; n.y += n.vy; if (n.x < 0 || n.x > W) n.vx *= -1; if (n.y < 0 || n.y > H) n.vy *= -1; });
+    function frame() { if (!document.contains(cv)) return; ctx.clearRect(0, 0, W, H); nodes.forEach(n => { n.x += n.vx; n.y += n.vy; if (n.x < 0 || n.x > W) n.vx *= -1; if (n.y < 0 || n.y > H) n.vy *= -1; });
       for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) { const a = nodes[i], b = nodes[j], d = Math.hypot(a.x - b.x, a.y - b.y); if (d < 160) { ctx.strokeStyle = `rgba(98,13,60,${(1 - d / 160) * 0.13})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); } }
       nodes.forEach((n, i) => { ctx.fillStyle = i % 3 === 0 ? "rgba(241,162,34,0.5)" : "rgba(98,13,60,0.32)"; ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 6.2832); ctx.fill(); });
       if (!RM) requestAnimationFrame(frame); }
     size(true); requestAnimationFrame(() => size(true)); setTimeout(() => size(true), 120);
-    addEventListener("resize", () => { if (document.getElementById("heroCanvas")) size(true); }); frame();
+    if (window._heroResize) removeEventListener("resize", window._heroResize);
+    window._heroResize = () => { if (document.contains(cv)) size(true); };
+    addEventListener("resize", window._heroResize); frame();
   }
 
   function boot() {

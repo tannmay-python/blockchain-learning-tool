@@ -139,7 +139,7 @@ window.LESSONS = (function () {
   const L = {};
 
   /* ===================== FOUNDATIONS ===================== */
-  L.ledger = { world: "foundations", title: "The ledger", oneliner: "How a ledger tracks value", icon: "₿",
+  L.ledger = { world: "primer", title: "The ledger", oneliner: "How a ledger tracks value", icon: "₿",
     hero: "Money isn't gold or paper. It's a list of who owns what. Everything starts here.",
     beats: [
       { n: "01", h: "Money is just a list", cap: "Press send and watch the entries change. The coins never move — only the <b>record</b> of who owns them.",
@@ -172,7 +172,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("Removing the trusted keeper is the whole point of a blockchain — but it creates a hard new problem. With no boss, how does everyone agree on the one true ledger, and in what order? That question — <b>consensus</b> — drives the rest of this course. The bank's strength (one authority) is also its weakness (one point of control and failure).") },
 
-  L.doublespend = { world: "foundations", title: "Double-spend", oneliner: "Solving the digital double-spend problem", icon: "⊘",
+  L.doublespend = { world: "primer", title: "Double-spend", oneliner: "Solving the digital double-spend problem", icon: "⊘",
     hero: "Cash can't be in two places at once. A digital file can. That's the problem.",
     beats: [
       { n: "01", h: "A coin is a file, and files copy", cap: "Click to copy the same coin to two people. Nothing physical stops you — so what does?",
@@ -494,7 +494,7 @@ window.LESSONS = (function () {
     deeper: P("Two main flavours. <b>Optimistic rollups</b> assume each batch is valid and allow a challenge window to prove fraud. <b>zk-rollups</b> attach a cryptographic proof that the batch is valid (the zero-knowledge maths from the previous lesson), so there is nothing to dispute. Either way the heavy work happens off-chain and only a tiny summary touches the expensive, secure base layer — buying scale without selling decentralisation or security.") };
 
   /* ===================== PRIMER (start here) ===================== */
-  L.whatis = { world: "primer", title: "What is a blockchain?", oneliner: "The entire concept in one screen", icon: "◧",
+  L.whatis = { world: "foundations", title: "What is a blockchain?", oneliner: "The entire concept in one screen", icon: "◧",
     hero: "Forget the buzzwords. A blockchain is a list of blocks, copied across many computers, that nobody can quietly rewrite. Let us build that picture.",
     beats: [
       { n: "01", h: "A block holds records", cap: "Start with one <b>block</b> — just a box that holds a list of records, like a page in a notebook. Add a few and watch its fingerprint at the bottom change.",
@@ -537,7 +537,7 @@ window.LESSONS = (function () {
     ],
     deeper: P("This is the real pitch, stripped of hype: blockchain trades a <i>trusted</i> keeper for a <i>trustless</i> system. You give up the convenience of someone to call when things go wrong, and in return you get money — or records — that no single party can censor, freeze, or quietly alter. Whether that trade is worth it depends entirely on the use case, which is the honest question to ask of any blockchain pitch.") };
 
-  L.tour = { world: "primer", title: "The life of a payment", oneliner: "The lifecycle of a single payment", icon: "↗",
+  L.tour = { world: "foundations", title: "The life of a payment", oneliner: "The lifecycle of a single payment", icon: "↗",
     hero: "Before the details, watch the whole machine work. Follow one payment from your fingertips to the permanent record, in five steps.",
     beats: [
       { n: "01", h: "Step through it", cap: "Click through the journey of a single payment. Each step is its own lesson later — this is just the map.",

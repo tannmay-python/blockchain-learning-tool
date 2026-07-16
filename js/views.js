@@ -20,8 +20,16 @@ window.VIEWS = (function () {
   }
   function wireGo(scope) { (scope || document).querySelectorAll("[data-go]").forEach(e => e.onclick = (ev) => { ev.preventDefault(); go(e.dataset.go); }); }
 
+  function wireGo(scope) { (scope || document).querySelectorAll("[data-go]").forEach(e => e.onclick = (ev) => { ev.preventDefault(); go(e.dataset.go); }); }
+
+  function teardown() {
+    if (window._lessonIO) { window._lessonIO.disconnect(); window._lessonIO = null; }
+    if (window._lessonScroll) { removeEventListener("scroll", window._lessonScroll); window._lessonScroll = null; }
+  }
+
   /* ---------------- HOME ---------------- */
   function home() {
+    teardown();
     const done = S.totalDone(), total = S.lessonsTotal, resume = done > 0 && done < total, startId = S.firstUndone();
     const beatsTotal = S.ORDER.reduce((a, id) => a + (L[id] ? L[id].beats.length : 0), 0);
     root().innerHTML = nav("home") + `
@@ -41,10 +49,10 @@ window.VIEWS = (function () {
       <footer style="padding: 16px 24px;">
         <div style="display:flex; justify-content:center; align-items:center; gap: 14px;">
           <span>Built by Tannmay Kumarr Baid</span>
-          <a href="https://x.com/tannmaybaid" target="_blank" style="display:flex; align-items:center; color:var(--ink-3); transition:color 0.2s;" onmouseover="this.style.color='var(--plum)'" onmouseout="this.style.color='var(--ink-3)'" aria-label="X (Twitter)">
+          <a href="https://x.com/tannmaybaid" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; color:var(--ink-3); transition:color 0.2s;" onmouseover="this.style.color='var(--plum)'" onmouseout="this.style.color='var(--ink-3)'" aria-label="X (Twitter)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           </a>
-          <a href="https://www.linkedin.com/in/tannmaykumarrbaid/" target="_blank" style="display:flex; align-items:center; color:var(--ink-3); transition:color 0.2s;" onmouseover="this.style.color='var(--plum)'" onmouseout="this.style.color='var(--ink-3)'" aria-label="LinkedIn">
+          <a href="https://www.linkedin.com/in/tannmaykumarrbaid/" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; color:var(--ink-3); transition:color 0.2s;" onmouseover="this.style.color='var(--plum)'" onmouseout="this.style.color='var(--ink-3)'" aria-label="LinkedIn">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
           </a>
         </div>
@@ -58,6 +66,7 @@ window.VIEWS = (function () {
 
   /* ---------------- MAP ---------------- */
   function map() {
+    teardown();
     const done = S.totalDone();
     root().innerHTML = nav("map") + `
       <div class="map-wrap"><div class="map-head"><h1>Map</h1></div>
@@ -82,6 +91,7 @@ window.VIEWS = (function () {
 
   /* ---------------- LESSON (vertical explorable) ---------------- */
   function lesson(id) {
+    teardown();
     const l = L[id]; if (!l) { go("#/map"); return; }
     const w = S.worldOf[id], gpos = S.ORDER.indexOf(id), prev = S.prevOf(id), next = S.nextOf(id);
     root().innerHTML = `
@@ -122,13 +132,13 @@ window.VIEWS = (function () {
       try { b.build(beat.querySelector(".beat-viz")); } catch (e) { console.error("beat", id, i, e); beat.querySelector(".beat-viz").innerHTML = `<div class="sig-state bad">This demo hit an error: ${e.message}</div>`; }
     });
     // reveal on scroll
-    const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.12 });
-    root().querySelectorAll(".reveal").forEach(r => io.observe(r));
+    window._lessonIO = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); window._lessonIO.unobserve(e.target); } }), { threshold: 0.12 });
+    root().querySelectorAll(".reveal").forEach(r => window._lessonIO.observe(r));
     // reading progress in the lesson bar
     const fill = document.getElementById("lprogFill");
-    const onScroll = () => { if (!fill || !document.contains(fill)) { removeEventListener("scroll", onScroll); return; }
+    window._lessonScroll = () => { if (!fill || !document.contains(fill)) return;
       const h = document.documentElement, max = h.scrollHeight - innerHeight; fill.style.width = (max > 0 ? Math.min(100, h.scrollTop / max * 100) : 0) + "%"; };
-    addEventListener("scroll", onScroll, { passive: true }); onScroll();
+    addEventListener("scroll", window._lessonScroll, { passive: true }); window._lessonScroll();
     // silently mark done when the learner moves on
     const markDone = () => { if (!S.isDone(id)) { S.setDone(id, true); document.querySelectorAll(".progmini").forEach(p => { p.outerHTML = progMini(); }); } };
     document.getElementById("lPrev").onclick = () => prev && go("#/lesson/" + prev);
