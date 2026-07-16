@@ -8,45 +8,73 @@
   "use strict";
   const L = window.LESSONS;
   const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
-  const fmt = (n) => Math.round(n).toLocaleString();
   const short = (s, a = 8, b = 6) => s && s.length > a + b + 1 ? s.slice(0, a) + "…" + s.slice(-b) : (s || "");
   const RM = matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const P = (t) => `<p>${t}</p>`;
 
   /* ---------- checkpoint quiz primitive ----------
      q: { ask, opts: [{t, ok, why}] } — one correct option.
-     Formal feedback, no confetti: mark, explain, move on. */
+     Skippable, progress dots, a scored reveal at the end. Formal, not
+     cutesy: mark, explain, tally. */
   function quiz(host, questions) {
-    let qi = 0, answered = false;
+    let qi = 0, answered = false, score = 0;
+    const marks = new Array(questions.length).fill(null); // 'right' | 'wrong' | null
     const wrap = el("div", "quiz");
     host.appendChild(wrap);
-    function draw() {
+    const dots = (showCur = true) => `<div class="quiz-dots">${questions.map((_, i) => `<i class="qd${marks[i] ? " " + marks[i] : ""}${showCur && i === qi ? " cur" : ""}"></i>`).join("")}</div>`;
+    const restart = () => { qi = 0; score = 0; marks.fill(null); drawQ(); };
+
+    function drawQ() {
       const q = questions[qi];
-      wrap.innerHTML = `<div class="quiz-head"><span class="quiz-tag">Checkpoint</span><span class="quiz-n">${qi + 1} / ${questions.length}</span></div>
+      wrap.className = "quiz fadein";
+      wrap.innerHTML = `<div class="quiz-head"><span class="quiz-tag">Checkpoint</span>${dots()}<button class="quiz-skip" id="qskip">skip ›</button></div>
         <div class="quiz-q">${q.ask}</div>
-        <div class="quiz-opts">${q.opts.map((o, i) => `<button class="quiz-opt" data-i="${i}">${o.t}</button>`).join("")}</div>
+        <div class="quiz-opts">${q.opts.map((o, i) => `<button class="quiz-opt" data-i="${i}"><span class="qo-mk"></span><span class="qo-t">${o.t}</span></button>`).join("")}</div>
         <div class="quiz-why" id="qwhy"></div>
-        <div class="quiz-foot"><button class="btn" id="qnext" disabled>${qi < questions.length - 1 ? "Next question →" : "Done"}</button></div>`;
+        <div class="quiz-foot"><button class="btn primary" id="qnext" disabled>${qi < questions.length - 1 ? "Next question →" : "See result →"}</button></div>`;
       answered = false;
+      wrap.querySelector("#qskip").onclick = skip;
       wrap.querySelectorAll(".quiz-opt").forEach(btn => btn.onclick = () => {
         if (answered) return; answered = true;
-        const o = q.opts[+btn.dataset.i];
+        const o = q.opts[+btn.dataset.i], right = !!o.ok;
+        marks[qi] = right ? "right" : "wrong"; if (right) score++;
         wrap.querySelectorAll(".quiz-opt").forEach((b, i) => {
           b.disabled = true;
           if (q.opts[i].ok) b.classList.add("right");
           else if (b === btn) b.classList.add("wrong");
         });
+        const d = wrap.querySelectorAll(".qd")[qi]; if (d) { d.classList.remove("cur"); d.classList.add(marks[qi]); }
         const why = wrap.querySelector("#qwhy");
-        why.className = "quiz-why show " + (o.ok ? "ok" : "bad");
-        why.innerHTML = (o.ok ? "<b>Correct.</b> " : "<b>Not quite.</b> ") + o.why;
+        why.className = "quiz-why show " + (right ? "ok" : "bad");
+        why.innerHTML = (right ? "<b>Correct.</b> " : "<b>Not quite.</b> ") + o.why;
         wrap.querySelector("#qnext").disabled = false;
       });
-      wrap.querySelector("#qnext").onclick = () => {
-        if (qi < questions.length - 1) { qi++; draw(); }
-        else { wrap.querySelector("#qnext").textContent = "✓ Checkpoint complete"; wrap.querySelector("#qnext").disabled = true; }
-      };
+      wrap.querySelector("#qnext").onclick = () => { if (qi < questions.length - 1) { qi++; drawQ(); } else result(); };
     }
-    draw();
+
+    function skip() {
+      wrap.className = "quiz skipped fadein";
+      wrap.innerHTML = `<div class="quiz-head"><span class="quiz-tag">Checkpoint</span><span class="quiz-n">skipped</span></div>
+        <p class="quiz-skipmsg">No problem — it's here whenever you want to test yourself.</p>
+        <div class="quiz-foot"><button class="btn" id="qtake">Take it anyway</button></div>`;
+      wrap.querySelector("#qtake").onclick = restart;
+    }
+
+    function result() {
+      const total = questions.length, pct = score / total;
+      const tier = pct === 1 ? ["Nailed it.", "Every one correct — you have this cold."]
+        : pct >= 0.5 ? ["Solid grasp.", "You've got the core. Glance back at the ones you missed and keep moving."]
+        : ["Worth a re-read.", "A couple slipped — the “go deeper” panel above will shore them up."];
+      wrap.className = "quiz result fadein";
+      wrap.innerHTML = `<div class="quiz-result">
+        <div class="qr-score"><span class="qr-n">${RM ? score : 0}</span><span class="qr-d">/ ${total}</span></div>
+        ${dots(false)}
+        <h4>${tier[0]}</h4><p>${tier[1]}</p>
+        <div class="quiz-foot"><button class="btn" id="qretake">Retake checkpoint</button></div></div>`;
+      wrap.querySelector("#qretake").onclick = restart;
+      if (!RM && score > 0) { const n = wrap.querySelector(".qr-n"); let c = 0; const t = setInterval(() => { c++; n.textContent = c; if (c >= score) clearInterval(t); }, 200); }
+    }
+    drawQ();
   }
 
   /* ===================== TRANSACTION — the atomic unit ===================== */
@@ -337,13 +365,19 @@
             setTimeout(step, 430);
           };
         } },
-      { n: "03", h: "Check yourself", cap: "One question.",
+      { n: "03", h: "Check yourself", cap: "Two questions.",
         build(s) { quiz(s, [
           { ask: "Why do forks happen even when every single node is honest?",
             opts: [
               { t: "News takes time to travel, so distant nodes can hear different blocks first", ok: true, why: "Propagation delay means two simultaneous blocks each convince the part of the network nearest to them." },
               { t: "Some nodes secretly cheat", ok: false, why: "No cheating needed. Two miners can win at nearly the same instant, and each block reaches nearby nodes first." },
               { t: "The software has a bug", ok: false, why: "It's physics, not a bug: information takes time to cross the planet, so ties briefly split the network." },
+            ] },
+          { ask: "There is no central server. So how does your transaction reach the whole network?",
+            opts: [
+              { t: "Each node passes it on to its handful of peers, who pass it on again", ok: true, why: "That's the gossip protocol — no coordinator, no master list. A few hops and the whole planet has it." },
+              { t: "It uploads to Bitcoin's head office, which distributes it", ok: false, why: "There is no head office. Nodes only know their own neighbours and relay whatever checks out — news spreads like a rumour." },
+              { t: "Miners phone each other to stay in sync", ok: false, why: "Nobody coordinates directly. Each node simply forwards valid data to its peers; that alone floods the network in seconds." },
             ] },
         ]); } },
     ],
@@ -447,6 +481,12 @@
         { t: "Spend your coins", ok: false, why: "Spending requires a signature, and only the private key can produce one. The public key can't be run backwards." },
         { t: "Change your past transactions", ok: false, why: "Past transactions are sealed in the chain; and without your private key, no new signature can be forged either." },
       ] },
+    { ask: "Why is it safe to post your public address on your website so people can pay you?",
+      opts: [
+        { t: "The address lets people pay you but never spend — only your private key can sign", ok: true, why: "Public key and address come one-way from the private key. Receiving is public; spending needs the secret only you hold." },
+        { t: "The network hides the address after the first payment", ok: false, why: "Addresses stay public and reusable forever. Safety comes from the one-way maths, not from hiding anything." },
+        { t: "It isn't safe — you should keep your address secret", ok: false, why: "The address is meant to be shared; that's how people pay you. The private key is the only thing you ever guard." },
+      ] },
   ]);
 
   addCheck("chainlink", [
@@ -455,6 +495,12 @@
         { t: "Every block from #48 onward — their links stop matching", ok: true, why: "Block #48's 'prev' field no longer matches #47's new hash, and so on up the chain. The edit is visible instantly, everywhere." },
         { t: "Only block #47", ok: false, why: "Block #48 stored #47's old fingerprint — the mismatch cascades through every later block. That cascade is the chain's whole defence." },
         { t: "Nothing, if the edit is small", ok: false, why: "Any edit avalanches #47's hash, and every later block's 'prev' link stops matching. Small doesn't exist here." },
+      ] },
+    { ask: "What actually links one block to the block before it?",
+      opts: [
+        { t: "Each block stores the previous block's fingerprint in its own header", ok: true, why: "That shared hash is the link. Edit an old block and its fingerprint changes, so the next block's stored copy no longer matches." },
+        { t: "The blocks are saved next to each other on disk", ok: false, why: "Physical order means nothing. The link is cryptographic — each block records the exact hash of the one before it." },
+        { t: "A central index maps block numbers to positions", ok: false, why: "There is no central index. The chain is nothing but each block carrying the previous block's hash." },
       ] },
   ]);
 
@@ -465,6 +511,12 @@
         { t: "The bank hasn't approved it yet", ok: false, why: "There is no bank. The risk is a reorg — a competing branch replacing recent blocks — which more confirmations make vanishingly unlikely." },
         { t: "Blocks expire if not renewed", ok: false, why: "Blocks don't expire. The concern is a reorg replacing recent blocks — confirmations bury your payment deeper." },
       ] },
+    { ask: "Two miners publish a block at the same height in the same second. What decides the winner?",
+      opts: [
+        { t: "Whichever branch the next block extends — the chain with more work wins", ok: true, why: "The tie is temporary. The first branch to get another block on top has more accumulated work, and the network abandons the other." },
+        { t: "The block with the earlier timestamp", ok: false, why: "Timestamps can't be trusted or globally ordered. The rule is objective: the chain with the most work (usually the longer one) wins." },
+        { t: "A vote among all the miners", ok: false, why: "No one votes. Miners build on the chain they saw first, and whichever branch grows longer first becomes canonical." },
+      ] },
   ]);
 
   addCheck("attack", [
@@ -474,6 +526,12 @@
         { t: "Steal coins from any wallet", ok: false, why: "Never. Spending needs a valid signature, and hashpower doesn't crack private keys. Majority power reverses recent history; it doesn't forge ownership." },
         { t: "Print unlimited new coins", ok: false, why: "Every node checks every block against the rules; a block minting extra coins is rejected no matter who mined it." },
       ] },
+    { ask: "An attacker has only 30% of the hashpower. As the victim waits for more confirmations, the odds of a successful reversal…",
+      opts: [
+        { t: "Fall exponentially — each confirmation makes catching up far less likely", ok: true, why: "Below 50% the attacker loses ground on average, so the chance of ever catching up decays fast with every block stacked on top." },
+        { t: "Stay the same however long you wait", ok: false, why: "They don't. With a minority of the power the attacker falls behind each block, so waiting for confirmations crushes the odds." },
+        { t: "Rise — waiting actually helps the attacker", ok: false, why: "The opposite. Below 50%, more confirmations bury the payment deeper and make reversal exponentially less likely." },
+      ] },
   ]);
 
   addCheck("whatis", [
@@ -482,6 +540,12 @@
         { t: "A shared record, chained by fingerprints, copied to everyone", ok: true, why: "Blocks of records, linked by hashes, replicated across a network. Every other lesson is just how each of those parts works." },
         { t: "A faster kind of database", ok: false, why: "It's actually far slower than a database — the point isn't speed, it's a shared record nobody can quietly rewrite." },
         { t: "A company that processes payments", ok: false, why: "There is no company and no centre — just a record kept identically by thousands of computers." },
+      ] },
+    { ask: "What actually makes a blockchain hard to tamper with?",
+      opts: [
+        { t: "Any edit changes a fingerprint, and thousands of copies would disagree", ok: true, why: "Tampering breaks the hash links (visible at once) and every other copy still holds the real history, so the lie is outvoted." },
+        { t: "The data is encrypted so no one can read it", ok: false, why: "Blockchain data is usually public, not encrypted. Its defence is that edits are detectable and the honest majority's copy wins." },
+        { t: "A firewall protects the main server", ok: false, why: "There is no main server. Safety comes from replication plus hash-linking, not from guarding one machine." },
       ] },
   ]);
 })();

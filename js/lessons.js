@@ -11,7 +11,6 @@ window.LESSONS = (function () {
   const bitsOf = (hex) => { let b = ""; for (const c of hex) b += parseInt(c, 16).toString(2).padStart(4, "0"); return b; };
   const subtle = window.crypto && window.crypto.subtle, hasSubtle = !!(subtle && subtle.generateKey);
   const hexOf = (buf) => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
-  const card = (inner) => `<div class="fcard">${inner}</div>`;
   const P = (t) => `<p>${t}</p>`;
 
   /* shared rich block/chain renderer — beautiful, detailed, interactive */

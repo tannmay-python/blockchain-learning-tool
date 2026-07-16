@@ -4,7 +4,6 @@
 window.STORE = (function () {
   "use strict";
   const LS = "blockcourse_v1";
-  const LEGACY = "chainworld_v2";
 
   const WORLDS = [
     { id: "primer", n: "00", title: "Start here", sub: "Money, trust, and the core problem", color: "#9c2a5a", lessons: ["ledger", "why", "doublespend"],
@@ -27,12 +26,8 @@ window.STORE = (function () {
 
   let completed = new Set();
   try {
-    const cur = JSON.parse(localStorage.getItem(LS) || "null");
-    if (cur) { cur.forEach(id => completed.add(id)); }
-    else {
-      // one-time migration from the old ChainWorld progress key
-      (JSON.parse(localStorage.getItem(LEGACY) || "[]")).forEach(id => completed.add(id));
-    }
+    const cur = JSON.parse(localStorage.getItem(LS) || "[]");
+    cur.forEach(id => completed.add(id));
   } catch (e) {}
   function save() { try { localStorage.setItem(LS, JSON.stringify([...completed])); } catch (e) {} }
 
@@ -40,11 +35,10 @@ window.STORE = (function () {
   function setDone(id, v) { if (v) completed.add(id); else completed.delete(id); save(); }
   function reset() { completed.clear(); save(); }
   function worldDone(w) { return w.lessons.filter(isDone).length; }
-  function worldComplete(w) { return worldDone(w) === w.lessons.length; }
   function totalDone() { return ORDER.filter(isDone).length; }
   function nextOf(id) { const i = ORDER.indexOf(id); return i >= 0 && i < ORDER.length - 1 ? ORDER[i + 1] : null; }
   function prevOf(id) { const i = ORDER.indexOf(id); return i > 0 ? ORDER[i - 1] : null; }
   function firstUndone() { return ORDER.find(id => !isDone(id)) || ORDER[0]; }
 
-  return { WORLDS, ORDER, worldOf, isDone, setDone, reset, worldDone, worldComplete, totalDone, nextOf, prevOf, firstUndone, lessonsTotal: ORDER.length };
+  return { WORLDS, ORDER, worldOf, isDone, setDone, reset, worldDone, totalDone, nextOf, prevOf, firstUndone, lessonsTotal: ORDER.length };
 })();
