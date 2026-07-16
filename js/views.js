@@ -98,6 +98,7 @@ window.VIEWS = (function () {
           <div class="co-bg" style="background:${w.color}08"></div>
           <div class="co-head">
             <span class="co-num" style="color:${w.color}">Chapter ${w.n}</span>
+            <span class="co-sep">·</span>
             <h2 class="co-title">${w.title}</h2>
           </div>
           <p class="co-i">${w.intro}</p>
