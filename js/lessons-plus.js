@@ -282,8 +282,45 @@
   /* ============================================================
      copy polish — sharpen the flattest captions
      ============================================================ */
+  /* ============================================================
+     DOUBLESPEND — beat 1: a coin that visibly clones to two people
+     ============================================================ */
   setBeat("doublespend", 0, {
-    cap: "Click to copy the very same coin to two people at once. Nothing physical stops you — the file just duplicates. So what <i>could</i> stop you?",
+    h: "A coin is a file — and files copy perfectly",
+    cap: "Spend the very same coin to two people at once. Two flawless copies fly out; both look completely real. Nothing physical stops you — so what <i>could</i>?",
+    build(s) {
+      const wrap = el("div", "fcard");
+      wrap.innerHTML = `<div class="dsp">
+          <div class="dsp-src"><div class="dsp-coin" id="dsrc">◉</div><div class="note" style="margin-top:6px">your one coin</div></div>
+          <div class="dsp-targets">
+            <div class="dsp-t" id="dtb"><span class="dsp-ic">🧔</span><span class="dsp-nm">Bob</span><span class="dsp-got" id="dgb">waiting…</span></div>
+            <div class="dsp-t" id="dtc"><span class="dsp-ic">👩</span><span class="dsp-nm">Carol</span><span class="dsp-got" id="dgc">waiting…</span></div>
+          </div>
+        </div>
+        <div class="btn-row" style="justify-content:center;margin-top:6px"><button class="btn danger" id="dcopy">Spend it to both at once</button><button class="btn" id="drst">Reset</button></div>
+        <div class="note" id="dmsg" style="text-align:center;margin-top:12px">One coin, one owner — for now. What happens if you send it to two people?</div>`;
+      s.appendChild(wrap);
+      let spent = false;
+      function fly(destId, cb) {
+        const src = wrap.querySelector("#dsrc"), t = wrap.querySelector("#" + destId), host = wrap.getBoundingClientRect();
+        if (RM) { cb(); return; }
+        const rs = src.getBoundingClientRect(), rt = t.getBoundingClientRect();
+        const c = el("div", "flycoin", "◉");
+        c.style.left = (rs.left - host.left + rs.width / 2 - 8) + "px";
+        c.style.top = (rs.top - host.top + rs.height / 2 - 8) + "px";
+        wrap.appendChild(c);
+        requestAnimationFrame(() => { c.style.transform = `translate(${rt.left - rs.left + rt.width / 2 - rs.width / 2}px, ${rt.top - rs.top + 6}px)`; });
+        setTimeout(() => { c.remove(); cb(); }, 620);
+      }
+      wrap.querySelector("#dcopy").onclick = () => {
+        if (spent) return; spent = true;
+        wrap.querySelector("#dsrc").classList.add("split");
+        fly("dtb", () => { wrap.querySelector("#dgb").innerHTML = `<span style="color:var(--green)">got ◉ · valid ✓</span>`; wrap.querySelector("#dtb").classList.add("has"); });
+        fly("dtc", () => { wrap.querySelector("#dgc").innerHTML = `<span style="color:var(--green)">got ◉ · valid ✓</span>`; wrap.querySelector("#dtc").classList.add("has"); });
+        setTimeout(() => { wrap.querySelector("#dmsg").innerHTML = `<span style="color:var(--red)">You just spent one coin twice.</span> Both copies are byte-for-byte identical and both signatures check out. With no agreed <b>order</b>, Bob and Carol are each convinced they were paid.`; }, RM ? 0 : 640);
+      };
+      wrap.querySelector("#drst").onclick = () => { spent = false; wrap.querySelector("#dsrc").classList.remove("split"); ["dgb", "dgc"].forEach(id => wrap.querySelector("#" + id).textContent = "waiting…"); ["dtb", "dtc"].forEach(id => wrap.querySelector("#" + id).classList.remove("has")); wrap.querySelector("#dmsg").innerHTML = `One coin, one owner — for now. What happens if you send it to two people?`; };
+    }
   });
   setBeat("forks", 1, {
     cap: "Each new block stacked on top of yours makes undoing it exponentially harder. Stack a few and watch the chance of reversal fall off a cliff — this is why merchants ‘wait for confirmations’.",
@@ -296,6 +333,141 @@
   });
   setBeat("money", 1, {
     cap: "A stablecoin is engineered to stay worth exactly one dollar. There are three ways to pull that off — and they are nowhere near equally safe.",
+  });
+
+  /* ============================================================
+     LEDGER — beat 1: the first interactive. Coins fly, but the
+     lesson is that nothing physical moves — only the record.
+     ============================================================ */
+  setHero("ledger", "Money isn't gold, and it isn't paper. It's a <i>list</i> of who owns what. Get that one idea and every other piece of this course clicks into place.");
+  setBeat("ledger", 0, {
+    h: "Money is just a list of balances",
+    cap: "Press send. A coin appears to fly between people — but watch closely. Nothing physical moves: one number drops, another rises. That list <b>is</b> the money.",
+    build(s) {
+      const START = { Alice: 12, Bob: 7, You: 5 }, ic = { Alice: "👩", Bob: "🧔", You: "🧑" }, who = ["Alice", "Bob", "You"];
+      let bal = { ...START };
+      const wrap = el("div", "fcard");
+      wrap.innerHTML = `<div class="flabel"><span class="pin"></span>the ledger · who owns what</div>
+        <div class="ledgrid" id="lg"></div>
+        <div class="btn-row" style="justify-content:center;margin-top:16px"><button class="btn primary" id="ab">Alice pays Bob 3</button><button class="btn" id="by">Bob pays You 2</button><button class="btn" id="rst">Reset</button></div>
+        <div class="note" id="msg" style="text-align:center;margin-top:10px">Three people, one shared list. Every payment is just an edit to it.</div>`;
+      s.appendChild(wrap);
+      function draw(flash) {
+        wrap.querySelector("#lg").innerHTML = who.map(k => `<div class="ledrow" data-k="${k}"><span class="led-ic">${ic[k]}</span><span class="led-name">${k}</span><span class="led-bal${flash && flash[k] ? " " + flash[k] : ""}" id="lb-${k}">${bal[k]}</span><span class="led-u">coins</span></div>`).join("");
+      }
+      function fly(from, to, n, done) {
+        const a = wrap.querySelector(`.ledrow[data-k="${from}"]`), b = wrap.querySelector(`.ledrow[data-k="${to}"]`);
+        if (!a || !b || RM) { done(); return; }
+        const host = wrap.getBoundingClientRect(), ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+        for (let i = 0; i < Math.min(n, 3); i++) {
+          const c = el("div", "flycoin", "◉");
+          c.style.left = (ra.right - host.left - 74) + "px";
+          c.style.top = (ra.top - host.top + ra.height / 2 - 8) + "px";
+          wrap.appendChild(c);
+          requestAnimationFrame(() => { setTimeout(() => { c.style.transform = `translate(0, ${rb.top - ra.top}px) scale(.7)`; c.style.opacity = "0.15"; }, i * 110); });
+          setTimeout(() => c.remove(), 760 + i * 110);
+        }
+        setTimeout(done, 430);
+      }
+      function pay(from, to, n) {
+        if (bal[from] < n) { wrap.querySelector("#msg").innerHTML = `${from} only has ${bal[from]} — can't send ${n}. The list won't let you spend what you don't have.`; return; }
+        bal[from] -= n; draw({ [from]: "dn" });
+        fly(from, to, n, () => { bal[to] += n; draw({ [from]: "dn", [to]: "up" }); setTimeout(() => draw(), 620);
+          wrap.querySelector("#msg").innerHTML = `${from} → ${to}, ${n} coins. <b>No coin object travelled</b> — the ledger simply now reads ${from}: ${bal[from]}, ${to}: ${bal[to]}.`; });
+      }
+      wrap.querySelector("#ab").onclick = () => pay("Alice", "Bob", 3);
+      wrap.querySelector("#by").onclick = () => pay("Bob", "You", 2);
+      wrap.querySelector("#rst").onclick = () => { bal = { ...START }; draw(); wrap.querySelector("#msg").innerHTML = `Three people, one shared list. Every payment is just an edit to it.`; };
+      draw();
+    }
+  });
+
+  /* ============================================================
+     DOUBLESPEND — beat 2: ordering resolves the conflict, live
+     ============================================================ */
+  setBeat("doublespend", 1, {
+    h: "The fix: everyone agrees on the order",
+    cap: "Both payments are validly signed — cryptography proves <b>who</b>, never <b>when</b>. Broadcast both, then let the network settle on one order. The first one in wins; the second is rejected as a double-spend.",
+    build(s) {
+      const wrap = el("div", "fcard");
+      wrap.innerHTML = `<div class="dord">
+          <div class="dord-tx" id="dt1"><span class="dord-h">tx #1</span><span class="dord-b">You → Bob · 1 coin</span><span class="dord-s" id="ds1">signed ✓</span></div>
+          <div class="dord-tx" id="dt2"><span class="dord-h">tx #2</span><span class="dord-b">You → Carol · <i>same</i> coin</span><span class="dord-s" id="ds2">signed ✓</span></div>
+        </div>
+        <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn primary" id="dgo">Let the network pick an order</button><button class="btn" id="drs">Reset</button></div>
+        <div class="note" id="dm" style="text-align:center;margin-top:12px">Two valid transactions spending the same coin. Only one can be true.</div>`;
+      s.appendChild(wrap);
+      let done = false;
+      wrap.querySelector("#dgo").onclick = () => {
+        if (done) return; done = true;
+        const t1 = wrap.querySelector("#dt1"), t2 = wrap.querySelector("#dt2");
+        t1.classList.add("settling"); t2.classList.add("settling");
+        setTimeout(() => {
+          t1.classList.remove("settling"); t2.classList.remove("settling");
+          t1.classList.add("win"); wrap.querySelector("#ds1").innerHTML = `into the block first — confirmed ✓`;
+          t2.classList.add("lose"); wrap.querySelector("#ds2").innerHTML = `coin already spent — rejected ✕`;
+          wrap.querySelector("#dm").innerHTML = `The network agreed tx&nbsp;#1 came first, so it is final. tx&nbsp;#2 tries to spend a coin that's already gone, and every node rejects it. <b>Agreeing on an order is exactly what kills the double-spend.</b>`;
+        }, RM ? 0 : 720);
+      };
+      wrap.querySelector("#drs").onclick = () => { done = false; ["dt1", "dt2"].forEach(id => wrap.querySelector("#" + id).className = "dord-tx"); wrap.querySelector("#ds1").textContent = "signed ✓"; wrap.querySelector("#ds2").textContent = "signed ✓"; wrap.querySelector("#dm").innerHTML = `Two valid transactions spending the same coin. Only one can be true.`; };
+    }
+  });
+
+  /* ============================================================
+     WHATIS — beat 1: the block fingerprint churns on every change
+     ============================================================ */
+  setBeat("whatis", 0, {
+    cap: "Start with one <b>block</b> — a box holding a list of records, like a page in a notebook. Add a record and watch the fingerprint at the bottom <b>rescramble completely</b>: any change, however small, produces a brand-new seal.",
+    build(s) {
+      const recs = ["Alice → Bob: 5 coins", "Carol → Dan: 2 coins", "Eve → Finn: 8 coins", "Gail → Hank: 1 coin", "Ivy → Jo: 3 coins"];
+      let list = recs.slice(0, 2), i = 2, raf;
+      const wrap = el("div", "");
+      wrap.innerHTML = `<div class="bigblock"><div class="bt"></div><div class="bp"><div class="bn">Block #1</div><div class="brow"><div class="k">records inside</div><div class="v" id="recs"></div></div><div class="brow"><div class="k">fingerprint that seals it</div><div class="v mono" style="color:var(--gold-2)" id="seal"></div></div></div></div>
+        <div class="btn-row" style="justify-content:center;margin-top:16px"><button class="btn" id="add">+ Add a record</button><button class="btn" id="rst">Reset</button></div>
+        <div class="note" style="text-align:center;margin-top:8px">The fingerprint is one short code standing in for everything in the box.</div>`;
+      s.appendChild(wrap);
+      const sealText = () => short(window.sha256 ? sha256(list.join("|")) : list.join(""), 18, 10);
+      function drawRecs(freshIdx) { wrap.querySelector("#recs").innerHTML = list.map((r, k) => `<div class="wr-rec${k === freshIdx ? " wr-in" : ""}">${r}</div>`).join(""); }
+      function scramble() { const real = sealText(), out = wrap.querySelector("#seal"); let t = 0; cancelAnimationFrame(raf);
+        const step = () => { if (RM) { out.textContent = real; return; } if (t < 7) { out.textContent = Array.from({ length: 22 }, () => "0123456789abcdef"[(Math.random() * 16) | 0]).join("") + "…"; t++; raf = requestAnimationFrame(step); } else out.textContent = real; };
+        step(); }
+      function draw(freshIdx) { drawRecs(freshIdx); scramble(); }
+      wrap.querySelector("#add").onclick = () => { list.push(i < recs.length ? recs[i++] : "Someone → Someone: " + (1 + Math.floor(Math.random() * 9)) + " coins"); draw(list.length - 1); };
+      wrap.querySelector("#rst").onclick = () => { list = recs.slice(0, 2); i = 2; draw(); };
+      draw();
+    }
+  });
+
+  /* ============================================================
+     FORKS — beat 1: the chain visibly splits, then one branch wins
+     ============================================================ */
+  setBeat("forks", 0, {
+    h: "Two winners at once — longest chain breaks the tie",
+    cap: "Two miners seal block #4 at the same instant and the chain <b>splits</b>. There's no referee. Whichever branch the <b>next</b> block extends becomes real; the other is abandoned — <b>orphaned</b> — and its transactions slide back into the pool.",
+    build(s) {
+      const wrap = el("div", "");
+      wrap.innerHTML = `<div class="frk" id="frk"></div><div class="btn-row" id="fkc" style="justify-content:center;margin-top:6px"></div><div class="note" id="fmsg" style="text-align:center;margin-top:12px">A healthy chain, growing one block at a time.</div>`;
+      s.appendChild(wrap);
+      const stage = wrap.querySelector("#frk"), ctl = wrap.querySelector("#fkc"), msg = wrap.querySelector("#fmsg");
+      const blk = (label, cls) => `<div class="frk-b ${cls || ""}">#${label}</div>`;
+      const arm = () => `<span class="frk-arm"></span>`;
+      let state = "base";
+      function render() {
+        if (state === "base") stage.innerHTML = `<div class="frk-line">${blk("2", "ok")}${arm()}${blk("3", "ok")}${arm()}${blk("4", "ok pulse")}</div>`;
+        else if (state === "fork") stage.innerHTML = `<div class="frk-line">${blk("2", "ok")}${arm()}${blk("3", "ok")}${arm()}<div class="frk-split"><div class="frk-line">${blk("4a", "cand pulse")}</div><div class="frk-line">${blk("4b", "cand pulse")}</div></div></div>`;
+        else {
+          const aCls = state === "a" ? "ok" : "orphan", bCls = state === "b" ? "ok" : "orphan";
+          const aExt = state === "a" ? arm() + blk("5", "ok pop") : "", bExt = state === "b" ? arm() + blk("5", "ok pop") : "";
+          stage.innerHTML = `<div class="frk-line">${blk("2", "ok")}${arm()}${blk("3", "ok")}${arm()}<div class="frk-split"><div class="frk-line">${blk("4a", aCls)}${aExt}</div><div class="frk-line">${blk("4b", bCls)}${bExt}</div></div></div>`;
+        }
+        ctl.innerHTML = "";
+        if (state === "base") { const b = el("button", "btn primary", "Two miners find #4 at once"); b.onclick = () => { state = "fork"; msg.innerHTML = `Both #4a and #4b are valid, and the network is <b>split</b> — some nodes heard one first, some the other.`; render(); }; ctl.appendChild(b); }
+        else if (state === "fork") { const a = el("button", "btn", "Next block extends #4a"); a.onclick = () => pick("a"); const b = el("button", "btn", "Next block extends #4b"); b.onclick = () => pick("b"); ctl.append(a, b); }
+        else { const r = el("button", "btn", "Replay"); r.onclick = () => { state = "base"; msg.innerHTML = `A healthy chain, growing one block at a time.`; render(); }; ctl.appendChild(r); }
+      }
+      function pick(which) { state = which; const kept = which === "a" ? "#4a" : "#4b", orph = which === "a" ? "#4b" : "#4a"; msg.innerHTML = `The next block built on ${kept}, so that branch now has the <b>most work</b> and wins. ${orph} is orphaned — every node abandons it, and its transactions return to the waiting pool. The fork lasted one block.`; render(); }
+      render();
+    }
   });
 
 })();
