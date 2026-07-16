@@ -14,9 +14,10 @@ window.VIEWS = (function () {
     return `<div class="progmini"><span>${d} / ${t}</span><div class="bar"><i style="width:${(d / t * 100).toFixed(0)}%"></i></div></div>`;
   }
   function nav(active) {
+    const icon = document.documentElement.dataset.theme === "dark" ? "☀️" : "🌙";
     return `<nav class="nav"><div class="brand" data-go="#/" title="Home"><div class="mk">${LOGO}</div><span class="bt">The Blockchain <span>Course</span></span></div>
       <div class="links"><a data-go="#/" class="${active === "home" ? "on" : ""}">Home</a><a data-go="#/map" class="${active === "map" ? "on" : ""}">Map</a></div>
-      <div class="right">${progMini()}</div></nav>`;
+      <div class="right"><button class="theme-toggle" onclick="window.APP.toggleTheme()" style="background:none; border:none; cursor:pointer; font-size:18px; color:var(--ink-3);" title="Toggle Theme">${icon}</button>${progMini()}</div></nav>`;
   }
   function wireGo(scope) { (scope || document).querySelectorAll("[data-go]").forEach(e => e.onclick = (ev) => { ev.preventDefault(); go(e.dataset.go); }); }
 

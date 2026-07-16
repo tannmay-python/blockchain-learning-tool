@@ -49,7 +49,17 @@ window.APP = (function () {
     addEventListener("resize", window._heroResize); frame();
   }
 
+  function toggleTheme() {
+    const isDark = document.documentElement.dataset.theme === "dark";
+    const newTheme = isDark ? "light" : "dark";
+    if (newTheme === "dark") document.documentElement.dataset.theme = "dark";
+    else document.documentElement.removeAttribute("data-theme");
+    localStorage.setItem("theme", newTheme);
+    document.querySelectorAll(".theme-toggle").forEach(btn => btn.innerHTML = newTheme === "dark" ? "☀️" : "🌙");
+  }
+
   function boot() {
+    if (localStorage.getItem("theme") === "dark") document.documentElement.dataset.theme = "dark";
     starfield(); addEventListener("hashchange", route); route();
     // keyboard: ← / → move between lessons
     addEventListener("keydown", (e) => {
@@ -60,5 +70,5 @@ window.APP = (function () {
     });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
-  return { heroCanvas, confetti: () => triggerConfetti() };
+  return { heroCanvas, confetti: () => triggerConfetti(), toggleTheme };
 })();
