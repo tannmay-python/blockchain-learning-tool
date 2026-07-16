@@ -18,9 +18,14 @@ window.VIEWS = (function () {
     const sunSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
     const moonSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
     const toggle = `<button class="theme-toggle" onclick="window.APP.toggleTheme()" title="Toggle theme" aria-label="Toggle theme">${isDark ? sunSvg : moonSvg}</button>`;
+    const hamburger = `<button class="hamburger" onclick="document.getElementById('mobileNav').classList.toggle('active'); this.classList.toggle('active')" aria-label="Menu"><span></span><span></span><span></span></button>`;
     return `<nav class="nav"><div class="brand" data-go="#/" title="Home"><div class="mk">${LOGO}</div><span class="bt">The Blockchain <span>Course</span></span></div>
-      <div class="links"><a data-go="#/" class="${active === "home" ? "on" : ""}">Home</a><a data-go="#/map" class="${active === "map" ? "on" : ""}">Map</a></div>
-      <div class="right">${toggle}${progMini()}</div></nav>`;
+      <div class="links desktop-only"><a data-go="#/" class="${active === "home" ? "on" : ""}">Home</a><a data-go="#/map" class="${active === "map" ? "on" : ""}">Map</a></div>
+      <div class="right">${toggle}${progMini()}${hamburger}</div></nav>
+      <div id="mobileNav" class="mobile-nav">
+        <a data-go="#/" class="${active === "home" ? "on" : ""}" onclick="document.getElementById('mobileNav').classList.remove('active'); document.querySelector('.hamburger').classList.remove('active')">Home</a>
+        <a data-go="#/map" class="${active === "map" ? "on" : ""}" onclick="document.getElementById('mobileNav').classList.remove('active'); document.querySelector('.hamburger').classList.remove('active')">Map</a>
+      </div>`;
   }
   function wireGo(scope) { (scope || document).querySelectorAll("[data-go]").forEach(e => e.onclick = (ev) => { ev.preventDefault(); go(e.dataset.go); }); }
 
@@ -51,7 +56,7 @@ window.VIEWS = (function () {
         </div>
       </section>
       <footer style="padding: 16px 24px;">
-        <div style="display:flex; justify-content:center; align-items:center; gap: 14px;">
+        <div style="display:flex; justify-content:center; align-items:center; gap: 14px; flex-wrap:wrap;">
           <span>Built by Tannmay Kumarr Baid</span>
           <a href="https://x.com/tannmaybaid" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; color:var(--ink-3); transition:color 0.2s;" onmouseover="this.style.color='var(--plum)'" onmouseout="this.style.color='var(--ink-3)'" aria-label="X (Twitter)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
