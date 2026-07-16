@@ -2,32 +2,19 @@
 
 An interactive course that teaches blockchain from absolute first principles. No slides, no
 jargon-first lectures: every idea is a thing you **do** — you mine the blocks, forge the
-signatures, trigger the forks, run the 51% attack — and the terms land only after your hands
-have built the experience.
+signatures, watch a coin double-spend, trigger the forks, run the 51% attack — and the terms
+land only after your hands have built the experience.
 
 **Live:** https://tannmay-python.github.io/blockchain-learning-tool/
 
-## The Observatory
-
-The second layer of the site (`#/live`): a **living blockchain on one screen**. A 26-node
-peer-to-peer network runs continuously — transactions gossip node to node, five miners race
-real SHA-256 (every candidate hash shown live), winning blocks sweep the map as waves, and
-forks genuinely split the network in two colours before the next block heals them and orphans
-the loser. Click any node to open its mempool; click any block on the ribbon to read its real
-header. A narrated **guided tour** plays on first visit — nine acts, each driven by real
-simulator events. Buttons let you broadcast a transaction, make a node announce an invalid
-block (its neighbours reject it), force a fork — or launch a **hostile takeover**: hand one
-miner 30–75% of the hashpower and watch it mine a secret chain and, if it wins Satoshi's race,
-erase honest history in a live reorg. Below 50% you watch gambler's ruin instead.
-
-## The journey (7 chapters · 24 lessons · ~60 hands-on demos)
+## The journey (7 chapters · 25 lessons · 60+ hands-on demos)
 
 | # | Chapter | What it answers |
 |---|---------|-----------------|
 | 00 | **Start here** | Money is a list. Who keeps the list? Why digital money is hard (double-spend). |
 | 01 | **The big idea** | What a blockchain actually is, and the life of one payment end to end. |
 | 02 | **Cryptography** | Hashing (the fingerprint) and keys & signatures (ownership without trust). |
-| 03 | **Building the chain** | Build a block, mine the nonce, earn the reward, chain the past shut, Merkle-prove inclusion. |
+| 03 | **Building the chain** | Inside a transaction & the mempool, build a block, Merkle-prove it, mine the nonce, earn the reward, chain the past shut. |
 | 04 | **The network agrees** | Gossip propagation, forks, the 51% attack, Proof of Stake. |
 | 05 | **The ecosystem** | Smart contracts, tokens & NFTs, wallets & custody, Layer 2, zero-knowledge, stablecoins & CBDCs, staying safe from scams. |
 | 06 | **The whole machine** | Everything you built, running together. |
@@ -38,7 +25,7 @@ right or wrong, not just which one to click.
 ## What's actually real here
 
 - **Real SHA-256** (pure JS, verified against test vectors) powers every hash you see — the
-  avalanche demo, the mining loops, the Merkle trees.
+  avalanche demo, the mining loops, the Merkle trees, the transaction signatures.
 - **Real ECDSA P-256** (Web Crypto) — the signature lesson generates a genuine key pair;
   tampering with the signed message really breaks verification.
 - **Satoshi's actual math** — the 51% attack odds are the whitepaper's gambler's-ruin
@@ -62,7 +49,8 @@ css/app.css           the whole design system (plum & marigold, Fraunces/Inter/J
 js/sha256.js          pure-JS SHA-256 (verified against test vectors)
 js/store.js           curriculum structure + progress (localStorage)
 js/lessons.js         the core lessons — each one a vertical "explorable" of interactive beats
-js/lessons-extra.js   checkpoint quizzes + the incentives / network / safety lessons
+js/lessons-extra.js   checkpoint quizzes + the transaction / incentives / network / safety lessons
+js/lessons-plus.js    the "living interactives" layer — animated overrides + sharpened copy
 js/views.js           home, journey map, and lesson renderer
 js/app.js             hash router + ambient canvas backdrops
 ```
