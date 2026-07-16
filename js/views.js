@@ -178,7 +178,7 @@ window.VIEWS = (function () {
         <button class="btn primary" style="font-size:16px;padding:14px 32px;background:${w.color};border-color:transparent;color:#fff" data-go="#/lesson/${w.lessons[0]}">Enter Chapter →</button>
       </div>
     </div>`;
-    root().innerHTML = html + footer();
+    root().innerHTML = html;
     wireGo();
     if (window.APP) window.APP.heroCanvas();
   }
