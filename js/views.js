@@ -25,17 +25,31 @@ window.VIEWS = (function () {
     const done = S.totalDone(), total = S.lessonsTotal, resume = done > 0 && done < total, startId = S.firstUndone();
     const beatsTotal = S.ORDER.reduce((a, id) => a + (L[id] ? L[id].beats.length : 0), 0);
     root().innerHTML = nav("home") + `
-      <section class="hero hero-full"><canvas id="heroCanvas"></canvas><div class="hero-in">
-        <h1>Learn Blockchain<br>by <em>doing</em>.</h1>
-        <div class="cta">
-          <button class="btn primary lg" data-go="#/lesson/${startId}">${resume ? "Continue where you left off" : "Start the course"} →</button>
-          <button class="btn lg ghost" data-go="#/map">Open the map</button>
-          ${done > 0 ? `<button class="btn lg danger" id="restartHome">Restart course</button>` : ""}
+      <div style="display:flex; flex-direction:column; min-height: calc(100vh - 61px);">
+        <section class="hero hero-full" style="flex:1; padding: 24px; min-height:0;">
+          <canvas id="heroCanvas"></canvas>
+          <div class="hero-in">
+          <h1>Learn Blockchain<br>by <em>doing</em>.</h1>
+          <div class="cta">
+            <button class="btn primary lg" data-go="#/lesson/${startId}">${resume ? "Continue where you left off" : "Start the course"} →</button>
+            <button class="btn lg ghost" data-go="#/map">Open the map</button>
+            ${done > 0 ? `<button class="btn lg ghost" id="restartHome" style="color:var(--ink-3)">Restart course</button>` : ""}
+          </div>
+          <div class="herostats"><span><b>${S.WORLDS.length}</b> chapters</span><span class="dot"></span><span><b>${total}</b> lessons</span><span class="dot"></span><span><b>${beatsTotal}</b> hands-on demos</span></div>
         </div>
-        <div class="herostats"><span><b>${S.WORLDS.length}</b> chapters</span><span class="dot"></span><span><b>${total}</b> lessons</span><span class="dot"></span><span><b>${beatsTotal}</b> hands-on demos</span></div>
-      </div>
       </section>
-      <footer>Built by Tannmay Kumarr Baid</footer>`;
+      <footer style="padding: 16px 24px;">
+        <div style="display:flex; justify-content:center; align-items:center; gap: 14px;">
+          <span>Built by Tannmay Kumarr Baid</span>
+          <a href="https://x.com/tannmaybaid" target="_blank" style="display:flex; align-items:center; color:var(--ink-3); transition:color 0.2s;" onmouseover="this.style.color='var(--plum)'" onmouseout="this.style.color='var(--ink-3)'" aria-label="X (Twitter)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          </a>
+          <a href="https://www.linkedin.com/in/tannmaykumarrbaid/" target="_blank" style="display:flex; align-items:center; color:var(--ink-3); transition:color 0.2s;" onmouseover="this.style.color='var(--plum)'" onmouseout="this.style.color='var(--ink-3)'" aria-label="LinkedIn">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+          </a>
+        </div>
+      </footer>
+      </div>`;
     wireGo();
     const rh = document.getElementById("restartHome");
     if (rh) rh.onclick = () => { if (confirm("Clear your progress and start from the beginning?")) { S.reset(); go("#/lesson/" + S.ORDER[0]); } };
