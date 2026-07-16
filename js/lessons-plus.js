@@ -260,6 +260,42 @@
   setHero("pos", "Same defence, radically different cost. Instead of burning electricity, validators put their own money on the line — and lose it if they cheat.");
   setHero("zk", "Prove you know a secret without revealing the secret itself. It sounds impossible; it's real, it's provable, and it's quietly reshaping privacy and scaling.");
 
-  setDeeper("tour", window.LESSONS.tour.deeper); // unchanged, keep
+  /* ============================================================
+     POS — beat 2: a live, animated energy comparison
+     ============================================================ */
+  setBeat("pos", 1, {
+    h: "And it sips energy instead of guzzling it",
+    cap: "Same security, a rounding error of the power. Proof of work runs a planet's worth of machines flat out; proof of stake just checks who put up a bond. Watch the two draw down.",
+    build(s) {
+      const wrap = el("div", "fcard");
+      wrap.innerHTML = `<div class="flabel"><span class="pin"></span>energy to secure one block</div>
+        <div class="enrow"><div class="en-lab"><b>Proof of Work</b><span>a country's worth of electricity</span></div><div class="en-bar"><i class="en-fill pow" id="epow"></i><span class="en-bolts" id="ebolts"></span></div><div class="en-pct mono" id="epowp">100%</div></div>
+        <div class="enrow"><div class="en-lab"><b>Proof of Stake</b><span>a handful of ordinary servers</span></div><div class="en-bar"><i class="en-fill pos" id="epos"></i></div><div class="en-pct mono" id="eposp">~0.05%</div></div>
+        <div class="note" style="margin-top:12px">Ethereum's 2022 switch from work to stake cut its energy use by about <b>99.9%</b> overnight. The trade critics raise: stake can concentrate with the wealthy.</div>`;
+      s.appendChild(wrap);
+      wrap.querySelector("#ebolts").innerHTML = "⚡".repeat(9);
+      const fill = () => { wrap.querySelector("#epow").style.width = "100%"; wrap.querySelector("#epos").style.width = "0.6%"; };
+      RM ? fill() : setTimeout(fill, 200);
+    }
+  });
+
+  /* ============================================================
+     copy polish — sharpen the flattest captions
+     ============================================================ */
+  setBeat("doublespend", 0, {
+    cap: "Click to copy the very same coin to two people at once. Nothing physical stops you — the file just duplicates. So what <i>could</i> stop you?",
+  });
+  setBeat("forks", 1, {
+    cap: "Each new block stacked on top of yours makes undoing it exponentially harder. Stack a few and watch the chance of reversal fall off a cliff — this is why merchants ‘wait for confirmations’.",
+  });
+  setBeat("contracts", 1, {
+    cap: "A deployed contract can't be patched, so a single flaw is a vault with a hole and no plumber. Trigger the bug and watch the funds drain — no admin, no pause button, no undo.",
+  });
+  setBeat("zk", 1, {
+    cap: "That one move — prove something is true while revealing nothing else — quietly unlocks three enormous things.",
+  });
+  setBeat("money", 1, {
+    cap: "A stablecoin is engineered to stay worth exactly one dollar. There are three ways to pull that off — and they are nowhere near equally safe.",
+  });
 
 })();

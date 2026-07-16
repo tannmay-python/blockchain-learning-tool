@@ -618,8 +618,21 @@ body.obs-open { overflow: hidden; }
 .casc-acct .ca-r { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 2px 0; }
 .casc-acct .ca-r span { color: var(--ink-4); }
 
+/* ===== pos: animated energy meter ===== */
+.enrow { display: grid; grid-template-columns: 150px 1fr 64px; align-items: center; gap: 14px; margin: 14px 0; }
+.en-lab b { display: block; font-size: 14px; color: var(--ink); }
+.en-lab span { font-size: 11.5px; color: var(--ink-3); }
+.en-bar { position: relative; height: 26px; border-radius: 99px; background: var(--surface-3); border: 1px solid var(--line); overflow: hidden; }
+.en-fill { display: block; height: 100%; width: 0; border-radius: 99px; transition: width 1.4s cubic-bezier(.2,.8,.2,1); }
+.en-fill.pow { background: linear-gradient(90deg, var(--gold), #d98908); }
+.en-fill.pos { background: var(--green); }
+.en-bolts { position: absolute; inset: 0; display: flex; align-items: center; gap: 4px; padding-left: 12px; font-size: 12px; opacity: .55; pointer-events: none; letter-spacing: 3px; }
+.en-pct { font-weight: 700; text-align: right; color: var(--ink-2); }
+.enrow:first-of-type .en-pct { color: var(--gold-2); } .enrow:nth-of-type(2) .en-pct { color: var(--green); }
+@media (max-width: 560px) { .enrow { grid-template-columns: 1fr; gap: 4px; } .en-pct { text-align: left; } }
+
 @media (prefers-reduced-motion: reduce) {
-  .pcoin { transition: none; } .flycoin { transition: none; } .roll-swarm .swd { animation: none; }
+  .pcoin { transition: none; } .flycoin { transition: none; } .roll-swarm .swd { animation: none; } .en-fill { transition: none; }
 }
 
 footer { text-align: center; padding: 56px 24px; color: var(--ink-3); font-size: 13px; position: relative; z-index: 1; }
