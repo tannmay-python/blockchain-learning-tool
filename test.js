@@ -1,4 +1,4 @@
-/* test.js — no-framework checks, run with: node test.js
+/* test.js - no-framework checks, run with: node test.js
    1. SHA-256 against NIST test vectors (the README's claim, made real)
    2. Curriculum invariants: STORE.ORDER ↔ LESSONS stay in sync
    3. Smoke test: every chapter gate renders with the full production script stack */
@@ -36,11 +36,34 @@ global.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {
 
 /* ---- load the production script stack, in index.html order ---- */
 for (const f of ['sha256', 'store', 'lessons', 'lessons-extra', 'lessons-plus', 'views', 'app']) {
-  eval(fs.readFileSync('js/' + f + '.js', 'utf8'));
+  let code = fs.readFileSync('js/' + f + '.js', 'utf8');
+  let exports = [];
+  code = code.replace(/^\s*import\s+.*$/gm, '');
+  code = code.replace(/^\s*export\s+(const|let|var|function|class)\s+([a-zA-Z0-9_]+)/gm, (match, p1, p2) => {
+    exports.push(p2);
+    return `${p1} ${p2}`;
+  });
+  code = code.replace(/^\s*export\s*\{([^}]+)\}/gm, (match, p1) => {
+    exports.push(...p1.split(',').map(s => s.trim()));
+    return '';
+  });
+  
+  if (f === 'lessons-extra' || f === 'lessons-plus') code = `const L = global.LESSONS;\nconst S = global.STORE;\n` + code;
+  if (f === 'views') code = `const S = global.STORE;\nconst L = global.LESSONS;\nconst QUIZ = global.QUIZ;\n` + code;
+  if (f === 'app') code = `const V = global.VIEWS;\nconst L = global.LESSONS;\n` + code;
+  
+  const exportAssignments = exports.map(e => `global.${e} = ${e};`).join('\n');
+  eval(`(function() { ${code}\n${exportAssignments} })()`);
 }
+// Attach to window
+global.window.sha256 = global.sha256;
+global.window.STORE = global.STORE;
+global.window.LESSONS = global.LESSONS;
+global.window.QUIZ = global.QUIZ;
+global.window.VIEWS = global.VIEWS;
 
 let failures = 0;
-const check = (name, fn) => { try { fn(); console.log('PASS  ' + name); } catch (e) { failures++; console.error('FAIL  ' + name + ' — ' + e.message); } };
+const check = (name, fn) => { try { fn(); console.log('PASS  ' + name); } catch (e) { failures++; console.error('FAIL  ' + name + ' : ' + e.message); } };
 
 /* ---- 1. SHA-256 NIST vectors ---- */
 const sha256 = window.sha256;

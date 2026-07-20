@@ -1,9 +1,11 @@
 /* ============================================================
-   app.js — router + ambient canvas backdrops (light theme).
+   app.js: router + ambient canvas backdrops (light theme).
    ============================================================ */
-window.APP = (function () {
+import { VIEWS as V } from './views.js';
+import { LESSONS } from './lessons.js';
+
+export const APP = (function () {
   "use strict";
-  const V = window.VIEWS;
 
   const _rmq = matchMedia && matchMedia("(prefers-reduced-motion: reduce)");
   let RM = _rmq && _rmq.matches;
@@ -15,10 +17,10 @@ window.APP = (function () {
     const h = location.hash || "#/";
     const m = h.match(/^#\/lesson\/(.+)$/);
     const c = h.match(/^#\/chapter\/(.+)$/);
-    if (m) { V.lesson(m[1]); const L = window.LESSONS[m[1]]; document.title = (L ? L.title : "Lesson") + " · The Blockchain Course"; }
+    if (m) { V.lesson(m[1]); const L = LESSONS[m[1]]; document.title = (L ? L.title : "Lesson") + " · The Blockchain Course"; }
     else if (c) { V.chapterGate(c[1]); document.title = "Chapter · The Blockchain Course"; }
     else if (h === "#/map") { V.map(); document.title = "The Journey · The Blockchain Course"; }
-    else { V.home(); document.title = "The Blockchain Course — learn blockchain by doing"; }
+    else { V.home(); document.title = "The Blockchain Course: learn blockchain by doing"; }
     // new view: back to the top, and hand focus to the heading for keyboard/AT users
     scrollTo(0, 0);
     const h1 = document.querySelector("#root h1");
@@ -28,7 +30,7 @@ window.APP = (function () {
   }
 
   let triggerConfetti = () => {};
-  /* ambient drifting dots — subtle on a light page */
+  /* ambient drifting dots, subtle on a light page */
   function starfield() {
     const cv = document.getElementById("starfield"); if (!cv) return;
     const ctx = cv.getContext("2d"); let W, H, dpr, dots = [], confetti = [];
@@ -36,7 +38,7 @@ window.APP = (function () {
     const PALETTE = { light: ["98,13,60", "241,162,34"], dark: ["198,59,135", "241,162,34"] };
     let lastW = 0;
     function size() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (W === lastW && dots.length) return; // height-only change (mobile URL bar) — keep the field
+      if (W === lastW && dots.length) return; // height-only change (mobile URL bar), so keep the field
       lastW = W; dots = []; const n = Math.min(90, Math.round(W * H / (W < 640 ? 36000 : 18000))); for (let i = 0; i < n; i++) dots.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.4 + .4, a: Math.random(), tw: Math.random() * .015 + .003, vy: Math.random() * .1 + .02, ci: (Math.random() * 2) | 0 }); }
     function frame() {
       const cols = PALETTE[isDark() ? "dark" : "light"];
@@ -97,7 +99,7 @@ window.APP = (function () {
     document.querySelectorAll(".theme-toggle").forEach(btn => { btn.innerHTML = newTheme === "dark" ? sunSvg : moonSvg; btn.setAttribute("aria-pressed", String(newTheme === "dark")); });
   }
 
-  /* mobile nav: one controller — class state, aria-expanded, scroll lock, Esc */
+  /* mobile nav: one controller for class state, aria-expanded, scroll lock, and Esc */
   function toggleMobileNav(force) {
     const nav = document.getElementById("mobileNav"), burger = document.querySelector(".hamburger");
     if (!nav) return;
@@ -122,3 +124,4 @@ window.APP = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   return { heroCanvas, confetti: () => triggerConfetti(), toggleTheme, toggleMobileNav };
 })();
+window.APP = APP;

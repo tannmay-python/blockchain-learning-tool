@@ -1,7 +1,7 @@
 /* ============================================================
-   store.js — curriculum structure + simple progress (no points).
+   store.js: curriculum structure + simple progress (no points).
    ============================================================ */
-window.STORE = (function () {
+export const STORE = (function () {
   "use strict";
   const LS = "blockcourse_v1";
 
@@ -13,23 +13,23 @@ window.STORE = (function () {
     { id: "crypto", n: "02", title: "Cryptography", sub: "The two tools everything is built from", color: "#f1a222", colorText: "#8a5a00", colorTextDark: "#ffd479", lessons: ["hashing", "keys"],
       intro: "Don't let the word 'cryptography' scare you. The entire system is built on just two simple tools: a digital fingerprint that makes it impossible to tamper with data, and a digital signature that proves you own your money. Once you grasp these two tools, the rest of blockchain is just connecting the dots." },
     { id: "chain", n: "03", title: "Building the chain", sub: "Bundling, mining, and locking the past", color: "#8a2057", colorText: "#8a2057", colorTextDark: "#ea86bb", lessons: ["tx", "block", "merkle", "nonce", "incentives", "chainlink"],
-      intro: "Now we get our hands dirty. You're going to build the machine yourself: packing transactions into a neat bundle, doing the 'work' to seal them, and linking them together so the past can never be erased. You'll see exactly how a blockchain earns its name." },
+      intro: "Now we get our hands dirty. You're going to build the machine yourself. You'll pack transactions together, seal them with 'work', and link them up so the past can never be erased. You'll see exactly how a blockchain earns its name." },
     { id: "consensus", n: "04", title: "The network agrees", sub: "Thousands of strangers, one history", color: "#d2384f", colorText: "#b02540", colorTextDark: "#f2708a", lessons: ["gossip", "sybil", "forks", "attack", "pos"],
-      intro: "Getting one computer to follow the rules is easy. Getting thousands of strangers around the world to agree on the exact same history—without a referee—is the real magic. This chapter explores how the network reaches agreement, handles disagreements, and protects itself from attackers." },
-    { id: "progmoney", n: "05", title: "Programmable money", sub: "Contracts, tokens, and markets made of code", color: "#2e9e6b", colorText: "#1e7350", colorTextDark: "#4ecb92", lessons: ["contracts", "tokens", "amm"],
-      intro: "A secure ledger is just the foundation. Once a network can store data and agree on it, it can run programs — unstoppable ones. This chapter explores what gets built on top: smart contracts, tokens and NFTs, and markets that trade with no seller on the other side." },
+      intro: "Getting one computer to follow the rules is easy. Getting thousands of strangers around the world to agree on the exact same history without a referee is the real magic. This chapter explores how the network reaches agreement, handles disagreements, and stays secure against attackers." },
+    { id: "progmoney", n: "05", title: "Programmable money", sub: "Contracts, tokens, and markets made of code", color: "#2e9e6b", colorText: "#1e7350", colorTextDark: "#4ecb92", lessons: ["contracts", "tokens", "amm", "mev"],
+      intro: "A secure ledger is just the foundation. Once a network can store data and agree on it, it can run unstoppable programs. This chapter explores what gets built on top: smart contracts, tokens and NFTs, and markets that trade with no seller on the other side." },
     { id: "keysworld", n: "06", title: "Your keys, your problem", sub: "Custody, and the ways people lose everything", color: "#b02540", colorText: "#b02540", colorTextDark: "#f2708a", lessons: ["wallets", "safety"],
-      intro: "On a blockchain there is no password reset and no fraud department. A wallet is just a key, and whoever holds the key owns the coins — which makes you both the owner and the single point of failure. This short chapter is about keeping it that way." },
+      intro: "On a blockchain there is no password reset and no fraud department. A wallet is just a key, and whoever holds the key owns the coins. This makes you both the owner and the single point of failure. This short chapter is about keeping it that way." },
     { id: "scaling", n: "07", title: "Scaling, privacy & the state", sub: "Layer 2, zero-knowledge, and public money", color: "#c67c05", colorText: "#8a5a00", colorTextDark: "#f8c977", lessons: ["layer2", "zk", "money"],
-      intro: "A chain everyone verifies is slow and public by design. This chapter covers the engineering that buys the speed back, the cryptography that buys privacy back, and what happens when states pick up the same tools." },
+      intro: "A chain everyone verifies is slow and public by design. This chapter covers the engineering that speeds it up, the cryptography that brings back privacy, and what happens when governments adopt these tools." },
     { id: "history", n: "08", title: "How it went wrong", sub: "The disasters that proved the rules", color: "#9c2a5a", colorText: "#9c2a5a", colorTextDark: "#f28ab5", lessons: ["history"],
       intro: "Mt. Gox, The DAO, Terra, FTX. Every rule this course taught you was written in someone else's losses. One lesson: each disaster, and the exact principle it proved." },
     { id: "capstone", n: "09", title: "The whole machine", sub: "Watch every piece work together", color: "#d98908", colorText: "#8a5a00", colorTextDark: "#f5b955", lessons: ["recap", "coin"],
-      intro: "You've built every piece by hand: the keys, the signatures, the blocks, and the chain. Now, watch them all come together. This final chapter runs the entire machine as one living, breathing system." },
+      intro: "You've built every piece by hand: the keys, the signatures, the blocks, and the chain. Now, watch them all come together. This final chapter runs the entire machine." },
   ];
   const ORDER = WORLDS.flatMap(w => w.lessons);
   /* optional deep-dive lessons: on the map, never on the critical path */
-  const DEEP = new Set(["merkle", "zk"]);
+  const DEEP = new Set(["merkle", "zk", "mev"]);
   const worldOf = {}; WORLDS.forEach(w => w.lessons.forEach(id => worldOf[id] = w));
 
   /* lesson renames across versions: old id -> new id (progress survives) */

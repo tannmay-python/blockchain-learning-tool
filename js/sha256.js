@@ -1,6 +1,5 @@
-/* Pure-JS SHA-256 — works everywhere (file://, http, https) with no dependencies.
+/* Pure-JS SHA-256 - works everywhere (file://, http, https) with no dependencies.
    Returns a lowercase hex string. Based on the FIPS 180-4 spec. */
-(function (global) {
   "use strict";
 
   function rrot(x, n) { return (x >>> n) | (x << (32 - n)); }
@@ -81,5 +80,4 @@
     return bits;
   };
 
-  global.sha256 = sha256;
-})(window);
+  export { sha256 };

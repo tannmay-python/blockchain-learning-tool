@@ -1,10 +1,14 @@
 /* ============================================================
-   views.js — Home, the Journey map, and Lesson explorables.
-   No points, no levels — just clean progress + a lot to play with.
+   views.js: Home, the Journey map, and Lesson explorables.
+   No points, no levels. Just clean progress and a lot to play with.
    ============================================================ */
-window.VIEWS = (function () {
+import { STORE as S } from './store.js';
+import { LESSONS as L } from './lessons.js';
+import { QUIZ } from './lessons-extra.js';
+import './lessons-plus.js'; // Ensure lessons-plus mutations happen
+
+export const VIEWS = (function () {
   "use strict";
-  const S = window.STORE, L = window.LESSONS;
   const root = () => document.getElementById("root");
   const go = (h) => { location.hash = h; };
   const LOGO = `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" stroke="#fff" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.6" stroke="#fff" stroke-width="1.7"/><path d="M10 6.5h2.5A1.5 1.5 0 0 1 14 8v6" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>`;
@@ -96,7 +100,7 @@ window.VIEWS = (function () {
         ${done ? '<div class="check" aria-hidden="true">✓</div>' : ""}
         <div class="ic" style="background:${w.color}1c">${l.icon}</div>
         <div class="lt">${l.title}</div><div class="lo">${l.oneliner}</div>
-        ${deep ? '<div class="lx">◇ deep dive — optional</div>' : isCur ? '<div class="lx">start here</div>' : ""}</a>`;
+        ${deep ? '<div class="lx">◇ optional deep dive</div>' : isCur ? '<div class="lx">start here</div>' : ""}</a>`;
     }).join("");
     return `<div class="world-block"><a class="world-rail" href="#/chapter/${w.id}" title="Go to chapter intro"><span class="wdot" style="background:${w.color}"></span><span class="wt">${w.title}</span><span class="ws">${w.sub}</span><span class="wprog">${S.worldDone(w)}/${w.lessons.length}</span>${S.gatePassed(w.id) ? '<span class="wbadge" title="Exit gate passed">✦</span>' : ""}<span class="wgate-arr" style="margin-left:auto;color:var(--line-2);font-size:18px">→</span></a><div class="nodes">${nodes}</div></div>`;
   }
@@ -118,8 +122,8 @@ window.VIEWS = (function () {
       <div class="explorable">
         <div class="lesson-hero"><div class="icbig" style="background:${w.color}1c;${wv(w)}">${l.icon}</div><h1>${l.title}</h1><p>${l.hero}</p></div>
         <div id="beats"></div>
-        ${l.deeper ? `<details class="deeper"><summary>Go deeper — the technical detail</summary><div class="dbody">${l.deeper}</div></details>` : ""}
-        ${l.bridge ? `<div class="bridge"><span class="bridge-lab" style="${wv(w)}">▸ where this leads</span><p class="bridge-txt">${l.bridge}</p>${next ? `<div class="bridge-next">Next up — <b>${L[next].title}</b></div>` : ""}</div>` : ""}
+        ${l.deeper ? `<details class="deeper"><summary>Go deeper: the technical detail</summary><div class="dbody">${l.deeper}</div></details>` : ""}
+        ${l.bridge ? `<div class="bridge"><span class="bridge-lab" style="${wv(w)}">▸ where this leads</span><p class="bridge-txt">${l.bridge}</p>${next ? `<div class="bridge-next">Next up: <b>${L[next].title}</b></div>` : ""}</div>` : ""}
         <div class="lesson-end">
           <div class="btn-row" style="justify-content:center">${prev ? `<button class="btn ghost" data-go="#/lesson/${prev}">← ${L[prev].title}</button>` : ""}${next ? `<button class="btn primary" id="endNext">${L[next].title} →</button>` : `<button class="btn primary" data-go="#/map">Back to the map</button>`}</div>
           <div class="kbd-hint">tip: <kbd>←</kbd> <kbd>→</kbd> move between lessons</div>
@@ -134,9 +138,9 @@ window.VIEWS = (function () {
       beatsEl.appendChild(beat);
       try { b.build(beat.querySelector(".beat-viz")); } catch (e) { console.error("beat", id, i, e); beat.querySelector(".beat-viz").innerHTML = `<div class="sig-state bad">This demo hit an error: ${e.message}</div>`; }
     });
-    // demo outputs are silent to AT otherwise — announce updates politely
+    // demo outputs are silent to AT otherwise. Announce updates politely.
     beatsEl.querySelectorAll(".sig-state, .verdict, .linkmsg, .log, .hashout").forEach(n => { n.setAttribute("aria-live", "polite"); });
-    // silently mark done when the learner moves on — or reaches the end of the page
+    // silently mark done when the learner moves on or reaches the end of the page
     const markDone = () => { if (!S.isDone(id)) { S.setDone(id, true); document.querySelectorAll(".progmini").forEach(p => { p.outerHTML = progMini(); }); document.querySelectorAll(".progmini .bar").forEach(b => { b.classList.add("pulse"); setTimeout(() => b.classList.remove("pulse"), 700); }); } };
     // reveal on scroll; reaching the lesson-end block also counts as completing the lesson
     const endEl = root().querySelector(".lesson-end");
@@ -164,7 +168,7 @@ window.VIEWS = (function () {
     teardown();
     const w = S.WORLDS.find(x => x.id === wId);
     if (!w) return go("#/map");
-    const demos = w.lessons.reduce((a, id) => a + (window.LESSONS[id] ? window.LESSONS[id].beats.length : 0), 0);
+    const demos = w.lessons.reduce((a, id) => a + (L[id] ? L[id].beats.length : 0), 0);
     const core = w.lessons.filter(id => !S.DEEP.has(id));
     const passed = S.gatePassed(w.id);
     let html = nav("");
@@ -178,7 +182,7 @@ window.VIEWS = (function () {
       <div class="cg-modules">`;
     let num = 0;
     w.lessons.forEach((id) => {
-      const l = window.LESSONS[id];
+      const l = L[id];
       if (!l) return;
       const done = S.isDone(id), deep = S.DEEP.has(id);
       if (!deep) num++;
@@ -196,11 +200,11 @@ window.VIEWS = (function () {
       <div class="cg-start">
         <button class="btn primary" style="font-size:16px;padding:14px 32px;background:${w.color};border-color:transparent;color:#fff" data-go="#/lesson/${w.lessons[0]}">Enter Chapter →</button>
       </div>
-      ${gateQs ? `<div class="cg-exit"><div class="cg-exit-h">Exit gate${passed ? " — passed ✦" : ""}</div><p class="cg-exit-p">${passed ? "Badge earned. Retake it any time — the questions reach back into earlier chapters on purpose." : "Answer these — including the reach-back questions from earlier chapters — to earn the chapter badge. Lessons tick themselves; the badge you have to win."}</p><div id="gateQuiz"></div></div>` : ""}
+      ${gateQs ? `<div class="cg-exit"><div class="cg-exit-h">Exit gate${passed ? " (passed) ✦" : ""}</div><p class="cg-exit-p">${passed ? "Badge earned. Retake it any time. The questions reach back into earlier chapters on purpose." : "Answer these questions, including the reach-backs from earlier chapters, to earn the chapter badge. Lessons tick themselves, but you have to earn the badge."}</p><div id="gateQuiz"></div></div>` : ""}
     </div>`;
     root().innerHTML = html;
     wireGo();
-    if (gateQs && window.QUIZ) window.QUIZ(document.getElementById("gateQuiz"), gateQs, { tag: "Exit gate", onDone: (score, total) => {
+    if (gateQs && QUIZ) QUIZ(document.getElementById("gateQuiz"), gateQs, { tag: "Exit gate", onDone: (score, total) => {
       if (score >= total - (total > 2 ? 1 : 0) && !S.gatePassed(w.id)) { S.setGate(w.id); }
     } });
   }

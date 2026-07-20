@@ -1,12 +1,15 @@
 /* ============================================================
-   lessons-plus.js — the course upgrade pass. Replaces the driest
+   lessons-plus.js: the course upgrade pass. Replaces the driest
    interactives with living, animated ones and sharpens copy.
    Loads after lessons.js + lessons-extra.js; mutates window.LESSONS
    in place. Strong existing interactives are left untouched.
    ============================================================ */
+import { LESSONS as L } from './lessons.js';
+import { sha256 } from './sha256.js';
+import './lessons-extra.js'; // Ensure extra runs first
+
 (function () {
   "use strict";
-  const L = window.LESSONS;
   if (!L) return;
   const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
   const short = (s, a = 8, b = 6) => s && s.length > a + b + 1 ? s.slice(0, a) + "…" + s.slice(-b) : (s || "");
@@ -18,11 +21,11 @@
   const setDeeper = (id, html) => { if (L[id]) L[id].deeper = html; };
 
   /* ============================================================
-     WHY — beat 3: a live distributed network shrugging off a freeze
+     WHY, beat 3: a live distributed network shrugging off a freeze
      ============================================================ */
   setBeat("why", 2, {
     h: "A blockchain has no keeper to lean on",
-    cap: "The same balance now lives on every computer at once. Try to freeze it, or knock computers offline one by one — the record survives as long as <b>anyone</b> is still standing.",
+    cap: "The same balance now lives on every computer at once. Try freezing it, or knocking computers offline one by one. The record survives as long as <b>anyone</b> is still standing.",
     build(s) {
       const N = 12, wrap = el("div", "fcard");
       wrap.innerHTML = `<div class="flabel"><span class="pin"></span>your balance, replicated across the network</div>
@@ -35,46 +38,46 @@
         wrap.querySelector("#ng").innerHTML = Array.from({ length: N }, (_, i) => {
           const off = dead.has(i);
           return `<div class="ncell${off ? " off" : ""}${flashFreeze && !off ? " shield" : ""}">
-            <div class="nc-ic">🖥️</div><div class="nc-bal">${off ? "—" : "20"}</div></div>`;
+            <div class="nc-ic">🖥️</div><div class="nc-bal">${off ? "-" : "20"}</div></div>`;
         }).join("");
       }
       wrap.querySelector("#freeze").onclick = () => {
         draw(true); setTimeout(() => draw(false), 650);
         const alive = N - dead.size;
         wrap.querySelector("#msg").className = "sig-state ok";
-        wrap.querySelector("#msg").innerHTML = `A freeze order hits the network — and bounces. There is no central switch; all ${alive} live copies simply ignore it and agree the balance is still <b>20</b>.`;
+        wrap.querySelector("#msg").innerHTML = `A freeze order hits the network, but it bounces right off. With no central switch, all ${alive} live copies simply ignore the command. They all agree the balance is still <b>20</b>.`;
       };
       wrap.querySelector("#kill").onclick = () => {
         const live = [...Array(N).keys()].filter(i => !dead.has(i));
-        if (live.length <= 1) { wrap.querySelector("#msg").className = "sig-state bad"; wrap.querySelector("#msg").innerHTML = `Only one computer left — take it down too and the ledger is finally gone. But knocking out a whole <b>global</b> network at once is the part that is practically impossible.`; return; }
+        if (live.length <= 1) { wrap.querySelector("#msg").className = "sig-state bad"; wrap.querySelector("#msg").innerHTML = `Only one computer left. Take it down too and the ledger is finally gone. But knocking out a whole <b>global</b> network at once is the part that is practically impossible.`; return; }
         dead.add(live[(Math.random() * live.length) | 0]); draw();
         wrap.querySelector("#msg").className = "sig-state ok";
-        wrap.querySelector("#msg").innerHTML = `${dead.size} down, <b>${N - dead.size} still holding the record</b>. Every survivor has the full history — so nothing was lost. That redundancy is the whole point.`;
+        wrap.querySelector("#msg").innerHTML = `${dead.size} down, <b>${N - dead.size} still holding the record</b>. Every survivor has the full history, meaning nothing is lost. That redundancy is the whole point.`;
       };
       wrap.querySelector("#rst").onclick = () => { dead = new Set(); draw(); wrap.querySelector("#msg").className = "sig-state"; wrap.querySelector("#msg").innerHTML = `All ${N} computers hold the same balance: <b>20 coins</b>. No one is in charge.`; };
       draw();
     }
   });
   setBeat("why", 1, {
-    cap: "Everything sits with one party. Press either button — a frozen account or a dead server — and your money is suddenly out of reach, with no one to appeal to.",
+    cap: "Everything sits with one party. Press either button (a frozen account or a dead server) and your money is suddenly out of reach, with no one to appeal to.",
   });
-  setHero("why", "Why go to all this trouble? Because handing your records to a single keeper has real costs — and sometimes, when you need it most, you simply can't.");
+  setHero("why", "Why go to all this trouble? Because handing your records to a single keeper has real costs. Sometimes, when you need your funds the most, you simply cannot access them.");
 
   /* ============================================================
-     TOUR — replace the click-through with an ANIMATED payment
+     TOUR: replace the click-through with an ANIMATED payment
      pipeline: a coin physically travels five stations, live.
      ============================================================ */
-  setHero("tour", "Before any of the details, watch the whole machine move. Follow one payment — a real one, signed and hashed in your browser — from your fingertips to the permanent record.");
+  setHero("tour", "Before any of the details, watch the whole machine move. Follow one payment (a real one, signed and hashed in your browser) from your fingertips to the permanent record.");
   setBeat("tour", 0, {
     h: "Watch a payment travel the whole machine",
-    cap: "Press play. A single coin moves through all five stations that make a blockchain work. Each one is its own lesson later — this is the map, alive.",
+    cap: "Press play. A single coin moves through all five stations that make a blockchain work. Each one is its own lesson later. Think of this as the living map.",
     build(s) {
       const STATIONS = [
         { ic: "✍️", t: "Sign", d: "You authorise it with your secret key. Only you can produce this signature; anyone can check it." },
         { ic: "📥", t: "Broadcast", d: "The signed payment is gossiped to the network and waits in a shared pool with everyone else's." },
-        { ic: "⛏️", t: "Mine", d: "A miner scoops it into a block and burns real work — hashing until the seal locks." },
+        { ic: "⛏️", t: "Mine", d: "A miner scoops it into a block and burns real work, hashing until the seal locks." },
         { ic: "⛓️", t: "Chain", d: "The block points back at the previous one and snaps onto the end. Your payment is now on the record." },
-        { ic: "🌍", t: "Settle", d: "Every computer adds the same block. Stack a few more and it is final — no take-backs." },
+        { ic: "🌍", t: "Settle", d: "Every computer adds the same block. Stack a few more and it is final. There are no take-backs." },
       ];
       const sig = window.sha256 ? sha256("You→Bob:5·" + Date.now()) : "a1b2c3d4e5f6";
       const details = [
@@ -109,7 +112,7 @@
       function play() {
         if (playing) return; if (at >= STATIONS.length - 1) reset();
         playing = true; wrap.querySelector("#pplay").textContent = "● sending…";
-        const step = () => { if (at < STATIONS.length - 1) { goto(at + 1); timer = setTimeout(step, 1500); } else { playing = false; wrap.querySelector("#pplay").textContent = "▶ Send again"; cap.innerHTML += ` <b style="color:var(--green)">Done — Bob has been paid, permanently.</b>`; } };
+        const step = () => { if (at < STATIONS.length - 1) { goto(at + 1); timer = setTimeout(step, 1500); } else { playing = false; wrap.querySelector("#pplay").textContent = "▶ Send again"; cap.innerHTML += ` <b style="color:var(--green)">Done. Bob has been paid, permanently.</b>`; } };
         step();
       }
       function reset() { clearTimeout(timer); playing = false; at = -1; place(-0.5); stats.forEach(s2 => s2.classList.remove("on", "live")); cap.innerHTML = `<b>Ready.</b> Press play to send 5 coins from you to Bob.`; wrap.querySelector("#pplay").textContent = "▶ Send the payment"; }
@@ -121,19 +124,19 @@
   });
 
   /* ============================================================
-     TOKENS — beat 1: coins physically fly between holders
+     TOKENS, beat 1: coins physically fly between holders
      ============================================================ */
-  setHero("tokens", "Once a chain can run code, it can track far more than one coin. A token is just a row in a contract's ledger — and an NFT is a row that happens to be one of a kind.");
+  setHero("tokens", "Once a chain can run code, it can track far more than one coin. A token is just a row in a contract's ledger. An NFT is simply a row that happens to be one of a kind.");
   setBeat("tokens", 0, {
     h: "Mint tokens, then watch them move",
-    cap: "A token balance is only a number the contract keeps. Mint some to yourself, then send a few — the coins <b>fly</b> between accounts, but all that really changes is the contract's bookkeeping.",
+    cap: "A token balance is only a number the contract keeps. Mint some to yourself, then send a few. The coins <b>fly</b> between accounts, but all that really changes is the contract's bookkeeping.",
     build(s) {
       const wrap = el("div", "fcard");
       let bal = { You: 0, Bob: 0, Carol: 0 };
       wrap.innerHTML = `<div class="flabel"><span class="pin"></span>ACME token · one contract, three accounts</div>
         <div class="tokcols" id="tc"></div>
         <div class="btn-row" style="justify-content:center;margin-top:16px"><button class="btn primary" id="mint">Mint 10 to you</button><button class="btn" id="sb" disabled>Send 4 → Bob</button><button class="btn" id="sc" disabled>Send 3 → Carol</button><button class="btn" id="rst">Reset</button></div>
-        <div class="note" id="msg" style="text-align:center;margin-top:10px">Minting creates new tokens from nothing — exactly what a token contract's <code>mint()</code> does.</div>`;
+        <div class="note" id="msg" style="text-align:center;margin-top:10px">Minting creates new tokens from nothing. This is exactly what a token contract's <code>mint()</code> does.</div>`;
       s.appendChild(wrap);
       const who = ["You", "Bob", "Carol"], ic = { You: "🧑", Bob: "🧔", Carol: "👩" };
       function draw(flash) {
@@ -162,24 +165,24 @@
         if (bal.You < n) return;
         bal.You -= n;
         fly("You", to, n, () => { bal[to] += n; draw({ You: "dn", [to]: "up" }); setTimeout(() => draw(), 500);
-          wrap.querySelector("#msg").innerHTML = `The contract just moved <b>${n}</b> from You to ${to}. No coin object travelled — one number went down, another went up.`; });
+          wrap.querySelector("#msg").innerHTML = `The contract just moved <b>${n}</b> from You to ${to}. No coin object travelled. One number went down, another went up.`; });
         draw();
       }
-      wrap.querySelector("#mint").onclick = () => { bal.You += 10; draw({ You: "up" }); setTimeout(() => draw(), 500); wrap.querySelector("#msg").innerHTML = `Minted <b>10</b> new ACME to your account. Supply just grew — the contract said so, and everyone believes it.`; };
+      wrap.querySelector("#mint").onclick = () => { bal.You += 10; draw({ You: "up" }); setTimeout(() => draw(), 500); wrap.querySelector("#msg").innerHTML = `Minted <b>10</b> new ACME to your account. Supply just grew. The contract said so, and everyone believes it.`; };
       wrap.querySelector("#sb").onclick = () => send("Bob", 4);
       wrap.querySelector("#sc").onclick = () => send("Carol", 3);
-      wrap.querySelector("#rst").onclick = () => { bal = { You: 0, Bob: 0, Carol: 0 }; draw(); wrap.querySelector("#msg").innerHTML = `Minting creates new tokens from nothing — exactly what a token contract's <code>mint()</code> does.`; };
+      wrap.querySelector("#rst").onclick = () => { bal = { You: 0, Bob: 0, Carol: 0 }; draw(); wrap.querySelector("#msg").innerHTML = `Minting creates new tokens from nothing. This is exactly what a token contract's <code>mint()</code> does.`; };
       draw();
     }
   });
 
   /* ============================================================
-     LAYER 2 — beat 2: thousands of tx dots funnel into one proof
+     LAYER 2, beat 2: thousands of tx dots funnel into one proof
      ============================================================ */
-  setHero("layer2", "A secure, decentralised chain is slow <i>on purpose</i> — every computer re-checks every transaction. Layer 2 buys the speed back without giving that up.");
+  setHero("layer2", "A secure, decentralised chain is slow <i>on purpose</i>. Every computer re-checks every transaction. Layer 2 buys the speed back without giving that up.");
   setBeat("layer2", 1, {
     h: "Roll thousands into one",
-    cap: "A rollup runs transactions off to the side, then posts a single tiny <b>proof</b> back to the secure main chain. Pile some up and roll them — watch a swarm collapse into one block.",
+    cap: "A rollup runs transactions off to the side, then posts a single tiny <b>proof</b> back to the secure main chain. Pile some up and roll them to watch a swarm collapse into one block.",
     build(s) {
       const wrap = el("div", "fcard");
       let pending = 0, settled = 0, rolling = false;
@@ -217,12 +220,12 @@
   });
 
   /* ============================================================
-     WALLETS — beat 1: the seed→keys cascade, animated
+     WALLETS, beat 1: the seed→keys cascade, animated
      ============================================================ */
-  setHero("wallets", "A wallet does not hold coins. It holds <i>keys</i>. The coins are entries on the chain — your key is simply what proves they are yours.");
+  setHero("wallets", "A wallet does not hold coins. It holds <i>keys</i>. The coins are entries on the chain, and your key is simply what proves they are yours.");
   setBeat("wallets", 0, {
     h: "One phrase unfolds into every key you own",
-    cap: "From a single secret phrase, a wallet <b>derives</b> a whole tree of keys and addresses — deterministically, the same every time. Generate one and watch it cascade down.",
+    cap: "From a single secret phrase, a wallet <b>derives</b> a whole tree of keys and addresses deterministically. It works the same every time. Generate one and watch it cascade down.",
     build(s) {
       const wrap = el("div", "fcard");
       const words = ["ocean", "maple", "silver", "tiger", "amber", "ginger", "violet", "harbor", "cedar", "ribbon", "quartz", "meadow"];
@@ -248,7 +251,7 @@
           row.classList.add("casc-in");
         });
         const m = wrap.querySelector("#wmsg");
-        if (last && last.seed === seed) m.innerHTML = `<span style="color:var(--green)">Identical phrase → identical addresses, every time.</span> Nothing is stored anywhere — the phrase <b>is</b> the wallet. That is why it restores everything, and why anyone who reads it owns everything.`;
+        if (last && last.seed === seed) m.innerHTML = `<span style="color:var(--green)">Identical phrase → identical addresses, every time.</span> Nothing is stored anywhere. The phrase <b>is</b> the wallet. That is why it restores everything, and why anyone who reads it owns everything.`;
         else if (last && last.seed !== seed) { const diff = [...seed].filter((ch, i2) => ch !== last.seed[i2]).length + Math.abs(seed.length - (last.seed || "").length); m.innerHTML = diff <= 2 ? `One character different → <span style="color:var(--red)">a completely unrelated wallet</span> (compare the addresses). There is no "close": mistype one word of a real phrase and you restore someone else's empty universe.` : `A different phrase is simply a different wallet. Try typing the <b>same</b> phrase twice.`; }
         last = { seed, addrs };
       };
@@ -262,17 +265,17 @@
      copy-only polish across the remaining lessons
      ============================================================ */
   setHero("ledger", "Money isn't gold, and it isn't paper. It's a <i>list</i> of who owns what. Get that, and every other piece of this course clicks into place.");
-  setHero("doublespend", "Physical cash can't be in two places at once. A digital file copies perfectly and endlessly. That gap — trivial to state, brutal to close — is the problem blockchains exist to solve.");
+  setHero("doublespend", "Physical cash can't be in two places at once. A digital file copies perfectly and endlessly. That gap is trivial to state but brutal to close. It is the problem blockchains exist to solve.");
   setHero("whatis", "Forget the buzzwords. A blockchain is a list of blocks, copied across many computers, that nobody can quietly rewrite. Let's build that picture from nothing.");
-  setHero("hashing", "Feed in anything — a word, a novel, an entire hard drive — and get back one short fingerprint. This single tool seals records, links blocks, and powers all of mining.");
+  setHero("hashing", "Feed in anything (a word, a novel, an entire hard drive) and get back one short fingerprint. This single tool seals records, links blocks, and powers all of mining.");
   setHero("keys", "No usernames. No passwords. A single secret number is the only thing standing between you and everything you own on a chain.");
-  setHero("contracts", "Once a chain can store data and agree on it, it can run <i>programs</i> — unstoppable ones, with no off switch and no one to call.");
-  setHero("money", "The very same technology can free money from the state, or hand the state perfect control over it. Nothing about the tech decides which — only who holds the keys.");
-  setHero("pos", "Same defence, radically different cost. Instead of burning electricity, validators put their own money on the line — and lose it if they cheat.");
+  setHero("contracts", "Once a chain can store data and agree on it, it can run <i>programs</i>. These are unstoppable, with no off switch and no one to call.");
+  setHero("money", "The very same technology can free money from the state, or hand the state perfect control over it. Nothing about the tech decides which. It only matters who holds the keys.");
+  setHero("pos", "Same defence, radically different cost. Instead of burning electricity, validators put their own money on the line and lose it if they cheat.");
   setHero("zk", "Prove you know a secret without revealing the secret itself. It sounds impossible; it's real, it's provable, and it's quietly reshaping privacy and scaling.");
 
   /* ============================================================
-     POS — beat 2: a live, animated energy comparison
+     POS, beat 2: a live, animated energy comparison
      ============================================================ */
   setBeat("pos", 1, {
     h: "And it sips energy instead of guzzling it",
@@ -291,14 +294,14 @@
   });
 
   /* ============================================================
-     copy polish — sharpen the flattest captions
+     copy polish: sharpen the flattest captions
      ============================================================ */
   /* ============================================================
-     DOUBLESPEND — beat 1: a coin that visibly clones to two people
+     DOUBLESPEND, beat 1: a coin that visibly clones to two people
      ============================================================ */
   setBeat("doublespend", 0, {
-    h: "A coin is a file — and files copy perfectly",
-    cap: "Spend the very same coin to two people at once. Two flawless copies fly out; both look completely real. Nothing physical stops you — so what <i>could</i>?",
+    h: "A coin is a file, and files copy perfectly",
+    cap: "Spend the very same coin to two people at once. Two flawless copies fly out; both look completely real. Nothing physical stops you. So what <i>could</i>?",
     build(s) {
       const wrap = el("div", "fcard");
       wrap.innerHTML = `<div class="dsp">
@@ -309,7 +312,7 @@
           </div>
         </div>
         <div class="btn-row" style="justify-content:center;margin-top:6px"><button class="btn danger" id="dcopy">Spend it to both at once</button><button class="btn" id="drst">Reset</button></div>
-        <div class="note" id="dmsg" style="text-align:center;margin-top:12px">One coin, one owner — for now. What happens if you send it to two people?</div>`;
+        <div class="note" id="dmsg" style="text-align:center;margin-top:12px">One coin, one owner (for now). What happens if you send it to two people?</div>`;
       s.appendChild(wrap);
       let spent = false;
       function fly(destId, cb) {
@@ -330,30 +333,30 @@
         fly("dtc", () => { wrap.querySelector("#dgc").innerHTML = `<span style="color:var(--green)">got ◉ · valid ✓</span>`; wrap.querySelector("#dtc").classList.add("has"); });
         setTimeout(() => { wrap.querySelector("#dmsg").innerHTML = `<span style="color:var(--red)">You just spent one coin twice.</span> Both copies are byte-for-byte identical and both signatures check out. With no agreed <b>order</b>, Bob and Carol are each convinced they were paid.`; }, RM ? 0 : 640);
       };
-      wrap.querySelector("#drst").onclick = () => { spent = false; wrap.querySelector("#dsrc").classList.remove("split"); ["dgb", "dgc"].forEach(id => wrap.querySelector("#" + id).textContent = "waiting…"); ["dtb", "dtc"].forEach(id => wrap.querySelector("#" + id).classList.remove("has")); wrap.querySelector("#dmsg").innerHTML = `One coin, one owner — for now. What happens if you send it to two people?`; };
+      wrap.querySelector("#drst").onclick = () => { spent = false; wrap.querySelector("#dsrc").classList.remove("split"); ["dgb", "dgc"].forEach(id => wrap.querySelector("#" + id).textContent = "waiting…"); ["dtb", "dtc"].forEach(id => wrap.querySelector("#" + id).classList.remove("has")); wrap.querySelector("#dmsg").innerHTML = `One coin, one owner (for now). What happens if you send it to two people?`; };
     }
   });
   setBeat("forks", 1, {
-    cap: "Each new block stacked on top of yours makes undoing it exponentially harder. Stack a few and watch the chance of reversal fall off a cliff — this is why merchants ‘wait for confirmations’.",
+    cap: "Each new block stacked on top of yours makes undoing it exponentially harder. Stack a few and watch the chance of reversal fall off a cliff. This is why merchants ‘wait for confirmations’.",
   });
   setBeat("contracts", 1, {
-    cap: "A deployed contract can't be patched, so a single flaw is a vault with a hole and no plumber. Trigger the bug and watch the funds drain — no admin, no pause button, no undo.",
+    cap: "A deployed contract can't be patched, so a single flaw is a vault with a hole and no plumber. Trigger the bug and watch the funds drain. There is no admin, no pause button, and no undo.",
   });
   setBeat("zk", 1, {
-    cap: "That one move — prove something is true while revealing nothing else — quietly unlocks three enormous things.",
+    cap: "That one move (prove something is true while revealing nothing else) quietly unlocks three enormous things.",
   });
   setBeat("money", 1, {
-    cap: "A stablecoin is engineered to stay worth exactly one dollar. There are three ways to pull that off — and they are nowhere near equally safe.",
+    cap: "A stablecoin is engineered to stay worth exactly one dollar. There are three ways to pull that off, and they are nowhere near equally safe.",
   });
 
   /* ============================================================
-     LEDGER — beat 1: the first interactive. Coins fly, but the
-     lesson is that nothing physical moves — only the record.
+     LEDGER, beat 1: the first interactive. Coins fly, but the
+     lesson is that nothing physical moves, only the record.
      ============================================================ */
   setHero("ledger", "Money isn't gold, and it isn't paper. It's a <i>list</i> of who owns what. Get that one idea and every other piece of this course clicks into place.");
   setBeat("ledger", 0, {
     h: "Money is just a list of balances",
-    cap: "Press send. A coin appears to fly between people — but watch closely. Nothing physical moves: one number drops, another rises. That list <b>is</b> the money.",
+    cap: "Press send. A coin appears to fly between people, but watch closely. Nothing physical moves: one number drops, another rises. That list <b>is</b> the money.",
     build(s) {
       const START = { Alice: 12, Bob: 7, You: 5 }, ic = { Alice: "👩", Bob: "🧔", You: "🧑" }, who = ["Alice", "Bob", "You"];
       let bal = { ...START };
@@ -381,10 +384,10 @@
         setTimeout(done, 430);
       }
       function pay(from, to, n) {
-        if (bal[from] < n) { wrap.querySelector("#msg").innerHTML = `${from} only has ${bal[from]} — can't send ${n}. The list won't let you spend what you don't have.`; return; }
+        if (bal[from] < n) { wrap.querySelector("#msg").innerHTML = `${from} only has ${bal[from]} and can't send ${n}. The list won't let you spend what you don't have.`; return; }
         bal[from] -= n; draw({ [from]: "dn" });
         fly(from, to, n, () => { bal[to] += n; draw({ [from]: "dn", [to]: "up" }); setTimeout(() => draw(), 620);
-          wrap.querySelector("#msg").innerHTML = `${from} → ${to}, ${n} coins. <b>No coin object travelled</b> — the ledger simply now reads ${from}: ${bal[from]}, ${to}: ${bal[to]}.`; });
+          wrap.querySelector("#msg").innerHTML = `${from} → ${to}, ${n} coins. <b>No coin object travelled</b>. The ledger simply now reads ${from}: ${bal[from]}, ${to}: ${bal[to]}.`; });
       }
       wrap.querySelector("#ab").onclick = () => pay("Alice", "Bob", 3);
       wrap.querySelector("#by").onclick = () => pay("Bob", "You", 2);
@@ -394,11 +397,11 @@
   });
 
   /* ============================================================
-     DOUBLESPEND — beat 2: ordering resolves the conflict, live
+     DOUBLESPEND, beat 2: ordering resolves the conflict, live
      ============================================================ */
   setBeat("doublespend", 1, {
     h: "The fix: everyone agrees on the order",
-    cap: "Both payments are validly signed — cryptography proves <b>who</b>, never <b>when</b>. Broadcast both, then let the network settle on one order. The first one in wins; the second is rejected as a double-spend.",
+    cap: "Both payments are validly signed. Cryptography proves <b>who</b>, never <b>when</b>. Broadcast both, then let the network settle on one order. The first one in wins; the second is rejected as a double-spend.",
     build(s) {
       const wrap = el("div", "fcard");
       wrap.innerHTML = `<div class="dord">
@@ -415,8 +418,8 @@
         t1.classList.add("settling"); t2.classList.add("settling");
         setTimeout(() => {
           t1.classList.remove("settling"); t2.classList.remove("settling");
-          t1.classList.add("win"); wrap.querySelector("#ds1").innerHTML = `into the block first — confirmed ✓`;
-          t2.classList.add("lose"); wrap.querySelector("#ds2").innerHTML = `coin already spent — rejected ✕`;
+          t1.classList.add("win"); wrap.querySelector("#ds1").innerHTML = `into the block first: confirmed ✓`;
+          t2.classList.add("lose"); wrap.querySelector("#ds2").innerHTML = `coin already spent: rejected ✕`;
           wrap.querySelector("#dm").innerHTML = `The network agreed tx&nbsp;#1 came first, so it is final. tx&nbsp;#2 tries to spend a coin that's already gone, and every node rejects it. <b>Agreeing on an order is exactly what kills the double-spend.</b>`;
         }, RM ? 0 : 720);
       };
@@ -425,10 +428,10 @@
   });
 
   /* ============================================================
-     WHATIS — beat 1: the block fingerprint churns on every change
+     WHATIS, beat 1: the block fingerprint churns on every change
      ============================================================ */
   setBeat("whatis", 0, {
-    cap: "Start with one <b>block</b> — a box holding a list of records, like a page in a notebook. Add a record and watch the fingerprint at the bottom <b>rescramble completely</b>: any change, however small, produces a brand-new seal.",
+    cap: "Start with one <b>block</b>. It is a box holding a list of records, like a page in a notebook. Add a record and watch the fingerprint at the bottom <b>rescramble completely</b>. Any change, however small, produces a brand-new seal.",
     build(s) {
       const recs = ["Alice → Bob: 5 coins", "Carol → Dan: 2 coins", "Eve → Finn: 8 coins", "Gail → Hank: 1 coin", "Ivy → Jo: 3 coins"];
       let list = recs.slice(0, 2), i = 2, raf;
@@ -450,11 +453,11 @@
   });
 
   /* ============================================================
-     FORKS — beat 1: the chain visibly splits, then one branch wins
+     FORKS, beat 1: the chain visibly splits, then one branch wins
      ============================================================ */
   setBeat("forks", 0, {
-    h: "Two winners at once — longest chain breaks the tie",
-    cap: "Two miners seal block #4 at the same instant and the chain <b>splits</b>. There's no referee. Whichever branch the <b>next</b> block extends becomes real; the other is abandoned — <b>orphaned</b> — and its transactions slide back into the pool.",
+    h: "Two winners at once: longest chain breaks the tie",
+    cap: "Two miners seal block #4 at the same instant and the chain <b>splits</b>. There's no referee. Whichever branch the <b>next</b> block extends becomes real. The other is abandoned (<b>orphaned</b>) and its transactions slide back into the pool.",
     build(s) {
       const wrap = el("div", "");
       wrap.innerHTML = `<div class="frk" id="frk"></div><div class="btn-row" id="fkc" style="justify-content:center;margin-top:6px"></div><div class="note" id="fmsg" style="text-align:center;margin-top:12px">A healthy chain, growing one block at a time.</div>`;
@@ -472,26 +475,26 @@
           stage.innerHTML = `<div class="frk-line">${blk("2", "ok")}${arm()}${blk("3", "ok")}${arm()}<div class="frk-split"><div class="frk-line">${blk("4a ★", aCls)}${aExt}</div><div class="frk-line">${blk("4b", bCls)}${bExt}</div></div></div>`;
         }
         ctl.innerHTML = "";
-        if (state === "base") { const b = el("button", "btn primary", "Two miners find #4 at once"); b.onclick = () => { state = "fork"; msg.innerHTML = `Both #4a and #4b are valid, and the network is <b>split</b> — some nodes heard one first, some the other.`; render(); }; ctl.appendChild(b); }
+        if (state === "base") { const b = el("button", "btn primary", "Two miners find #4 at once"); b.onclick = () => { state = "fork"; msg.innerHTML = `Both #4a and #4b are valid, and the network is <b>split</b>. Some nodes heard one first, some the other.`; render(); }; ctl.appendChild(b); }
         else if (state === "fork") { const a = el("button", "btn", "Next block extends #4a"); a.onclick = () => pick("a"); const b = el("button", "btn", "Next block extends #4b"); b.onclick = () => pick("b"); ctl.append(a, b); }
         else { const r = el("button", "btn", "Replay"); r.onclick = () => { state = "base"; msg.innerHTML = `A healthy chain, growing one block at a time.`; render(); }; ctl.appendChild(r); }
       }
       function pick(which) { state = which; msg.innerHTML = which === "a"
-        ? `#4a won — <span style="color:var(--green)">your payment survived</span> and is now one block deeper. But notice: it survived by <i>luck of the race</i>, not merit. That's why one confirmation is a coin-flip and six is a wall.`
-        : `#4b won — and <span style="color:var(--red)">your payment just vanished from the chain</span>. Orphaned with its block, it slides back to the waiting pool, unconfirmed. It will ride the next block — but if a merchant had shipped goods at zero confirmations, this exact moment is how they get burned.`; render(); }
+        ? `#4a won. <span style="color:var(--green)">Your payment survived</span> and is now one block deeper. But notice: it survived by <i>luck of the race</i>, not merit. That's why one confirmation is a coin-flip and six is a wall.`
+        : `#4b won, and <span style="color:var(--red)">your payment just vanished from the chain</span>. Orphaned with its block, it slides back to the waiting pool, unconfirmed. It will ride the next block. If a merchant had shipped goods at zero confirmations, this exact moment is how they get burned.`; render(); }
       render();
     }
   });
 
   /* ============================================================
-     CAPSTONE — "The whole machine": a living, labelled, end-to-end
+     CAPSTONE, "The whole machine": a living, labelled, end-to-end
      blockchain. One payment loops through all five stages while a
      real chain grows itself and the network flashes on each block.
      Every stage is tagged with the lesson that taught it.
      ============================================================ */
   setBeat("recap", 0, {
     h: "The whole machine, running",
-    cap: "Everything you built, wired together and moving. One payment flows through all five stages — sign, broadcast, mine, link, settle — over and over, while the chain grows itself. Each stage is a lesson you did by hand.",
+    cap: "Everything you built, wired together and moving. One payment flows through all five stages: sign, broadcast, mine, link, settle. This loops over and over while the chain grows itself. Each stage is a lesson you did by hand.",
     build(s) {
       const STAGES = [
         { ic: "✍️", t: "Sign", d: "you authorise it", tag: "Keys" },
@@ -528,9 +531,9 @@
       }
       function setMsg() {
         wrap.querySelector("#mmsg").innerHTML = [
-          "A fresh payment is signed with a secret key — only its owner could produce this signature.",
+          "A fresh payment is signed with a secret key. Only its owner could produce this signature.",
           "The signed payment floods out to every node, hop by hop. No coordinator.",
-          `A miner spins the nonce, hashing until the seal starts with <b>${"0".repeat(DIFF)}</b> — real work.`,
+          `A miner spins the nonce, hashing until the seal starts with <b>${"0".repeat(DIFF)}</b>. This requires real work.`,
           "The sealed block records the previous block's fingerprint, locking the past shut.",
           "Every node adds the same block. A few more on top and the payment is final.",
         ][phase];
@@ -552,7 +555,7 @@
         if (!document.contains(wrap)) { clearTimeout(timer); return; }
         drawStages(); setMsg();
         if (forged && phase === 0) { forged = false;
-          wrap.querySelector("#mmsg").innerHTML = `<span style="color:var(--red)">Your forged payment hit the Sign check and died instantly</span> — the signature doesn't verify against the sender's key, so every single node drops it before it ever reaches a block. Nobody decided this. No admin acted. <b>The machine defends itself.</b>`;
+          wrap.querySelector("#mmsg").innerHTML = `<span style="color:var(--red)">Your forged payment hit the Sign check and died instantly</span>. The signature doesn't verify against the sender's key, so every single node drops it before it ever reaches a block. Nobody decided this. No admin acted. <b>The machine defends itself.</b>`;
           wrap.querySelector("#mnlab").textContent = "forged tx rejected ✕"; }
         if (phase === 0) curTx = "pay:" + ((Math.random() * 1e6) | 0);
         if (phase === 2) mineBlock();
@@ -565,67 +568,67 @@
         clearTimeout(timer); if (playing) step();
       };
       wrap.querySelector("#mspeed").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; wrap.querySelector("#mspeed").textContent = speed + "× speed"; };
-      wrap.querySelector("#mforge").onclick = () => { forged = true; if (!playing) { wrap.querySelector("#mplay").click(); } wrap.querySelector("#mmsg").innerHTML = `A payment claiming to spend someone else's coins enters the pipeline — signed with the <b>wrong key</b>. Watch the Sign stage.`; };
+      wrap.querySelector("#mforge").onclick = () => { forged = true; if (!playing) { wrap.querySelector("#mplay").click(); } wrap.querySelector("#mmsg").innerHTML = `A payment claiming to spend someone else's coins enters the pipeline. It is signed with the <b>wrong key</b>. Watch the Sign stage.`; };
       drawStages(); drawChain();
       if (playing) timer = setTimeout(step, 600); else setMsg();
     }
   });
 
   /* ============================================================
-     CONNECTIVE TISSUE — a bridge at the end of every lesson that
+     CONNECTIVE TISSUE, a bridge at the end of every lesson that
      crystallises what you just built and poses the exact question
      the next lesson answers. This is the thread that turns a set of
      interactives into a course.
      ============================================================ */
   const setBridge = (id, html) => { if (L[id]) L[id].bridge = html; };
   const BRIDGES = {
-    ledger: "You've seen that money is nothing but a <b>list of balances</b>. But a list has to live somewhere, kept by someone — so the real question becomes: <i>who do you trust to hold it, and what happens the day they fail you?</i>",
-    why: "A single keeper is a single point of control and failure. Handing the list to <b>everyone</b> removes that keeper — but it tears open a new hole: if a coin is just data, and data copies perfectly, what stops you spending the same coin twice?",
-    doublespend: "So the hard part was never <i>sending</i> digital money — it's getting strangers to agree on the <b>order</b> of payments with no referee. That agreement machine has a name. Next you'll see its whole shape at once.",
+    ledger: "You've seen that money is nothing but a <b>list of balances</b>. But a list has to live somewhere, kept by someone. The real question becomes: <i>who do you trust to hold it, and what happens the day they fail you?</i>",
+    why: "A single keeper is a single point of control and failure. Handing the list to <b>everyone</b> removes that keeper, but it tears open a new hole: if a coin is just data, and data copies perfectly, what stops you spending the same coin twice?",
+    doublespend: "So the hard part was never <i>sending</i> digital money. It is getting strangers to agree on the <b>order</b> of payments with no referee. That agreement machine has a name. Next you'll see its whole shape at once.",
     whatis: "That's the model: <b>blocks</b> of records, <b>chained</b> by fingerprints, <b>copied</b> everywhere. Before we forge each piece, watch one real payment travel the entire machine, end to end.",
-    tour: "Sign, broadcast, mine, chain, settle — five moves and the payment is permanent. Every one of them leans on a single tool you haven't met yet: the <b>fingerprint</b>. Start there.",
-    hashing: "A hash proves nothing was <i>changed</i>. But it can't prove <i>who</i> changed it — anyone can hash anything. To actually own money, you need a fingerprint that <b>only you</b> can produce.",
+    tour: "Sign, broadcast, mine, chain, settle. Five moves and the payment is permanent. Every one of them leans on a single tool you haven't met yet: the <b>fingerprint</b>. Start there.",
+    hashing: "A hash proves nothing was <i>changed</i>. But it can't prove <i>who</i> changed it, as anyone can hash anything. To actually own money, you need a fingerprint that <b>only you</b> can produce.",
     keys: "A signature proves <b>you</b> authorised one specific message. Bundle that signature with a from, a to, and an amount, and you've built the only thing a blockchain ever really moves: a <b>transaction</b>.",
     tx: "One signed transaction, waiting in the mempool. Now the miner's job: scoop a batch of them into a box and <b>seal it shut</b>, so no one can ever reshuffle what's inside.",
-    block: "You sealed a block with one fingerprint. But a real block holds <b>thousands</b> of transactions — so how does a single short hash stand in for all of them, and still let you prove any one is inside?",
-    merkle: "The Merkle root crushes a whole block into one hash for the header. But building a block is <i>easy</i> — anyone can. What makes <b>adding</b> one to the chain cost real money is the single number you tune next.",
-    nonce: "Mining is just spinning that dial until the hash lands in the target zone — millions of guesses, real electricity burned. Which raises the obvious question: <i>why would anyone pay to do that?</i>",
+    block: "You sealed a block with one fingerprint. But a real block holds <b>thousands</b> of transactions. How does a single short hash stand in for all of them, and still let you prove any one is inside?",
+    merkle: "The Merkle root crushes a whole block into one hash for the header. But building a block is <i>easy</i>, anyone can do it. What makes <b>adding</b> one to the chain cost real money is the single number you tune next.",
+    nonce: "Mining is just spinning that dial until the hash lands in the target zone. It requires millions of guesses and real electricity burned. This raises the obvious question: <i>why would anyone pay to do that?</i>",
     incentives: "The block pays its own miner, so honesty is simply the profitable move. Now the last piece of the chain itself: how each sealed block <b>locks onto the one before it</b>, and why that makes the past unrewritable.",
-    chainlink: "Fingerprints make tampering visible; work makes fixing it a race you lose. That's <i>one</i> computer's chain — but there are thousands. So how does a new block reach all of them, and what happens when two appear at once?",
-    gossip: "News spreads with no coordinator, hop by hop — and because light isn't instant, two miners can win at nearly the same moment. When the network briefly <b>splits in two</b>, which block is real?",
+    chainlink: "Fingerprints make tampering visible; work makes fixing it a race you lose. That is <i>one</i> computer's chain, but there are thousands. How does a new block reach all of them, and what happens when two appear at once?",
+    gossip: "News spreads with no coordinator, hop by hop. Because light isn't instant, two miners can win at nearly the same moment. When the network briefly <b>splits in two</b>, which block is real?",
     forks: "The longest chain wins, and every confirmation buries your payment deeper. That whole safety rests on one bet: that no single miner controls most of the power. <i>What if someone did?</i>",
-    attack: "Even a majority can only reverse its <i>own</i> recent payments — it can't forge signatures or mint coins from nothing. Proof of work makes attacks expensive with <b>electricity</b>. There's a second way to make them expensive: money on the line.",
-    pos: "Work or stake, the trick is identical — make lying cost more than it pays. You now understand how a chain of pure <b>payments</b> stays honest. The next leap: what happens when the chain can run <i>programs</i>?",
-    contracts: "A contract is unstoppable code that holds funds by its own rules. Once a chain can run code, it can track far more than one coin — it can mint <b>entirely new assets</b>.",
-    tokens: "Tokens and NFTs are just entries in a contract's ledger. But every one of them — coins, tokens, NFTs — is only <i>yours</i> because of a key. So where does that key actually live, and who holds it?",
-    wallets: "A wallet holds <b>keys</b>, not coins, and “not your keys, not your coins” is the whole trade-off. Keys let anyone use the chain — but if everyone does at once, a deliberately slow base layer chokes. How do you scale without breaking it?",
-    layer2: "Rollups do the work off to the side and post one summary back. Some prove that summary is honest <i>without revealing the transactions inside</i> — using a piece of maths that sounds impossible until you play with it.",
-    zk: "Prove something true while revealing nothing else: private payments, cheap scaling, quiet compliance. Now zoom all the way out — this same technology can free money from the state, or hand the state total control.",
-    money: "From censorship-proof Bitcoin to a programmable CBDC, it's a spectrum set entirely by <b>who holds the keys</b>. But none of it protects <i>you</i> from being talked out of your own keys — which is how most crypto is actually lost.",
-    safety: "Urgency, secrecy, guaranteed upside — that's the shape of every scam, because the chain is hard to attack but people aren't. And that's the last piece. You've now built every part by hand. Time to watch them run <b>together</b>.",
-    recap: "That's the whole machine — strangers keeping one honest record with no one in charge. Take the referee out and you get money no state can freeze; hand a state the keys and you get the most controllable money in history. Same machine, pointed in opposite directions. Now you understand exactly why.",
+    attack: "Even a majority can only reverse its <i>own</i> recent payments. It cannot forge signatures or mint coins from nothing. Proof of work makes attacks expensive with <b>electricity</b>. There is a second way to make them expensive: money on the line.",
+    pos: "Work or stake, the trick is identical: make lying cost more than it pays. You now understand how a chain of pure <b>payments</b> stays honest. The next leap: what happens when the chain can run <i>programs</i>?",
+    contracts: "A contract is unstoppable code that holds funds by its own rules. Once a chain can run code, it can track far more than one coin. It can mint <b>entirely new assets</b>.",
+    tokens: "Tokens and NFTs are just entries in a contract's ledger. But every one of them (coins, tokens, NFTs) is only <i>yours</i> because of a key. So where does that key actually live, and who holds it?",
+    wallets: "A wallet holds <b>keys</b>, not coins, and “not your keys, not your coins” is the whole trade-off. Keys let anyone use the chain, but if everyone does at once, a deliberately slow base layer chokes. How do you scale without breaking it?",
+    layer2: "Rollups do the work off to the side and post one summary back. Some prove that summary is honest <i>without revealing the transactions inside</i>. They use a piece of maths that sounds impossible until you play with it.",
+    zk: "Prove something true while revealing nothing else: private payments, cheap scaling, quiet compliance. Now zoom all the way out. This same technology can free money from the state, or hand the state total control.",
+    money: "From censorship-proof Bitcoin to a programmable CBDC, it is a spectrum set entirely by <b>who holds the keys</b>. None of it protects <i>you</i> from being talked out of your own keys, which is how most crypto is actually lost.",
+    safety: "Urgency, secrecy, guaranteed upside: that is the shape of every scam, because the chain is hard to attack but people are not. That is the last piece. You have now built every part by hand. Time to watch them run <b>together</b>.",
+    recap: "That's the whole machine: strangers keeping one honest record with no one in charge. Take the referee out and you get money no state can freeze; hand a state the keys and you get the most controllable money in history. Same machine, pointed in opposite directions. Now you understand exactly why.",
   };
   Object.keys(BRIDGES).forEach(id => setBridge(id, BRIDGES[id]));
 
   /* ============================================================
-     GO DEEPER — richer, multi-paragraph technical detail for the
+     GO DEEPER, richer, multi-paragraph technical detail for the
      lessons whose "deeper" was thinnest.
      ============================================================ */
-  setDeeper("block", `<p>A block has two parts: a small fixed-size <b>header</b> and the list of transactions. The header holds the previous block's hash, a timestamp, the difficulty target, the nonce, and one more field — the <b>Merkle root</b>, a single hash that stands in for every transaction in the body (the very next lesson builds it). Hashing that roughly 80-byte header is what produces the block's ID and its seal.</p>
-    <p>That header design is a quiet masterstroke: because the root commits to <i>all</i> the transactions, you can prove things about a block's contents using only the tiny header — and a miner only ever has to hash 80 bytes, no matter whether the block carries ten transactions or ten thousand.</p>
+  setDeeper("block", `<p>A block has two parts: a small fixed-size <b>header</b> and the list of transactions. The header holds the previous block's hash, a timestamp, the difficulty target, the nonce, and one more field: the <b>Merkle root</b>. It is a single hash that stands in for every transaction in the body (the very next lesson builds it). Hashing that roughly 80-byte header is what produces the block's ID and its seal.</p>
+    <p>That header design is a quiet masterstroke: because the root commits to <i>all</i> the transactions, you can prove things about a block's contents using only the tiny header. A miner only ever has to hash 80 bytes, no matter whether the block carries ten transactions or ten thousand.</p>
     <p>A block on its own is nothing special; anyone can build one in a millisecond. What makes <i>adding</i> it to the chain expensive, and the past unrewritable, is everything still ahead of you: the nonce that costs real work, the reward that pays for that work, and the links that chain each block to the last.</p>`);
 
-  setDeeper("merkle", `<p>The tree's height is <code>log₂(n)</code>, so a million transactions need only about <b>20</b> sibling hashes to prove membership, and a billion need about <b>30</b> — doubling the block size adds a single hash to any proof. That logarithmic scaling is the whole trick.</p>
-    <p>The proof is <b>self-verifying</b>: you re-hash your transaction with each supplied sibling, climbing the tree, and you either land on the known Merkle root or you don't. A forged sibling produces the wrong root, so the proof fails safely even when a completely untrusted server hands it to you — you never trust the source, only the root.</p>
-    <p>This is exactly what lets a phone wallet (a "light client") confirm a payment in milliseconds. It stores only the tiny block headers, asks a full node for one short Merkle branch, and checks it against the root already in the header — verifying that a transaction is really in the chain without ever downloading the hundreds of gigabytes of the chain itself.</p>
-    <p>Satoshi designed for this from day one: the whitepaper gives light clients their own section — §8, “Simplified Payment Verification” — built entirely on the Merkle branch you just clicked through.</p>
-    <blockquote>“It is possible to verify payments without running a full network node. A user only needs to keep a copy of the block headers of the longest proof-of-work chain… and obtain the Merkle branch linking the transaction to the block it's timestamped in.” — <a href="https://bitcoin.org/bitcoin.pdf" target="_blank" rel="noopener">Satoshi Nakamoto, the Bitcoin whitepaper (2008), §8</a></blockquote>`);
+  setDeeper("merkle", `<p>The tree's height is <code>log₂(n)</code>, so a million transactions need only about <b>20</b> sibling hashes to prove membership, and a billion need about <b>30</b>. Doubling the block size adds a single hash to any proof. That logarithmic scaling is the whole trick.</p>
+    <p>The proof is <b>self-verifying</b>: you re-hash your transaction with each supplied sibling, climbing the tree, and you either land on the known Merkle root or you don't. A forged sibling produces the wrong root, so the proof fails safely even when a completely untrusted server hands it to you. You never trust the source, only the root.</p>
+    <p>This is exactly what lets a phone wallet (a "light client") confirm a payment in milliseconds. It stores only the tiny block headers, asks a full node for one short Merkle branch, and checks it against the root already in the header. This verifies that a transaction is really in the chain without ever downloading the hundreds of gigabytes of the chain itself.</p>
+    <p>Satoshi designed for this from day one: the whitepaper gives light clients their own section (§8, “Simplified Payment Verification”) built entirely on the Merkle branch you just clicked through.</p>
+    <blockquote>“It is possible to verify payments without running a full network node. A user only needs to keep a copy of the block headers of the longest proof-of-work chain… and obtain the Merkle branch linking the transaction to the block it's timestamped in.” - <a href="https://bitcoin.org/bitcoin.pdf" target="_blank" rel="noopener">Satoshi Nakamoto, the Bitcoin whitepaper (2008), §8</a></blockquote>`);
 
-  setDeeper("tokens", `<p>Under the hood a token contract is almost boringly simple: a single table mapping addresses to numbers — <code>balances[you] = 40</code> — plus a <code>transfer</code> function that subtracts from one row and adds to another. That is the entire "coin." There is no coin object anywhere; there is only the table, and everyone's agreement about it.</p>
-    <p>What makes tokens powerful is <b>standards</b>. ERC-20 (fungible) and ERC-721 (non-fungible) fix a shared set of function names, so every wallet, exchange, and contract can handle a token it has never seen before. That common interface is why thousands of different tokens just work everywhere, and why one contract can snap into another — the composability that DeFi is built from.</p>
-    <p>The catch with NFTs: the contract usually stores only a <b>pointer</b> — a URL or an IPFS hash — to the image, not the image itself. So "I own the NFT" really means "the chain agrees I own token #7, whose metadata points over there." Owning the entry is ironclad; owning the thing it points at is only as durable as wherever that file actually lives.</p>`);
+  setDeeper("tokens", `<p>Under the hood a token contract is almost boringly simple: a single table mapping addresses to numbers (<code>balances[you] = 40</code>) plus a <code>transfer</code> function that subtracts from one row and adds to another. That is the entire "coin." There is no coin object anywhere; there is only the table, and everyone's agreement about it.</p>
+    <p>What makes tokens powerful is <b>standards</b>. ERC-20 (fungible) and ERC-721 (non-fungible) fix a shared set of function names, so every wallet, exchange, and contract can handle a token it has never seen before. That common interface is why thousands of different tokens just work everywhere, and why one contract can snap into another. This is the composability that DeFi is built from.</p>
+    <p>The catch with NFTs: the contract usually stores only a <b>pointer</b> (a URL or an IPFS hash) to the image, not the image itself. So "I own the NFT" really means "the chain agrees I own token #7, whose metadata points over there." Owning the entry is ironclad; owning the thing it points at is only as durable as wherever that file actually lives.</p>`);
 
-  setDeeper("tour", `<p>Those five moves map cleanly onto the rest of the course: <b>signing</b> is Cryptography; <b>pooling and sealing with work</b> are Building the Chain; <b>every copy agreeing</b> is Consensus. If you remember one thing, remember the loop — <i>sign, pool, seal, link, agree</i> — repeating, on Bitcoin, roughly every ten minutes, forever.</p>
-    <p>Two details to carry forward. First, the payment is never "done" the instant it lands in a block; it becomes <i>progressively</i> final as more blocks stack on top, which is why merchants wait for confirmations. Second, no one is in charge of any single step: you broadcast to whoever will listen, any miner may seal your payment, and every node independently re-checks the result. The absence of a coordinator isn't a gap in the design — it <b>is</b> the design.</p>`);
+  setDeeper("tour", `<p>Those five moves map cleanly onto the rest of the course: <b>signing</b> is Cryptography; <b>pooling and sealing with work</b> are Building the Chain; <b>every copy agreeing</b> is Consensus. If you remember one thing, remember the loop: <i>sign, pool, seal, link, agree</i>. This repeats on Bitcoin roughly every ten minutes, forever.</p>
+    <p>Two details to carry forward. First, the payment is never "done" the instant it lands in a block; it becomes <i>progressively</i> final as more blocks stack on top, which is why merchants wait for confirmations. Second, no one is in charge of any single step: you broadcast to whoever will listen, any miner may seal your payment, and every node independently re-checks the result. The absence of a coordinator isn't a gap in the design. It <b>is</b> the design.</p>`);
 
 })();
