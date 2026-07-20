@@ -14,6 +14,8 @@ export const VIEWS = (function () {
   const LOGO = `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" stroke="#fff" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.6" stroke="#fff" stroke-width="1.7"/><path d="M10 6.5h2.5A1.5 1.5 0 0 1 14 8v6" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>`;
 
   const wv = (w) => `--wca:${w.color};--wcl:${w.colorText || w.color};--wcd:${w.colorTextDark || w.color}`;
+  /* chapter colours are oklch() strings, so tints are mixed, never concatenated */
+  const tint = (c, pct) => `color-mix(in oklch, ${c} ${pct}%, transparent)`;
   function progMini() {
     const d = S.totalDone(), t = S.lessonsTotal;
     return `<div class="progmini"><span>${d} / ${t}</span><div class="bar"><i style="width:${(d / t * 100).toFixed(0)}%"></i></div></div>`;
@@ -43,18 +45,19 @@ export const VIEWS = (function () {
   function home() {
     teardown();
     const done = S.totalDone(), total = S.lessonsTotal, resume = done > 0 && done < total, startId = S.firstUndone();
-    const beatsTotal = S.ORDER.reduce((a, id) => a + (L[id] ? L[id].beats.length : 0), 0);
+    const journey = S.WORLDS.map(w => `<span class="jd" style="background:${w.color}"></span>`).join(`<span class="jd-link"></span>`)
+      + `<span class="jd-link"></span><span class="jd-cap mono">the journey</span>`;
     root().innerHTML = nav("home") + `
-      <div style="display:flex; flex-direction:column; min-height: calc(100vh - 61px);">
-        <section class="hero hero-full" style="flex:1; padding: 24px; min-height:0;">
+      <div class="home-wrap">
+        <section class="hero home-hero">
           <canvas id="heroCanvas"></canvas>
           <div class="hero-in">
-          <h1>Learn Blockchain<br>by <em>doing</em>.</h1>
+          <h1>Learn blockchain<br>by <em>doing</em>.</h1>
           <div class="cta">
             <button class="btn gold lg" data-go="#/lesson/${startId}">${resume ? "Continue where you left off" : "Start the course"} →</button>
             <button class="btn lg ghost" data-go="#/map">Open the map</button>
           </div>
-          <div class="herostats"><span><b>${S.WORLDS.length}</b> chapters</span><span class="dot"></span><span><b>${total}</b> lessons</span><span class="dot"></span><span><b>${beatsTotal}</b> hands-on demos</span></div>
+          <div class="journey-rail">${journey}</div>
         </div>
       </section>
       <footer style="padding: 16px 24px;">
@@ -98,16 +101,22 @@ export const VIEWS = (function () {
       const deep = S.DEEP.has(id);
       return `<a class="lnode ${done ? "done" : ""} ${isCur ? "cur" : ""}${deep ? " deep" : ""}" href="#/lesson/${id}" style="${wv(w)}" aria-label="${l.title}${done ? " (done)" : ""}${deep ? " (optional deep dive)" : ""}">
         ${done ? '<div class="check" aria-hidden="true">✓</div>' : ""}
-        <div class="ic" style="background:${w.color}1c">${l.icon}</div>
+        <div class="ic" style="background:${tint(w.color, 11)}">${l.icon}</div>
         <div class="lt">${l.title}</div><div class="lo">${l.oneliner}</div>
         ${deep ? '<div class="lx">◇ optional deep dive</div>' : isCur ? '<div class="lx">start here</div>' : ""}</a>`;
     }).join("");
-    const chapterNode = `<a class="lnode chapter-node" href="#/chapter/${w.id}" title="Go to ${w.title} chapter intro" style="background:${w.color};border-color:transparent;box-shadow:0 4px 12px ${w.color}66">
-          <div class="ic" style="background:rgba(0,0,0,0.06);color:${w.colorText} !important;font-size:18px;border:none">★</div>
-          <div class="lt" style="color:${w.colorText} !important;font-size:17px;margin-bottom:4px">Chapter ${w.n}</div>
-          <div class="lo" style="color:${w.colorText} !important;opacity:0.9;font-size:13px;line-height:1.4">${w.title}: ${w.sub}</div>
-          <div class="lx" style="color:${w.colorText} !important;opacity:0.7">read intro</div></a>`;
-    return `<div class="world-block"><div class="world-rail"><span class="wdot" style="background:${w.color}"></span><span class="wt">${w.title}</span><span class="ws">${w.sub}</span><span class="wprog">${S.worldDone(w)}/${w.lessons.length}</span></div><div class="nodes">${chapterNode}${nodes}</div></div>`;
+    const band = `<a class="chapter-band" href="#/chapter/${w.id}" title="Go to ${w.title} chapter intro" style="${wv(w)}">
+        <span class="cb-bar" aria-hidden="true"></span>
+        <div class="cb-main">
+          <div class="cb-code">Chapter ${w.n}</div>
+          <div class="cb-title">${w.title}</div>
+          <div class="cb-sub">${w.sub}</div>
+        </div>
+        <div class="cb-right">
+          <span class="cb-prog">${S.worldDone(w)}/${w.lessons.length}</span>
+          <span class="cb-read">Read intro →</span>
+        </div></a>`;
+    return `<div class="world-block">${band}<div class="nodes">${nodes}</div></div>`;
   }
 
   /* ---------------- LESSON (vertical explorable) ---------------- */
@@ -118,14 +127,14 @@ export const VIEWS = (function () {
     root().innerHTML = `
       <div class="lesson-bar">
         <a class="back" href="#/map">← Map</a>
-        <span class="wchip" style="background:${w.color}1c;${wv(w)}">${w.title}</span>
+        <span class="wchip" style="background:${tint(w.color, 11)};${wv(w)}">${w.title}</span>
         <span class="lttl">${l.title}</span>
         <span class="nums">${gpos + 1} / ${S.lessonsTotal}</span>
         <div class="barnav"><button class="lbtn" id="lPrev" ${prev ? "" : "disabled"} aria-label="Previous lesson">←</button><button class="lbtn next" id="lNext">${next ? "Next →" : "Done"}</button></div>
         <div class="lprog"><i id="lprogFill" style="background:${w.color}"></i></div>
       </div>
       <div class="explorable">
-        <div class="lesson-hero"><div class="icbig" style="background:${w.color}1c;${wv(w)}">${l.icon}</div><h1>${l.title}</h1><p>${l.hero}</p></div>
+        <div class="lesson-hero"><div class="icbig" style="background:${tint(w.color, 11)};${wv(w)}">${l.icon}</div><h1>${l.title}</h1><p>${l.hero}</p></div>
         <div id="beats"></div>
         ${l.deeper ? `<details class="deeper"><summary>Go deeper: the technical detail</summary><div class="dbody">${l.deeper}</div></details>` : ""}
         ${l.bridge ? `<div class="bridge"><span class="bridge-lab" style="${wv(w)}">▸ where this leads</span><p class="bridge-txt">${l.bridge}</p>${next ? `<div class="bridge-next">Next up: <b>${L[next].title}</b></div>` : ""}</div>` : ""}
