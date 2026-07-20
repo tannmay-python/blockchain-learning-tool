@@ -102,11 +102,11 @@ export const VIEWS = (function () {
         <div class="lt">${l.title}</div><div class="lo">${l.oneliner}</div>
         ${deep ? '<div class="lx">◇ optional deep dive</div>' : isCur ? '<div class="lx">start here</div>' : ""}</a>`;
     }).join("");
-    const chapterNode = `<a class="lnode chapter-node" href="#/chapter/${w.id}" title="Go to ${w.title} chapter intro" style="background:${w.color};border-color:transparent;box-shadow:0 4px 12px ${w.color}44">
-          <div class="ic" style="background:rgba(255,255,255,0.2);color:#fff !important;font-size:18px;border:none">★</div>
-          <div class="lt" style="color:#fff !important;font-size:17px;margin-bottom:4px">Chapter ${w.n}</div>
-          <div class="lo" style="color:rgba(255,255,255,0.9) !important;font-size:13px;line-height:1.4">${w.title}: ${w.sub}</div>
-          <div class="lx" style="color:rgba(255,255,255,0.7) !important">read intro</div></a>`;
+    const chapterNode = `<a class="lnode chapter-node" href="#/chapter/${w.id}" title="Go to ${w.title} chapter intro" style="background:${w.color};border-color:transparent;box-shadow:0 4px 12px ${w.color}66">
+          <div class="ic" style="background:rgba(0,0,0,0.06);color:${w.colorText} !important;font-size:18px;border:none">★</div>
+          <div class="lt" style="color:${w.colorText} !important;font-size:17px;margin-bottom:4px">Chapter ${w.n}</div>
+          <div class="lo" style="color:${w.colorText} !important;opacity:0.9;font-size:13px;line-height:1.4">${w.title}: ${w.sub}</div>
+          <div class="lx" style="color:${w.colorText} !important;opacity:0.7">read intro</div></a>`;
     return `<div class="world-block"><div class="world-rail"><span class="wdot" style="background:${w.color}"></span><span class="wt">${w.title}</span><span class="ws">${w.sub}</span><span class="wprog">${S.worldDone(w)}/${w.lessons.length}</span></div><div class="nodes">${chapterNode}${nodes}</div></div>`;
   }
 
