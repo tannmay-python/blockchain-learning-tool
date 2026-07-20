@@ -54,6 +54,7 @@ button { font-family: var(--sans); cursor: pointer; }
 ::-webkit-scrollbar-thumb { background: rgba(98,13,60,.18); border-radius: 99px; border: 3px solid transparent; background-clip: content-box; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(98,13,60,.3); background-clip: content-box; }
 :focus-visible { outline: 2px solid var(--plum-2); outline-offset: 2px; border-radius: 4px; }
+[tabindex="-1"]:focus { outline: none !important; }
 
 #starfield { position: fixed; inset: 0; z-index: var(--z-bg); pointer-events: none; opacity: .5; }
 .bg-aura { position: fixed; inset: 0; z-index: var(--z-bg); pointer-events: none;
