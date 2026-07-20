@@ -73,11 +73,8 @@ button { font-family: var(--sans); cursor: pointer; }
 /* ============ nav ============ */
 .nav { position: sticky; top: 0; z-index: var(--z-nav); display: flex; align-items: center; gap: 18px; padding: 13px 26px; background: var(--nav-bg); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
 .nav .brand { display: flex; align-items: center; gap: 11px; cursor: pointer; }
-.nav .mk { width: 34px; height: 34px; border-radius: 10px; background: var(--plum); display: grid; place-items: center; box-shadow: var(--sh-plum); transition: transform .2s var(--ease); }
-.nav .brand:hover .mk { transform: rotate(-6deg); }
-.nav .mk svg { width: 19px; height: 19px; }
-.nav .bt { font-family: var(--disp); font-weight: 600; font-size: 17px; color: var(--plum); letter-spacing: -.01em; }
-.nav .bt span { color: var(--gold-text); font-style: italic; font-weight: 500; }
+[data-theme="dark"] .logo-light { display: none !important; }
+[data-theme="dark"] .logo-dark { display: block !important; }
 .nav .links { display: flex; gap: 4px; margin-left: 14px; }
 .nav .links a { padding: 8px 14px; border-radius: 9px; font-size: 14px; font-weight: 500; color: var(--ink-2); transition: all .15s; cursor: pointer; }
 .nav .links a:hover { color: var(--plum); background: var(--plum-soft); }
