@@ -77,7 +77,7 @@ export const VIEWS = (function () {
       </section>
       <footer style="padding: 16px 24px;">
         <span id="rsWrapHome" style="display:block; text-align:center; margin-bottom:12px;">
-          ${done} of ${total} explored${done > 0 ? ` · <a id="restartHome" style="cursor:pointer;border-bottom:1px solid var(--line-2)">start over</a>` : ""}
+          ${done} of ${total} explored${done > 0 ? ` · <a id="restartHome" style="cursor:pointer; font-weight:500; color:var(--plum); border-bottom:1px solid var(--plum)">start over</a>` : ""}
         </span>
         ${SOCIALS}
       </footer>
@@ -103,7 +103,7 @@ export const VIEWS = (function () {
       <div class="map-wrap"><div class="map-head"><h1>Map</h1>${resume}</div>
       ${S.WORLDS.map(mapWorld).join("")}</div>
       <footer>
-        <span id="rsWrap">${done} of ${total} explored${done > 0 ? ` · <a id="restart" style="cursor:pointer;border-bottom:1px solid var(--line-2)">start over</a>` : ""}</span>
+        <span id="rsWrap">${done} of ${total} explored${done > 0 ? ` · <a id="restart" style="cursor:pointer; font-weight:500; color:var(--plum); border-bottom:1px solid var(--plum)">start over</a>` : ""}</span>
         ${SOCIALS}
       </footer>`;
 
