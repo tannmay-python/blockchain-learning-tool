@@ -9,6 +9,7 @@ window.VIEWS = (function () {
   const go = (h) => { location.hash = h; };
   const LOGO = `<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" stroke="#fff" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.6" stroke="#fff" stroke-width="1.7"/><path d="M10 6.5h2.5A1.5 1.5 0 0 1 14 8v6" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>`;
 
+  const wv = (w) => `--wca:${w.color};--wcl:${w.colorText || w.color};--wcd:${w.colorTextDark || w.color}`;
   function progMini() {
     const d = S.totalDone(), t = S.lessonsTotal;
     return `<div class="progmini"><span>${d} / ${t}</span><div class="bar"><i style="width:${(d / t * 100).toFixed(0)}%"></i></div></div>`;
@@ -17,17 +18,17 @@ window.VIEWS = (function () {
     const isDark = document.documentElement.dataset.theme === "dark";
     const sunSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
     const moonSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-    const toggle = `<button class="theme-toggle" onclick="window.APP.toggleTheme()" title="Toggle theme" aria-label="Toggle theme">${isDark ? sunSvg : moonSvg}</button>`;
-    const hamburger = `<button class="hamburger" onclick="document.getElementById('mobileNav').classList.toggle('active'); this.classList.toggle('active')" aria-label="Menu"><span></span><span></span><span></span></button>`;
-    return `<nav class="nav"><div class="brand" data-go="#/" title="Home"><div class="mk">${LOGO}</div><span class="bt">The Blockchain <span>Course</span></span></div>
-      <div class="links desktop-only"><a data-go="#/" class="${active === "home" ? "on" : ""}">Home</a><a data-go="#/map" class="${active === "map" ? "on" : ""}">Map</a></div>
+    const toggle = `<button class="theme-toggle" onclick="window.APP.toggleTheme()" title="Toggle theme" aria-label="Dark theme" aria-pressed="${isDark}">${isDark ? sunSvg : moonSvg}</button>`;
+    const hamburger = `<button class="hamburger" onclick="window.APP.toggleMobileNav()" aria-label="Menu" aria-expanded="false" aria-controls="mobileNav"><span></span><span></span><span></span></button>`;
+    return `<nav class="nav"><a class="brand" href="#/" title="Home"><div class="mk">${LOGO}</div><span class="bt">The Blockchain <span>Course</span></span></a>
+      <div class="links desktop-only"><a href="#/" class="${active === "home" ? "on" : ""}" ${active === "home" ? 'aria-current="page"' : ""}>Home</a><a href="#/map" class="${active === "map" ? "on" : ""}" ${active === "map" ? 'aria-current="page"' : ""}>Map</a></div>
       <div class="right">${toggle}${progMini()}${hamburger}</div></nav>
       <div id="mobileNav" class="mobile-nav">
-        <a data-go="#/" class="${active === "home" ? "on" : ""}" onclick="document.getElementById('mobileNav').classList.remove('active'); document.querySelector('.hamburger').classList.remove('active')">Home</a>
-        <a data-go="#/map" class="${active === "map" ? "on" : ""}" onclick="document.getElementById('mobileNav').classList.remove('active'); document.querySelector('.hamburger').classList.remove('active')">Map</a>
+        <a href="#/" class="${active === "home" ? "on" : ""}" onclick="window.APP.toggleMobileNav(false)">Home</a>
+        <a href="#/map" class="${active === "map" ? "on" : ""}" onclick="window.APP.toggleMobileNav(false)">Map</a>
       </div>`;
   }
-  function wireGo(scope) { (scope || document).querySelectorAll("[data-go]").forEach(e => e.onclick = (ev) => { ev.preventDefault(); go(e.dataset.go); }); }
+  function wireGo(scope) { (scope || document).querySelectorAll("[data-go]:not([href])").forEach(e => e.onclick = (ev) => { ev.preventDefault(); go(e.dataset.go); }); }
 
   function teardown() {
     if (window._lessonIO) { window._lessonIO.disconnect(); window._lessonIO = null; }
@@ -46,9 +47,8 @@ window.VIEWS = (function () {
           <div class="hero-in">
           <h1>Learn Blockchain<br>by <em>doing</em>.</h1>
           <div class="cta">
-            <button class="btn primary lg" data-go="#/lesson/${startId}">${resume ? "Continue where you left off" : "Start the course"} →</button>
+            <button class="btn gold lg" data-go="#/lesson/${startId}">${resume ? "Continue where you left off" : "Start the course"} →</button>
             <button class="btn lg ghost" data-go="#/map">Open the map</button>
-            ${done > 0 ? `<button class="btn lg ghost" id="restartHome" style="color:var(--ink-3)">Restart course</button>` : ""}
           </div>
           <div class="herostats"><span><b>${S.WORLDS.length}</b> chapters</span><span class="dot"></span><span><b>${total}</b> lessons</span><span class="dot"></span><span><b>${beatsTotal}</b> hands-on demos</span></div>
         </div>
@@ -66,34 +66,38 @@ window.VIEWS = (function () {
       </footer>
       </div>`;
     wireGo();
-    const rh = document.getElementById("restartHome");
-    if (rh) rh.onclick = () => { if (confirm("Clear your progress and start from the beginning?")) { S.reset(); go("#/lesson/" + S.ORDER[0]); } };
     if (window.APP) window.APP.heroCanvas();
   }
 
   /* ---------------- MAP ---------------- */
   function map() {
     teardown();
-    const done = S.totalDone();
+    const done = S.totalDone(), total = S.lessonsTotal, nextId = S.firstUndone(), allDone = done >= total;
+    const resume = done > 0 && !allDone ? `<div class="map-resume"><div class="bar"><i style="width:${(done / total * 100).toFixed(0)}%"></i></div><span class="mr-n">${done} / ${total}</span><button class="btn gold" data-go="#/lesson/${nextId}">Continue: ${L[nextId].title} →</button></div>` : "";
     root().innerHTML = nav("map") + `
-      <div class="map-wrap"><div class="map-head"><h1>Map</h1></div>
+      <div class="map-wrap"><div class="map-head"><h1>Map</h1>${resume}</div>
       ${S.WORLDS.map(mapWorld).join("")}</div>
-      <footer>${done} of ${S.lessonsTotal} explored${done > 0 ? ` · <a id="restart" style="cursor:pointer;border-bottom:1px solid var(--line-2)">start over</a>` : ""}</footer>`;
+      <footer><span id="rsWrap">${done} of ${total} explored${done > 0 ? ` · <a id="restart" style="cursor:pointer;border-bottom:1px solid var(--line-2)">start over</a>` : ""}</span></footer>`;
     wireGo();
-    const rb = document.getElementById("restart"); if (rb) rb.onclick = () => { if (confirm("Clear your progress and start from the beginning?")) { S.reset(); map(); } };
-    root().querySelectorAll(".lnode").forEach(n => { const open = () => go("#/lesson/" + n.dataset.id); n.onclick = open; n.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }; });
+    const rb = document.getElementById("restart");
+    if (rb) rb.onclick = () => {
+      const w = document.getElementById("rsWrap");
+      w.innerHTML = `<span class="restart-confirm"><b>Erase all progress?</b><a id="rsYes">yes, start over</a><a id="rsNo">keep it</a></span>`;
+      document.getElementById("rsYes").onclick = () => { S.reset(); map(); };
+      document.getElementById("rsNo").onclick = () => map();
+    };
   }
   function mapWorld(w) {
     const cur = S.firstUndone();
     const nodes = w.lessons.map(id => {
       const l = L[id], done = S.isDone(id), isCur = id === cur && !done;
-      return `<div class="lnode ${done ? "done" : ""} ${isCur ? "cur" : ""}" data-id="${id}" role="link" tabindex="0" aria-label="${l.title}">
-        ${done ? '<div class="check">✓</div>' : ""}
-        <div class="ic" style="background:${w.color}1c;color:${w.color}">${l.icon}</div>
+      return `<a class="lnode ${done ? "done" : ""} ${isCur ? "cur" : ""}" href="#/lesson/${id}" style="${wv(w)}" aria-label="${l.title}${done ? " (done)" : ""}">
+        ${done ? '<div class="check" aria-hidden="true">✓</div>' : ""}
+        <div class="ic" style="background:${w.color}1c">${l.icon}</div>
         <div class="lt">${l.title}</div><div class="lo">${l.oneliner}</div>
-        ${isCur ? '<div class="lx" style="color:' + w.color + '">start here</div>' : ""}</div>`;
+        ${isCur ? '<div class="lx">start here</div>' : ""}</a>`;
     }).join("");
-    return `<div class="world-block"><div class="world-rail" data-go="#/chapter/${w.id}" style="cursor:pointer" title="Go to Chapter Intro"><span class="wdot" style="background:${w.color}"></span><span class="wt">${w.title}</span><span class="ws">${w.sub}</span><span class="wprog">${S.worldDone(w)}/${w.lessons.length}</span><span class="wgate-arr" style="margin-left:auto;color:var(--line-2);font-size:18px">→</span></div><div class="nodes">${nodes}</div></div>`;
+    return `<div class="world-block"><a class="world-rail" href="#/chapter/${w.id}" title="Go to chapter intro"><span class="wdot" style="background:${w.color}"></span><span class="wt">${w.title}</span><span class="ws">${w.sub}</span><span class="wprog">${S.worldDone(w)}/${w.lessons.length}</span><span class="wgate-arr" style="margin-left:auto;color:var(--line-2);font-size:18px">→</span></a><div class="nodes">${nodes}</div></div>`;
   }
 
   /* ---------------- LESSON (vertical explorable) ---------------- */
@@ -103,18 +107,18 @@ window.VIEWS = (function () {
     const w = S.worldOf[id], gpos = S.ORDER.indexOf(id), prev = S.prevOf(id), next = S.nextOf(id);
     root().innerHTML = `
       <div class="lesson-bar">
-        <a class="back" data-go="#/map">← Map</a>
-        <span class="wchip" style="background:${w.color}1c;color:${w.color}">${w.title}</span>
+        <a class="back" href="#/map">← Map</a>
+        <span class="wchip" style="background:${w.color}1c;${wv(w)}">${w.title}</span>
         <span class="lttl">${l.title}</span>
         <span class="nums">${gpos + 1} / ${S.lessonsTotal}</span>
         <div class="barnav"><button class="lbtn" id="lPrev" ${prev ? "" : "disabled"} aria-label="Previous lesson">←</button><button class="lbtn next" id="lNext">${next ? "Next →" : "Done"}</button></div>
         <div class="lprog"><i id="lprogFill" style="background:${w.color}"></i></div>
       </div>
       <div class="explorable">
-        <div class="lesson-hero"><div class="icbig" style="background:${w.color}1c;color:${w.color}">${l.icon}</div><h1>${l.title}</h1><p>${l.hero}</p></div>
+        <div class="lesson-hero"><div class="icbig" style="background:${w.color}1c;${wv(w)}">${l.icon}</div><h1>${l.title}</h1><p>${l.hero}</p></div>
         <div id="beats"></div>
         ${l.deeper ? `<details class="deeper"><summary>Go deeper — the technical detail</summary><div class="dbody">${l.deeper}</div></details>` : ""}
-        ${l.bridge ? `<div class="bridge"><span class="bridge-lab" style="color:${w.color}">▸ where this leads</span><p class="bridge-txt">${l.bridge}</p>${next ? `<div class="bridge-next">Next up — <b>${L[next].title}</b></div>` : ""}</div>` : ""}
+        ${l.bridge ? `<div class="bridge"><span class="bridge-lab" style="${wv(w)}">▸ where this leads</span><p class="bridge-txt">${l.bridge}</p>${next ? `<div class="bridge-next">Next up — <b>${L[next].title}</b></div>` : ""}</div>` : ""}
         <div class="lesson-end">
           <div class="btn-row" style="justify-content:center">${prev ? `<button class="btn ghost" data-go="#/lesson/${prev}">← ${L[prev].title}</button>` : ""}${next ? `<button class="btn primary" id="endNext">${L[next].title} →</button>` : `<button class="btn primary" data-go="#/map">Back to the map</button>`}</div>
           <div class="kbd-hint">tip: <kbd>←</kbd> <kbd>→</kbd> move between lessons</div>
@@ -125,12 +129,14 @@ window.VIEWS = (function () {
     const beatsEl = document.getElementById("beats");
     l.beats.forEach((b, i) => {
       const beat = document.createElement("div"); beat.className = "beat reveal";
-      beat.innerHTML = `<div class="beat-cap"><span class="bn">${b.n || String(i + 1).padStart(2, "0")}</span><h3>${b.h}</h3><p>${b.cap}</p></div><div class="beat-viz"></div>`;
+      beat.innerHTML = `<div class="beat-cap"><span class="bn">${b.n || String(i + 1).padStart(2, "0")}</span><h2>${b.h}</h2><p>${b.cap}</p></div><div class="beat-viz"></div>`;
       beatsEl.appendChild(beat);
       try { b.build(beat.querySelector(".beat-viz")); } catch (e) { console.error("beat", id, i, e); beat.querySelector(".beat-viz").innerHTML = `<div class="sig-state bad">This demo hit an error: ${e.message}</div>`; }
     });
+    // demo outputs are silent to AT otherwise — announce updates politely
+    beatsEl.querySelectorAll(".sig-state, .verdict, .linkmsg, .log, .hashout").forEach(n => { n.setAttribute("aria-live", "polite"); });
     // silently mark done when the learner moves on — or reaches the end of the page
-    const markDone = () => { if (!S.isDone(id)) { S.setDone(id, true); document.querySelectorAll(".progmini").forEach(p => { p.outerHTML = progMini(); }); } };
+    const markDone = () => { if (!S.isDone(id)) { S.setDone(id, true); document.querySelectorAll(".progmini").forEach(p => { p.outerHTML = progMini(); }); document.querySelectorAll(".progmini .bar").forEach(b => { b.classList.add("pulse"); setTimeout(() => b.classList.remove("pulse"), 700); }); } };
     // reveal on scroll; reaching the lesson-end block also counts as completing the lesson
     const endEl = root().querySelector(".lesson-end");
     window._lessonIO = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { if (e.target === endEl) markDone(); e.target.classList.add("in"); window._lessonIO.unobserve(e.target); } }), { threshold: 0.12 });
@@ -169,7 +175,7 @@ window.VIEWS = (function () {
       const l = window.LESSONS[id];
       if (!l) return;
       const done = S.isDone(id);
-      html += `<a data-go="#/lesson/${id}" class="cg-mod ${done ? "done" : ""}">
+      html += `<a href="#/lesson/${id}" class="cg-mod ${done ? "done" : ""}">
         <div class="cgm-icon" style="${done ? `background:${w.color};color:#fff;border:none` : ""}">${done ? "✓" : (l.icon || "•")}</div>
         <div class="cgm-info">
           <div class="cgm-title">${i + 1}. ${l.title}</div>

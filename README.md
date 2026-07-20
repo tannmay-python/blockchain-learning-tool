@@ -45,7 +45,7 @@ Any static file server works; there is no build step and no dependency.
 
 ```
 index.html            shell — loads the scripts below
-css/app.css           the whole design system (plum & marigold, Fraunces/Inter/JetBrains Mono)
+css/app.css           the whole design system (Llama maroon & marigold, Lora/Inter/JetBrains Mono)
 js/sha256.js          pure-JS SHA-256 (verified against test vectors)
 js/store.js           curriculum structure + progress (localStorage)
 js/lessons.js         the core lessons — each one a vertical "explorable" of interactive beats

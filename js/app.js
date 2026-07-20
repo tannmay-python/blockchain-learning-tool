@@ -11,6 +11,7 @@ window.APP = (function () {
   const isDark = () => document.documentElement.dataset.theme === "dark";
 
   function route() {
+    toggleMobileNav(false);
     const h = location.hash || "#/";
     const m = h.match(/^#\/lesson\/(.+)$/);
     const c = h.match(/^#\/chapter\/(.+)$/);
@@ -33,11 +34,14 @@ window.APP = (function () {
     const ctx = cv.getContext("2d"); let W, H, dpr, dots = [], confetti = [];
     // per-theme dot palettes, resolved every frame so a theme toggle takes effect immediately
     const PALETTE = { light: ["98,13,60", "241,162,34"], dark: ["198,59,135", "241,162,34"] };
-    function size() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); dots = []; const n = Math.min(90, Math.round(W * H / 18000)); for (let i = 0; i < n; i++) dots.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.4 + .4, a: Math.random(), tw: Math.random() * .015 + .003, vy: Math.random() * .1 + .02, ci: (Math.random() * 2) | 0 }); }
+    let lastW = 0;
+    function size() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (W === lastW && dots.length) return; // height-only change (mobile URL bar) — keep the field
+      lastW = W; dots = []; const n = Math.min(90, Math.round(W * H / (W < 640 ? 36000 : 18000))); for (let i = 0; i < n; i++) dots.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.4 + .4, a: Math.random(), tw: Math.random() * .015 + .003, vy: Math.random() * .1 + .02, ci: (Math.random() * 2) | 0 }); }
     function frame() {
       const cols = PALETTE[isDark() ? "dark" : "light"];
       ctx.clearRect(0, 0, W, H);
-      dots.forEach(s => { s.a += s.tw; const al = .08 + Math.abs(Math.sin(s.a)) * .22; s.y += s.vy; if (s.vx) s.x += s.vx; if (s.y > H) { s.y = 0; s.x = Math.random() * W; } ctx.fillStyle = `rgba(${cols[s.ci]},${al})`; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill(); });
+      dots.forEach(s => { s.a += s.tw; const al = .08 + Math.abs(Math.sin(s.a)) * .22; s.y += s.vy; if (s.y > H) { s.y = 0; s.x = Math.random() * W; } ctx.fillStyle = `rgba(${cols[s.ci]},${al})`; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill(); });
       if (confetti.length) {
         let active = [];
         confetti.forEach(p => {
@@ -75,19 +79,32 @@ window.APP = (function () {
       if (!RM) requestAnimationFrame(frame); }
     size(true); requestAnimationFrame(() => size(true)); setTimeout(() => size(true), 120);
     if (window._heroResize) removeEventListener("resize", window._heroResize);
-    window._heroResize = () => { if (document.contains(cv)) size(true); };
+    let hw = 0;
+    window._heroResize = () => { if (!document.contains(cv)) return; const w = dims()[0]; size(w !== hw); hw = w; };
     addEventListener("resize", window._heroResize); frame();
   }
 
   function toggleTheme() {
     const isDark = document.documentElement.dataset.theme === "dark";
     const newTheme = isDark ? "light" : "dark";
-    if (newTheme === "dark") document.documentElement.dataset.theme = "dark";
-    else document.documentElement.removeAttribute("data-theme");
+    const de = document.documentElement;
+    if (!RM) { de.classList.add("theming"); clearTimeout(window._themeT); window._themeT = setTimeout(() => de.classList.remove("theming"), 320); }
+    if (newTheme === "dark") de.dataset.theme = "dark";
+    else de.removeAttribute("data-theme");
     localStorage.setItem("theme", newTheme);
     const sunSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
     const moonSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-    document.querySelectorAll(".theme-toggle").forEach(btn => btn.innerHTML = newTheme === "dark" ? sunSvg : moonSvg);
+    document.querySelectorAll(".theme-toggle").forEach(btn => { btn.innerHTML = newTheme === "dark" ? sunSvg : moonSvg; btn.setAttribute("aria-pressed", String(newTheme === "dark")); });
+  }
+
+  /* mobile nav: one controller — class state, aria-expanded, scroll lock, Esc */
+  function toggleMobileNav(force) {
+    const nav = document.getElementById("mobileNav"), burger = document.querySelector(".hamburger");
+    if (!nav) return;
+    const open = force != null ? !!force : !nav.classList.contains("active");
+    nav.classList.toggle("active", open);
+    if (burger) { burger.classList.toggle("active", open); burger.setAttribute("aria-expanded", String(open)); }
+    if (document.body) document.body.style.overflow = open ? "hidden" : "";
   }
 
   function boot() {
@@ -95,6 +112,7 @@ window.APP = (function () {
     starfield(); addEventListener("hashchange", route); route();
     // keyboard: ← / → move between lessons
     addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { const mn = document.getElementById("mobileNav"); if (mn && mn.classList.contains("active")) { toggleMobileNav(false); return; } }
       if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
       if (!location.hash.startsWith("#/lesson/")) return;
       if (e.key === "ArrowRight") { const b = document.getElementById("lNext"); if (b) b.click(); }
@@ -102,5 +120,5 @@ window.APP = (function () {
     });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
-  return { heroCanvas, confetti: () => triggerConfetti(), toggleTheme };
+  return { heroCanvas, confetti: () => triggerConfetti(), toggleTheme, toggleMobileNav };
 })();

@@ -13,13 +13,18 @@ window.LESSONS = (function () {
   const hexOf = (buf) => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
   const P = (t) => `<p>${t}</p>`;
 
+  /* winning nonces for the deterministic starter chains (verified before use;
+     falls back to live mining on any miss, e.g. after the learner edits data) */
+  const MINED = {"Alice \u2192 Bob: 5\nCarol \u2192 Dan: 2|000000000000|3":4943,"Genesis block|000000000000|3":33,"Alice \u2192 Bob: 5|000ec697d4a08f4612b8af3256acd1e89aa61ee2d3c9896ea9b0b246f4e9b7ba|3":8090,"Carol \u2192 Dan: 2|0004c56c1c16d78f5988f47b458cdd2b53962694caa3b90b024b207d31d2fce0|3":6930,"Eve \u2192 Finn: 8|000eef8fa648c9d5c5de6c89a29ef773f731b08ac6f0ed8dd07d6cce04fcb663|3":8767,"Genesis|000000000000|3":5152,"Alice \u2192 Bob: 5|000715784e679a2d3e544cdf52ae4db5eb964aa5487847959c7d813680020dcb|3":7581,"Carol \u2192 Dan: 2|000fec793ae0caca8455ec6e0ef7d3a812efdb3b9358f980666e7bb5b8534483|3":3788,"Eve \u2192 Finn: 8|0008e405d9ed5e1114b414aa3051909fc686e1dc67d40c83ca77d14ac4bf31ba|3":8054,"Genesis block|000000000000|2":33,"Alice \u2192 Bob: 5|000ec697d4a08f4612b8af3256acd1e89aa61ee2d3c9896ea9b0b246f4e9b7ba|2":223,"Carol \u2192 Dan: 2|0031d99bfb2d83e4cd188414a4d2f5f033d901c83ccc4c0fb0bc85b45da27c37|2":325,"Genesis|000000000000|2":35,"Alice \u2192 Bob: 5|005be50ca2ff4e8bf83eddda1018c4e13d92344e981448ef473dc6be7acec875|2":2};
+
   /* shared rich block/chain renderer — beautiful, detailed, interactive */
   function richChain(host, opt) {
-    const diff = opt.diff || 2, GEN = "0".repeat(12);
+    const diff = opt.diff || 2, GEN = "0".repeat(12), Z = "0".repeat(opt.diff || 2);
     const bodyOf = (b) => b.txs ? b.txs.join("|") : b.data;
     const hh = (b, prev) => sha256(bodyOf(b) + prev + b.nonce);
+    const mine = (b, p) => { const c = MINED[bodyOf(b) + "|" + p + "|" + diff]; b.nonce = c != null ? c : 0; if (c == null || !hh(b, p).startsWith(Z)) { b.nonce = 0; while (!hh(b, p).startsWith(Z)) b.nonce++; } };
     let blocks = opt.blocks.map(b => ({ data: b.data, txs: b.txs ? b.txs.slice() : null }));
-    let prev = GEN; blocks.forEach(b => { b.nonce = 0; while (!hh(b, prev).startsWith("0".repeat(diff))) b.nonce++; b.prev = prev; b.hash = hh(b, prev); prev = b.hash; });
+    let prev = GEN; blocks.forEach(b => { mine(b, prev); b.prev = prev; b.hash = hh(b, prev); prev = b.hash; });
     const wrap = el("div", ""); wrap.innerHTML = `<div class="xchain" id="xc"></div>${opt.trace ? `<div class="linkmsg" id="lm">👆 Click any block to see how it locks onto the one before it.</div>` : ""}`; host.appendChild(wrap);
     const valid = (i) => { const b = blocks[i], rp = i === 0 ? GEN : blocks[i - 1].hash; return b.prev === rp && hh(b, b.prev).startsWith("0".repeat(diff)) && b.hash === hh(b, b.prev); };
     function render(freshIdx) {
@@ -32,16 +37,17 @@ window.LESSONS = (function () {
           <div class="xseg xprev"><div class="xlbl">prev block ↩</div><div class="xv">${short(b.prev, 9, 5)}</div></div>
           <div class="xseg"><div class="xlbl">${b.txs ? "transactions" : "data"}</div>${txsHtml}</div>
           <div class="xseg xnonce"><span class="xlbl" style="margin:0">nonce</span><span class="v">${fmt(b.nonce)}</span></div>
-          <div class="xseal"><span class="lk">${ok ? "🔒" : "⚠️"}</span><span class="sv">${short(cur, 9, 5)}</span></div>
+          <div class="xseal"><span class="lk" aria-hidden="true">${ok ? "🔒" : "⚠️"}</span><span class="sv">${short(cur, 9, 5)}</span></div>
           ${opt.editable ? `<button class="btn" data-mine="${i}" style="margin-top:10px;font-size:11px;padding:6px 10px;width:100%">Re-mine from here</button>` : ""}</div>`;
         c.appendChild(node);
         if (i < blocks.length - 1) { const conn = el("div", "xconn" + (ok ? "" : " bad")); conn.innerHTML = `<div class="hashtag">${short(b.hash, 5, 3)}</div><div class="ln"></div>`; c.appendChild(conn); }
       });
       if (opt.editable) {
         c.querySelectorAll("textarea[data-i]").forEach(t => t.oninput = () => { const i = +t.dataset.i; blocks[i].data = t.value; blocks[i].hash = hh(blocks[i], blocks[i].prev); render(); const tt = wrap.querySelector(`textarea[data-i="${i}"]`); if (tt) tt.focus(); });
-        c.querySelectorAll("button[data-mine]").forEach(btn => btn.onclick = () => { let i = +btn.dataset.mine, p = i === 0 ? GEN : blocks[i - 1].hash; for (let j = i; j < blocks.length; j++) { blocks[j].prev = p; blocks[j].nonce = 0; while (!hh(blocks[j], p).startsWith("0".repeat(diff))) blocks[j].nonce++; blocks[j].hash = hh(blocks[j], p); p = blocks[j].hash; } render(); });
+        c.querySelectorAll("button[data-mine]").forEach(btn => btn.onclick = () => { let i = +btn.dataset.mine, p = i === 0 ? GEN : blocks[i - 1].hash; for (let j = i; j < blocks.length; j++) { blocks[j].prev = p; mine(blocks[j], p); blocks[j].hash = hh(blocks[j], p); p = blocks[j].hash; } render(); });
       }
       if (opt.trace) {
+        c.querySelectorAll(".xblock").forEach(node => { node.tabIndex = 0; node.setAttribute("role", "button"); node.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); node.click(); } }; });
         c.querySelectorAll(".xblock").forEach(node => node.onclick = () => {
           c.querySelectorAll(".lit").forEach(e => e.classList.remove("lit")); c.querySelectorAll(".traced").forEach(e => e.classList.remove("traced"));
           const i = +node.dataset.i, lm = wrap.querySelector("#lm");
@@ -56,7 +62,7 @@ window.LESSONS = (function () {
     }
     render();
     return {
-      addBlock(data) { const p = blocks.length ? blocks[blocks.length - 1].hash : GEN; const nb = { data, nonce: 0 }; while (!hh(nb, p).startsWith("0".repeat(diff))) nb.nonce++; nb.prev = p; nb.hash = hh(nb, p); blocks.push(nb); render(blocks.length - 1); },
+      addBlock(data) { const p = blocks.length ? blocks[blocks.length - 1].hash : GEN; const nb = { data }; mine(nb, p); nb.prev = p; nb.hash = hh(nb, p); blocks.push(nb); render(blocks.length - 1); },
       mineNext(data, onDone) { // animated: scramble the seal while searching, then snap
         const p = blocks.length ? blocks[blocks.length - 1].hash : GEN; const tmp = { data, nonce: 0 };
         const c = wrap.querySelector("#xc");
@@ -117,13 +123,13 @@ window.LESSONS = (function () {
     host.appendChild(wrap);
     const poolEl = wrap.querySelector("#pool"), slot = wrap.querySelector("#slot"), mineBtn = wrap.querySelector("#mine");
     function drawMerkle() { const mw = wrap.querySelector("#mwrap"), ms = wrap.querySelector("#mslot"); if (inB.length >= 2) { mw.style.display = "block"; ms.innerHTML = ""; merkleViz(ms, inB, { compact: true }); } else { mw.style.display = "none"; ms.innerHTML = ""; } }
-    function drawPool() { poolEl.innerHTML = ""; pool.forEach(t => { const used = inB.includes(t); const chip = el("div", "txchip" + (used ? " used" : ""), `<span class="grip">⠿</span>${t}`); if (!used && !sealed) { chip.draggable = true; chip.ondragstart = e => { e.dataTransfer.setData("text/plain", t); chip.classList.add("dragging"); }; chip.ondragend = () => chip.classList.remove("dragging"); chip.onclick = () => add(t); } poolEl.appendChild(chip); }); }
+    function drawPool() { poolEl.innerHTML = ""; pool.forEach(t => { const used = inB.includes(t); const chip = el("button", "txchip" + (used ? " used" : ""), `<span class="grip" aria-hidden="true">⠿</span>${t}`); chip.type = "button"; chip.disabled = used || sealed; if (!used && !sealed) { chip.draggable = true; chip.ondragstart = e => { e.dataTransfer.setData("text/plain", t); chip.classList.add("dragging"); }; chip.ondragend = () => chip.classList.remove("dragging"); chip.onclick = () => add(t); } poolEl.appendChild(chip); }); }
     function drawBlock() { const root = inB.length ? merk(inB) : null;
       slot.innerHTML = `<div class="xblock${sealed ? " justsealed" : mining ? " mining" : ""}"><div class="xtop"></div><div class="xpad">
         <div class="xh"><span class="xn">#1</span><span class="xs">${sealed ? "sealed" : mining ? "mining…" : inB.length + " tx"}</span></div>
         <div class="xseg"><div class="xlbl">transactions${sealed ? " (locked)" : " — drop here"}</div><div class="dropzone${inB.length ? "" : " empty"}" id="dz">${inB.length ? inB.map(t => `<div class="xtx">${t}</div>`).join("") : "drag a transaction here"}</div></div>
-        <div class="xseg"><div class="xlbl">merkle root</div><div class="xv" style="color:var(--gold-2)">${root ? short(root, 11, 7) : "—"}</div></div>
-        <div class="xseal"><span class="lk">${sealed ? "🔒" : "🔓"}</span><span class="sv">${sealed || mining ? short(curHash || "0".repeat(64), 10, 6) : "not sealed yet"}</span></div>
+        <div class="xseg"><div class="xlbl">merkle root</div><div class="xv" style="color:var(--gold-text)">${root ? short(root, 11, 7) : "—"}</div></div>
+        <div class="xseal"><span class="lk" aria-hidden="true">${sealed ? "🔒" : "🔓"}</span><span class="sv">${sealed || mining ? short(curHash || "0".repeat(64), 10, 6) : "not sealed yet"}</span></div>
         ${mining ? `<div class="minebar"><i id="mb"></i></div>` : ""}</div></div>`;
       const dz = slot.querySelector("#dz"); if (!sealed && !mining) { dz.ondragover = e => { e.preventDefault(); dz.classList.add("over"); }; dz.ondragleave = () => dz.classList.remove("over"); dz.ondrop = e => { e.preventDefault(); dz.classList.remove("over"); add(e.dataTransfer.getData("text/plain")); }; }
       mineBtn.disabled = !inB.length || sealed || mining;
@@ -230,7 +236,7 @@ window.LESSONS = (function () {
         build(s) { const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>key derivation</div><div id="kd"></div><button class="btn primary block" id="kdGo" style="margin-top:14px">Roll a new private key</button>`;
           s.appendChild(wrap);
           function show() { const priv = sha256("k" + Math.random() + Date.now()); const pub = sha256(priv); const addr = "0x" + sha256(pub).slice(-16);
-            wrap.querySelector("#kd").innerHTML = `<div class="bfield" style="border-color:var(--red)"><div class="k" style="color:var(--red)">private key · keep secret</div><div class="v" style="color:var(--red)">${short(priv, 16, 8)}</div></div><div style="text-align:center;color:var(--gold-2);font-size:13px;margin:8px 0">↓ one-way maths (elliptic curve) ↓</div><div class="bfield"><div class="k">public key · share freely</div><div class="v vi">${short(pub, 16, 8)}</div></div><div style="text-align:center;color:var(--gold-2);font-size:13px;margin:8px 0">↓ hash ↓</div><div class="bfield" style="border-color:var(--green)"><div class="k" style="color:var(--green)">your address · how people pay you</div><div class="v gr">${addr}</div></div>`; }
+            wrap.querySelector("#kd").innerHTML = `<div class="bfield" style="border-color:var(--red)"><div class="k" style="color:var(--red)">private key · keep secret</div><div class="v" style="color:var(--red)">${short(priv, 16, 8)}</div></div><div style="text-align:center;color:var(--gold-text);font-size:13px;margin:8px 0">↓ one-way maths (elliptic curve) ↓</div><div class="bfield"><div class="k">public key · share freely</div><div class="v vi">${short(pub, 16, 8)}</div></div><div style="text-align:center;color:var(--gold-text);font-size:13px;margin:8px 0">↓ hash ↓</div><div class="bfield" style="border-color:var(--green)"><div class="k" style="color:var(--green)">your address · how people pay you</div><div class="v gr">${addr}</div></div>`; }
           wrap.querySelector("#kdGo").onclick = show; show();
         } },
       { n: "02", h: "Sign it — then try to forge it", cap: "Sign a payment, then tamper with the amount. The signature instantly stops matching. That's how the network spots fakes.",
@@ -325,7 +331,7 @@ window.LESSONS = (function () {
           let levels = []; let lvl = txs.map(t => ({ hash: sha256(t), label: t })); levels.push(lvl); while (lvl.length > 1) { const n = []; for (let i = 0; i < lvl.length; i += 2) { const a = lvl[i], b = lvl[i + 1] || lvl[i]; n.push({ hash: sha256(a.hash + b.hash) }); } levels.push(n); lvl = n; }
           const wrap = el("div", ""); wrap.innerHTML = `<div class="mtree2" id="mt"></div><div class="sig-state" id="mM" style="max-width:560px;margin:18px auto 0;text-align:center">Click any transaction at the bottom.</div>`; s.appendChild(wrap);
           function proof(leaf) { const path = new Set(), prf = new Set(); let idx = leaf; for (let l = 0; l < levels.length - 1; l++) { path.add(levels[l][idx].hash); const sib = idx % 2 === 0 ? idx + 1 : idx - 1; prf.add((levels[l][sib] || levels[l][idx]).hash); idx = Math.floor(idx / 2); } path.add(levels[levels.length - 1][0].hash); return { path, prf }; }
-          function render(sel) { const w = wrap.querySelector("#mt"); w.innerHTML = ""; const pr = sel >= 0 ? proof(sel) : null; for (let l = levels.length - 1; l >= 0; l--) { const row = el("div", "mrow"); levels[l].forEach((node, i) => { const isLeaf = l === 0, isRoot = l === levels.length - 1; let c = "mnode" + (isLeaf ? " leaf" : isRoot ? " root" : ""); if (pr) { if (pr.path.has(node.hash)) c += " path"; else if (pr.prf.has(node.hash)) c += " proof"; } const n = el("div", c, (isLeaf ? node.label + "<br>" : isRoot ? "ROOT<br>" : "") + short(node.hash, 5, 3)); if (isLeaf) n.onclick = () => { render(i); const sz = proof(i).prf.size; wrap.querySelector("#mM").innerHTML = `To prove <b>${txs[i]}</b> is in this block of ${txs.length}, supply just <b style="color:var(--gold-2)">${sz} gold hashes</b> and re-hash up the path to the root.`; }; row.appendChild(n); }); w.appendChild(row); } } render(-1);
+          function render(sel) { const w = wrap.querySelector("#mt"); w.innerHTML = ""; const pr = sel >= 0 ? proof(sel) : null; for (let l = levels.length - 1; l >= 0; l--) { const row = el("div", "mrow"); levels[l].forEach((node, i) => { const isLeaf = l === 0, isRoot = l === levels.length - 1; let c = "mnode" + (isLeaf ? " leaf" : isRoot ? " root" : ""); if (pr) { if (pr.path.has(node.hash)) c += " path"; else if (pr.prf.has(node.hash)) c += " proof"; } const n = el("div", c, (isLeaf ? node.label + "<br>" : isRoot ? "ROOT<br>" : "") + short(node.hash, 5, 3)); if (isLeaf) { n.setAttribute("role", "button"); n.tabIndex = 0; n.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); n.onclick(); } }; } if (isLeaf) n.onclick = () => { render(i); const sz = proof(i).prf.size; wrap.querySelector("#mM").innerHTML = `To prove <b>${txs[i]}</b> is in this block of ${txs.length}, supply just <b style="color:var(--gold-text)">${sz} gold hashes</b> and re-hash up the path to the root.`; }; row.appendChild(n); }); w.appendChild(row); } } render(-1);
         } },
     ],
     deeper: P("The tree's height is <code>log₂(n)</code>, so a million transactions need ~20 sibling hashes, a billion ~30 — doubling the block adds just one hash to the proof. A fake sibling produces the wrong root, so the proof fails safely even from an untrusted source. This is what lets a phone wallet confirm a payment in milliseconds without ever downloading the chain.") };
@@ -347,7 +353,7 @@ window.LESSONS = (function () {
           s.appendChild(wrap);
           // Satoshi's gambler's-ruin formula — same model as the 51% attack lesson — with a 10% attacker
           const prob = (q, z) => { const p = 1 - q; if (q >= p) return 1; const lam = z * (q / p); let s2 = 0, po = Math.exp(-lam); for (let k = 0; k <= z; k++) { if (k > 0) po *= lam / k; s2 += po * (1 - Math.pow(q / p, z - k)); } return 1 - s2; };
-          function draw() { wrap.querySelector("#stack").innerHTML = `<div class="xtx" style="background:var(--gold-soft);color:var(--gold-2);font-weight:700">★ your payment</div>` + Array.from({ length: conf }, (_, i) => `<div class="xtx">confirmation ${i + 1}</div>`).join(""); const risk = prob(0.10, conf) * 100; const r = wrap.querySelector("#risk"); r.textContent = risk >= 1 ? "~" + Math.round(risk) + "%" : risk < 0.01 ? "<0.01%" : risk.toFixed(2) + "%"; r.style.color = risk > 1 ? "var(--red)" : "var(--green)"; }
+          function draw() { wrap.querySelector("#stack").innerHTML = `<div class="xtx" style="background:var(--gold-soft);color:var(--gold-text);font-weight:700">★ your payment</div>` + Array.from({ length: conf }, (_, i) => `<div class="xtx">confirmation ${i + 1}</div>`).join(""); const risk = prob(0.10, conf) * 100; const r = wrap.querySelector("#risk"); r.textContent = risk >= 1 ? "~" + Math.round(risk) + "%" : risk < 0.01 ? "<0.01%" : risk.toFixed(2) + "%"; r.style.color = risk > 1 ? "var(--red)" : "var(--green)"; }
           wrap.querySelector("#add").onclick = () => { if (conf < 8) { conf++; draw(); } }; wrap.querySelector("#reset").onclick = () => { conf = 0; draw(); }; draw();
         } },
     ],
@@ -443,7 +449,7 @@ window.LESSONS = (function () {
           R.oninput = e => render(+e.target.value); render(20);
         } },
       { n: "02", h: "How a stablecoin holds its peg", cap: "A stablecoin is built to stay worth one dollar. There are three ways to try — and they are not equally safe.",
-        build(s) { const items = [["Fiat-backed", "One real dollar in a reserve per token (USDC, Tether).", "safest — if the reserve is truly there", "var(--green)"], ["Crypto-backed", "Over-collateralised with volatile crypto (DAI).", "needs a buffer against price swings", "var(--gold-2)"], ["Algorithmic", "Held up only by code and incentives, no full backing.", "fragile — Terra collapsed to zero", "var(--red)"]];
+        build(s) { const items = [["Fiat-backed", "One real dollar in a reserve per token (USDC, Tether).", "safest — if the reserve is truly there", "var(--green)"], ["Crypto-backed", "Over-collateralised with volatile crypto (DAI).", "needs a buffer against price swings", "var(--gold-text)"], ["Algorithmic", "Held up only by code and incentives, no full backing.", "fragile — Terra collapsed to zero", "var(--red)"]];
           const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>three ways to hold a peg</div>` + items.map(([h, d, n, c]) => `<div class="bfield" style="margin-bottom:8px;border-color:${c}"><b>${h}</b><div class="note" style="margin-top:4px;color:var(--ink-2)">${d}</div><div class="note" style="margin-top:4px;color:${c}">${n}</div></div>`).join(""); s.appendChild(wrap);
         } },
     ],
@@ -468,7 +474,7 @@ window.LESSONS = (function () {
     hero: "A wallet does not hold coins. It holds keys. The coins are entries on the chain — your key is just what proves they are yours.",
     beats: [
       { n: "01", h: "A wallet is a key, not a vault", cap: "From one secret phrase, a wallet derives all your keys and addresses. The balance lives on the chain; the wallet just unlocks it.",
-        build(s) { const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>from seed phrase to addresses</div><div class="bfield" style="border-color:var(--red)"><div class="k" style="color:var(--red)">seed phrase · the master secret</div><div class="v" id="seed" style="color:var(--red)">·············</div></div><div style="text-align:center;color:var(--gold-2);margin:8px 0">↓ derives ↓</div><div id="addrs"></div><button class="btn primary block" id="gen" style="margin-top:12px">Generate a wallet</button>`;
+        build(s) { const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>from seed phrase to addresses</div><div class="bfield" style="border-color:var(--red)"><div class="k" style="color:var(--red)">seed phrase · the master secret</div><div class="v" id="seed" style="color:var(--red)">·············</div></div><div style="text-align:center;color:var(--gold-text);margin:8px 0">↓ derives ↓</div><div id="addrs"></div><button class="btn primary block" id="gen" style="margin-top:12px">Generate a wallet</button>`;
           s.appendChild(wrap); const words = ["ocean", "maple", "silver", "tiger", "amber", "ginger", "violet", "harbor", "cedar", "ribbon"];
           wrap.querySelector("#gen").onclick = () => { const seed = Array.from({ length: 4 }, () => words[Math.floor(Math.random() * words.length)]).join(" "); wrap.querySelector("#seed").textContent = seed; const base = sha256(seed); wrap.querySelector("#addrs").innerHTML = [0, 1, 2].map(i => `<div class="bfield" style="margin-bottom:6px"><div class="k">address ${i + 1}</div><div class="v gr">0x${sha256(base + i).slice(-16)}</div></div>`).join(""); };
         } },
@@ -485,7 +491,7 @@ window.LESSONS = (function () {
     beats: [
       { n: "01", h: "The base chain is slow on purpose", cap: "Because thousands of computers each verify every transaction, throughput stays low. Here is the gap Layer 2 has to close.",
         build(s) { const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>transactions per second</div><div id="bars"></div>`;
-          s.appendChild(wrap); const rows = [["Bitcoin", 7, "var(--gold-2)"], ["Ethereum", 15, "var(--plum)"], ["Visa", 1700, "var(--green)"]];
+          s.appendChild(wrap); const rows = [["Bitcoin", 7, "var(--gold-text)"], ["Ethereum", 15, "var(--plum)"], ["Visa", 1700, "var(--green)"]];
           wrap.querySelector("#bars").innerHTML = rows.map(([n, v, c]) => `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13.5px"><b>${n}</b><span class="mono">${v.toLocaleString()}/s</span></div><div style="height:14px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${Math.max(3, Math.log10(v + 1) / Math.log10(1701) * 100)}%;background:${c};border-radius:99px"></div></div></div>`).join("") + `<div class="note" style="margin-top:8px">Log scale — Visa dwarfs base-layer chains. That gap is the whole job of Layer 2.</div>`;
         } },
       { n: "02", h: "Roll thousands into one", cap: "A rollup runs the transactions off to the side, then posts a single summary back to the secure main chain. Pile some up and roll them.",
@@ -502,7 +508,7 @@ window.LESSONS = (function () {
     beats: [
       { n: "01", h: "A block holds records", cap: "Start with one <b>block</b> — just a box that holds a list of records, like a page in a notebook. Add a few and watch its fingerprint at the bottom change.",
         build(s) { const recs = ["Alice → Bob: 5 coins", "Carol → Dan: 2 coins", "Eve → Finn: 8 coins", "Gail → Hank: 1 coin"];
-          const wrap = el("div", ""); wrap.innerHTML = `<div class="bigblock"><div class="bt"></div><div class="bp"><div class="bn">Block #1</div><div class="brow"><div class="k">records inside</div><div class="v" id="recs"></div></div><div class="brow"><div class="k">fingerprint that seals it</div><div class="v" style="color:var(--gold-2)" id="seal"></div></div></div></div><div class="btn-row" style="justify-content:center;margin-top:16px"><button class="btn" id="add">+ Add a record</button></div>`;
+          const wrap = el("div", ""); wrap.innerHTML = `<div class="bigblock"><div class="bt"></div><div class="bp"><div class="bn">Block #1</div><div class="brow"><div class="k">records inside</div><div class="v" id="recs"></div></div><div class="brow"><div class="k">fingerprint that seals it</div><div class="v" style="color:var(--gold-text)" id="seal"></div></div></div></div><div class="btn-row" style="justify-content:center;margin-top:16px"><button class="btn" id="add">+ Add a record</button></div>`;
           s.appendChild(wrap); let list = recs.slice(0, 2), i = 2;
           function draw() { wrap.querySelector("#recs").innerHTML = list.map(r => `<div style="padding:3px 0">${r}</div>`).join(""); wrap.querySelector("#seal").textContent = short(sha256(list.join("|")), 18, 10); }
           wrap.querySelector("#add").onclick = () => { list.push(i < recs.length ? recs[i++] : "Someone → Someone: " + (1 + Math.floor(Math.random() * 9)) + " coins"); draw(); }; draw();
@@ -568,7 +574,7 @@ window.LESSONS = (function () {
           const row = el("div", "btn-row"); row.style.cssText = "justify-content:center;margin-top:8px"; const b = el("button", "btn primary", "+ Mine the next block"); let i = 0; const tx = ["Bob → Carol: 3", "Carol → Dan: 7", "Dan → Eve: 2", "Eve → Finn: 9", "Finn → Gail: 4", "Gail → Hank: 6"]; b.onclick = () => c.addBlock(tx[i++ % tx.length]); row.appendChild(b); s.appendChild(row); } },
       { n: "02", h: "Everything you built", cap: "Nine ideas, one machine. Each was a lesson; together they let strangers agree on one history with no one in charge.",
         build(s) { const items = [["A hash", "a fingerprint you cannot reverse"], ["Keys", "a secret that proves what is yours"], ["A block", "records bundled and sealed shut"], ["Mining", "work that makes sealing expensive"], ["Rewards", "the block pays its own security bill"], ["The chain", "links that lock the past in place"], ["The network", "gossip spreads the news, no centre"], ["Consensus", "the chain with the most work wins"], ["Stake or work", "lying always costs more than it pays"]];
-          const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>the journey, in one line each</div>` + items.map(([h, d]) => `<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)"><span style="color:var(--gold-2);font-weight:700;font-family:var(--mono)">→</span><div><b style="color:var(--ink)">${h}</b> <span class="note">— ${d}</span></div></div>`).join(""); s.appendChild(wrap); } },
+          const wrap = el("div", "fcard"); wrap.innerHTML = `<div class="flabel"><span class="pin"></span>the journey, in one line each</div>` + items.map(([h, d]) => `<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)"><span style="color:var(--gold-text);font-weight:700;font-family:var(--mono)">→</span><div><b style="color:var(--ink)">${h}</b> <span class="note">— ${d}</span></div></div>`).join(""); s.appendChild(wrap); } },
     ],
     deeper: P("The point was never the coin. It was a way for people who do not trust each other to agree on one shared record without a referee. Take the referee out and you get money no state can freeze; hand a state the keys and you get the most controllable money in history. Same machine, pointed in opposite directions — which is exactly why the policy questions are so hard.") };
 

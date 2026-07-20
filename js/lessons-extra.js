@@ -71,7 +71,7 @@
       wrap.innerHTML = `<div class="quiz-result">
         <div class="qr-score"><span class="qr-n">${RM ? score : 0}</span><span class="qr-d">/ ${total}</span></div>
         ${dots(false)}
-        <h4>${tier[0]}</h4><p>${tier[1]}</p>
+        <h3>${tier[0]}</h3><p>${tier[1]}</p>
         <div class="quiz-foot"><button class="btn" id="qretake">Retake checkpoint</button></div></div>`;
       wrap.querySelector("#qretake").onclick = restart;
       if (!RM && score > 0) { 
@@ -318,6 +318,8 @@
           let lines = [], dots = [], busy = false;
           edges.forEach(([a, b]) => { const ln = document.createElementNS(NS, "line"); ln.setAttribute("x1", pts[a][0]); ln.setAttribute("y1", pts[a][1]); ln.setAttribute("x2", pts[b][0]); ln.setAttribute("y2", pts[b][1]); ln.setAttribute("class", "netedge"); svg.appendChild(ln); lines.push({ ln, a, b }); });
           pts.forEach((p, i) => { const c = document.createElementNS(NS, "circle"); c.setAttribute("cx", p[0]); c.setAttribute("cy", p[1]); c.setAttribute("r", 11); c.setAttribute("class", "netnode"); svg.appendChild(c); dots.push(c);
+            c.setAttribute("tabindex", "0"); c.setAttribute("role", "button"); c.setAttribute("aria-label", "Broadcast from node " + (i + 1));
+            c.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); c.onclick(); } };
             c.onclick = () => { if (busy) return; busy = true; ripple(i, "heard", () => { busy = false; wrap.querySelector("#gmsg").innerHTML = `From node ${i + 1} to all ${pts.length} in a few hops — <b>no one was in charge of delivery.</b>`; }); }; });
           function ripple(src, cls, done) {
             dots.forEach(d => d.setAttribute("class", "netnode")); lines.forEach(({ ln }) => ln.setAttribute("class", "netedge"));

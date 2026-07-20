@@ -78,9 +78,9 @@
       ];
       const sig = window.sha256 ? sha256("You→Bob:5·" + Date.now()) : "a1b2c3d4e5f6";
       const details = [
-        `signature <span class="mono" style="color:var(--gold-2)">${short(sig, 8, 6)}</span>`,
+        `signature <span class="mono" style="color:var(--gold-text)">${short(sig, 8, 6)}</span>`,
         `waiting in the pool with <b id="pmc">1</b> other payments`,
-        `nonce found: <span class="mono" style="color:var(--gold-2)"><b id="pnc">0</b></span>`,
+        `nonce found: <span class="mono" style="color:var(--gold-text)"><b id="pnc">0</b></span>`,
         `linked to block <span class="mono">#417</span>`,
         `now on <b id="pcp">1</b> computers`,
       ];
@@ -424,7 +424,7 @@
       const recs = ["Alice → Bob: 5 coins", "Carol → Dan: 2 coins", "Eve → Finn: 8 coins", "Gail → Hank: 1 coin", "Ivy → Jo: 3 coins"];
       let list = recs.slice(0, 2), i = 2, raf;
       const wrap = el("div", "");
-      wrap.innerHTML = `<div class="bigblock"><div class="bt"></div><div class="bp"><div class="bn">Block #1</div><div class="brow"><div class="k">records inside</div><div class="v" id="recs"></div></div><div class="brow"><div class="k">fingerprint that seals it</div><div class="v mono" style="color:var(--gold-2)" id="seal"></div></div></div></div>
+      wrap.innerHTML = `<div class="bigblock"><div class="bt"></div><div class="bp"><div class="bn">Block #1</div><div class="brow"><div class="k">records inside</div><div class="v" id="recs"></div></div><div class="brow"><div class="k">fingerprint that seals it</div><div class="v mono" style="color:var(--gold-text)" id="seal"></div></div></div></div>
         <div class="btn-row" style="justify-content:center;margin-top:16px"><button class="btn" id="add">+ Add a record</button><button class="btn" id="rst">Reset</button></div>
         <div class="note" style="text-align:center;margin-top:8px">The fingerprint is one short code standing in for everything in the box.</div>`;
       s.appendChild(wrap);
