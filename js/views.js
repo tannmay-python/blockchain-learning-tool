@@ -102,7 +102,11 @@ export const VIEWS = (function () {
         <div class="lt">${l.title}</div><div class="lo">${l.oneliner}</div>
         ${deep ? '<div class="lx">◇ optional deep dive</div>' : isCur ? '<div class="lx">start here</div>' : ""}</a>`;
     }).join("");
-    return `<div class="world-block"><a class="world-rail" href="#/chapter/${w.id}" title="Go to chapter intro"><span class="wdot" style="background:${w.color}"></span><span class="wt">${w.title}</span><span class="ws">${w.sub}</span><span class="wprog">${S.worldDone(w)}/${w.lessons.length}</span>${S.gatePassed(w.id) ? '<span class="wbadge" title="Exit gate passed">✦</span>' : ""}<span class="wgate-arr" style="margin-left:auto;color:var(--line-2);font-size:18px">→</span></a><div class="nodes">${nodes}</div></div>`;
+    const chapterNode = `<a class="lnode chapter-node" href="#/chapter/${w.id}" title="Go to ${w.title} chapter intro" style="border-color:${w.color};box-shadow:0 2px 8px ${w.color}33;background:var(--surface)">
+          <div class="ic" style="background:${w.color};color:#fff;font-size:13px;letter-spacing:0.04em">CH ${w.n}</div>
+          <div class="lt" style="color:${w.color};font-size:16px;margin-bottom:2px">Chapter Intro</div><div class="lo">${w.title}</div>
+          <div class="lx" style="color:${w.color}">chapter overview</div></a>`;
+    return `<div class="world-block"><div class="world-rail"><span class="wdot" style="background:${w.color}"></span><span class="wt">${w.title}</span><span class="ws">${w.sub}</span><span class="wprog">${S.worldDone(w)}/${w.lessons.length}</span></div><div class="nodes">${chapterNode}${nodes}</div></div>`;
   }
 
   /* ---------------- LESSON (vertical explorable) ---------------- */
@@ -170,11 +174,10 @@ export const VIEWS = (function () {
     if (!w) return go("#/map");
     const demos = w.lessons.reduce((a, id) => a + (L[id] ? L[id].beats.length : 0), 0);
     const core = w.lessons.filter(id => !S.DEEP.has(id));
-    const passed = S.gatePassed(w.id);
     let html = nav("");
     html += `<div class="ch-gate explorable fadein">
       <div class="ch-gate-head">
-        <div class="cg-n">Chapter ${w.n}${passed ? ' · <span style="color:var(--gold-text)">✦ badge earned</span>' : ""}</div>
+        <div class="cg-n">Chapter ${w.n}</div>
         <h1 class="cg-title">${w.title}</h1>
         <p class="cg-intro">${w.intro}</p>
         <p class="cg-meta">~${core.length * 5} min · ${w.lessons.length} lesson${w.lessons.length > 1 ? "s" : ""} · ${demos} hands-on demos</p>
@@ -195,18 +198,13 @@ export const VIEWS = (function () {
         <div class="cgm-arrow">→</div>
       </a>`;
     });
-    const gateQs = window.GATES && window.GATES[w.id];
     html += `</div>
       <div class="cg-start">
         <button class="btn primary" style="font-size:16px;padding:14px 32px;background:${w.color};border-color:transparent;color:#fff" data-go="#/lesson/${w.lessons[0]}">Enter Chapter →</button>
       </div>
-      ${gateQs ? `<div class="cg-exit"><div class="cg-exit-h">Exit gate${passed ? " (passed) ✦" : ""}</div><p class="cg-exit-p">${passed ? "Badge earned. Retake it any time. The questions reach back into earlier chapters on purpose." : "Answer these questions, including the reach-backs from earlier chapters, to earn the chapter badge. Lessons tick themselves, but you have to earn the badge."}</p><div id="gateQuiz"></div></div>` : ""}
     </div>`;
     root().innerHTML = html;
     wireGo();
-    if (gateQs && QUIZ) QUIZ(document.getElementById("gateQuiz"), gateQs, { tag: "Exit gate", onDone: (score, total) => {
-      if (score >= total - (total > 2 ? 1 : 0) && !S.gatePassed(w.id)) { S.setGate(w.id); }
-    } });
   }
 
   return { home, map, lesson, chapterGate };

@@ -533,8 +533,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .cg-start .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0,0,0,0.15); filter: brightness(1.1); }
 .cg-start .btn:active { transform: translateY(1px); }
 
-.world-rail { display: flex; align-items: center; }
-.world-rail:hover .wgate-arr { color: var(--ink) !important; transform: translateX(4px); transition: .2s; }
+
 
 /* ===== layer2: rollup funnel ===== */
 .roll-stage { display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -822,12 +821,8 @@ button.txchip { font-family: var(--mono); text-align: left; width: 100%; color: 
 .progmini .bar.pulse i { animation: progpulse .6s var(--ease); }
 @keyframes progpulse { 40% { transform: scaleY(1.9); } 100% { transform: scaleY(1); } }
 
-/* ============ curriculum: deep dives, exit gates, badges ============ */
+/* ============ curriculum: deep dives ============ */
 .cg-meta { margin-top: 14px; font-family: var(--mono); font-size: 12.5px; color: var(--ink-3); letter-spacing: .04em; }
 .deep-chip { display: inline-block; font-size: 10.5px; font-weight: 600; font-family: var(--sans); color: var(--gold-text); background: var(--gold-tint); border: 1px solid var(--gold); border-radius: 99px; padding: 2px 9px; margin-left: 8px; vertical-align: 2px; }
 .lnode.deep { border-style: dashed; }
 .lnode.deep .lx { font-style: italic; }
-.wbadge { margin-left: 10px; color: var(--gold-text); font-size: 15px; }
-.cg-exit { margin-top: 56px; border-top: 1px solid var(--line); padding-top: 34px; }
-.cg-exit-h { font-family: var(--disp); font-weight: 600; font-size: 24px; color: var(--plum); }
-.cg-exit-p { font-size: 15px; color: var(--ink-2); line-height: 1.6; margin: 10px 0 18px; max-width: 60ch; }

@@ -34,25 +34,22 @@ export const STORE = (function () {
 
   /* lesson renames across versions: old id -> new id (progress survives) */
   const RENAMES = {};
-  let completed = new Set(), gates = new Set();
+  let completed = new Set();
   try {
     const raw = JSON.parse(localStorage.getItem(LS) || "[]");
     const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.done) ? raw.done : []);
     list.forEach(id => { const cur = RENAMES[id] || id; if (ORDER.includes(cur)) completed.add(cur); });
-    if (raw && Array.isArray(raw.gates)) raw.gates.forEach(id => gates.add(id));
   } catch (e) {}
-  function save() { try { localStorage.setItem(LS, JSON.stringify({ v: 2, done: [...completed], gates: [...gates] })); } catch (e) {} }
-  function gatePassed(id) { return gates.has(id); }
-  function setGate(id) { gates.add(id); save(); }
+  function save() { try { localStorage.setItem(LS, JSON.stringify({ v: 2, done: [...completed] })); } catch (e) {} }
 
   function isDone(id) { return completed.has(id); }
   function setDone(id, v) { if (v) completed.add(id); else completed.delete(id); save(); }
-  function reset() { completed.clear(); gates.clear(); save(); }
+  function reset() { completed.clear(); save(); }
   function worldDone(w) { return w.lessons.filter(isDone).length; }
   function totalDone() { return ORDER.filter(isDone).length; }
   function nextOf(id) { const i = ORDER.indexOf(id); return i >= 0 && i < ORDER.length - 1 ? ORDER[i + 1] : null; }
   function prevOf(id) { const i = ORDER.indexOf(id); return i > 0 ? ORDER[i - 1] : null; }
   function firstUndone() { return ORDER.find(id => !isDone(id) && !DEEP.has(id)) || ORDER.find(id => !isDone(id)) || ORDER[0]; }
 
-  return { WORLDS, ORDER, worldOf, DEEP, isDone, setDone, reset, worldDone, totalDone, nextOf, prevOf, firstUndone, gatePassed, setGate, lessonsTotal: ORDER.length };
+  return { WORLDS, ORDER, worldOf, DEEP, isDone, setDone, reset, worldDone, totalDone, nextOf, prevOf, firstUndone, lessonsTotal: ORDER.length };
 })();
