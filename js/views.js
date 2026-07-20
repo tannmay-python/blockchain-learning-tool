@@ -5,7 +5,7 @@
 import { STORE as S } from './store.js';
 import { LESSONS as L } from './lessons.js';
 import { QUIZ } from './lessons-extra.js';
-import './lessons-plus.js'; // Ensure lessons-plus mutations happen
+import './lessons-v2.js'; // restructure pass; pulls in lessons-plus + lessons-extra
 
 export const VIEWS = (function () {
   "use strict";
@@ -38,6 +38,12 @@ export const VIEWS = (function () {
 
   let _lessonIO = null;
   let _lessonScroll = null;
+
+  /* map filter: "core path only" hides every optional lesson and chapter.
+     Remembered, because it is a statement about how you want to learn. */
+  let coreOnly = false;
+  try { coreOnly = localStorage.getItem("blockcourse_path") === "core"; } catch (e) {}
+  const savePath = () => { try { localStorage.setItem("blockcourse_path", coreOnly ? "core" : "all"); } catch (e) {} };
 
   function teardown() {
     if (_lessonIO) { _lessonIO.disconnect(); _lessonIO = null; }
@@ -100,16 +106,27 @@ export const VIEWS = (function () {
   /* ---------------- MAP ---------------- */
   function map() {
     teardown();
-    const done = S.totalDone(), total = S.lessonsTotal, nextId = S.firstUndone(), allDone = done >= total;
-    const resume = done > 0 && !allDone ? `<div class="map-resume"><div class="bar"><i style="width:${(done / total * 100).toFixed(0)}%"></i></div><span class="mr-n">${done} / ${total}</span><button class="btn gold" data-go="#/lesson/${nextId}">Continue: ${L[nextId].title} →</button></div>` : "";
+    const cDone = S.coreDone(), cTotal = S.coreTotal, done = S.totalDone(), total = S.lessonsTotal;
+    const nextId = S.firstUndone(), allDone = cDone >= cTotal;
+    const resume = cDone > 0 && !allDone ? `<div class="map-resume"><div class="bar"><i style="width:${(cDone / cTotal * 100).toFixed(0)}%"></i></div><span class="mr-n">${cDone} / ${cTotal} core</span><button class="btn gold" data-go="#/lesson/${nextId}">Continue: ${L[nextId].title} →</button></div>` : "";
     root().innerHTML = nav("map") + `
-      <div class="map-wrap"><div class="map-head"><h1>Map</h1>${resume}</div>
-      ${S.WORLDS.map(mapWorld).join("")}</div>
+      <div class="map-wrap ${coreOnly ? "core-only" : ""}"><div class="map-head"><h1>Map</h1>${resume}
+        <div class="path-switch" role="group" aria-label="Which lessons to show">
+          <button class="ps-b ${coreOnly ? "on" : ""}" id="psCore" aria-pressed="${coreOnly}">Core path <span class="ps-n">${cTotal}</span></button>
+          <button class="ps-b ${coreOnly ? "" : "on"}" id="psAll" aria-pressed="${!coreOnly}">Everything <span class="ps-n">${total}</span></button>
+        </div>
+        <p class="path-note">${coreOnly
+          ? "Showing only what you need. The optional lessons are still there whenever you want them."
+          : `${total - cTotal} optional lessons are marked ◇. Skip any of them and the course still works.`}</p>
+      </div>
+      ${S.WORLDS.map(mapWorld).filter(Boolean).join("")}</div>
       <footer>
         <span id="rsWrap">${done} of ${total} explored${done > 0 ? ` · <a id="restart" style="cursor:pointer; font-weight:500; color:var(--plum); border-bottom:1px solid var(--plum)">start over</a>` : ""}</span>
         ${SOCIALS}
       </footer>`;
 
+    document.getElementById("psCore").onclick = () => { if (!coreOnly) { coreOnly = true; savePath(); map(); } };
+    document.getElementById("psAll").onclick = () => { if (coreOnly) { coreOnly = false; savePath(); map(); } };
     const rb = document.getElementById("restart");
     if (rb) rb.onclick = () => {
       const w = document.getElementById("rsWrap");
@@ -120,27 +137,49 @@ export const VIEWS = (function () {
   }
   function mapWorld(w) {
     const cur = S.firstUndone();
-    const nodes = w.lessons.map(id => {
+    /* "core path" hides optional lessons, and optional chapters entirely */
+    if (coreOnly && w.optional) return "";
+    const shown = coreOnly ? w.lessons.filter(id => !S.isOptional(id)) : w.lessons;
+    if (!shown.length) return "";
+    const nodes = shown.map(id => {
       const l = L[id], done = S.isDone(id), isCur = id === cur && !done;
-      const deep = S.DEEP.has(id);
+      const deep = S.isOptional(id);
       return `<a class="lnode ${done ? "done" : ""} ${isCur ? "cur" : ""}${deep ? " deep" : ""}" href="#/lesson/${id}" style="${wv(w)}" aria-label="${l.title}${done ? " (done)" : ""}${deep ? " (optional deep dive)" : ""}">
         ${done ? '<div class="check" aria-hidden="true">✓</div>' : ""}
         <div class="ic" style="background:${tint(w.color, 11)}">${l.icon}</div>
         <div class="lt">${l.title}</div><div class="lo">${l.oneliner}</div>
         ${deep ? '<div class="lx">◇ optional deep dive</div>' : isCur ? '<div class="lx">start here</div>' : ""}</a>`;
     }).join("");
-    const band = `<a class="chapter-band" href="#/chapter/${w.id}" title="Go to ${w.title} chapter intro" style="${wv(w)}">
+    const band = `<a class="chapter-band${w.optional ? " optional" : ""}" href="#/chapter/${w.id}" title="Go to ${w.title} chapter intro" style="${wv(w)}">
         <span class="cb-bar" aria-hidden="true"></span>
         <div class="cb-main">
-          <div class="cb-code">Chapter ${w.n}</div>
+          <div class="cb-code">Chapter ${w.n}${w.optional ? ' <span class="cb-opt">◇ optional</span>' : ""}</div>
           <div class="cb-title">${w.title}</div>
           <div class="cb-sub">${w.sub}</div>
         </div>
         <div class="cb-right">
-          <span class="cb-prog">${S.worldDone(w)}/${w.lessons.length}</span>
+          <span class="cb-prog">${shown.filter(S.isDone).length}/${shown.length}</span>
           <span class="cb-read">Read intro →</span>
         </div></a>`;
-    return `<div class="world-block">${band}<div class="nodes">${nodes}</div></div>`;
+    return `<div class="world-block${w.optional ? " optional" : ""}">${band}<div class="nodes">${nodes}</div></div>`;
+  }
+
+  /* Optional lessons announce themselves at the top and offer a way out.
+     The core path never depends on anything behind one of these banners. */
+  function optBanner(id, w) {
+    if (!S.isOptional(id)) return "";
+    const skipTo = S.nextCoreOf(id);
+    const whole = w.optional;
+    return `<div class="opt-banner" style="${wv(w)}">
+      <span class="ob-mark" aria-hidden="true">◇</span>
+      <div class="ob-main">
+        <div class="ob-t">Optional${whole ? " chapter" : ""}</div>
+        <p class="ob-d">${whole
+          ? `Every lesson in <b>${w.title}</b> is a side road. Nothing later in the course depends on it.`
+          : `A deeper look, off the main path. You can skip it and lose nothing later.`}</p>
+      </div>
+      ${skipTo ? `<button class="btn ob-skip" data-go="#/lesson/${skipTo}">Skip to the core path →</button>` : ""}
+    </div>`;
   }
 
   /* ---------------- LESSON (vertical explorable) ---------------- */
@@ -158,6 +197,7 @@ export const VIEWS = (function () {
         <div class="lprog"><i id="lprogFill" style="background:${w.color}"></i></div>
       </div>
       <div class="explorable">
+        ${optBanner(id, w)}
         <div class="lesson-hero"><div class="icbig" style="background:${tint(w.color, 11)};${wv(w)}">${l.icon}</div><h1>${l.title}</h1><p>${l.hero}</p></div>
         <div id="beats"></div>
         ${l.deeper ? `<details class="deeper"><summary>Go deeper: the technical detail</summary><div class="dbody">${l.deeper}</div></details>` : ""}
@@ -216,21 +256,31 @@ export const VIEWS = (function () {
     const w = S.WORLDS.find(x => x.id === wId);
     if (!w) return go("#/map");
     const demos = w.lessons.reduce((a, id) => a + (L[id] ? L[id].beats.length : 0), 0);
-    const core = w.lessons.filter(id => !S.DEEP.has(id));
+    /* time estimate rides on the beats, so a fully optional chapter still
+       reports a real number (counting only core lessons gave those "~0 min") */
+    const mins = Math.max(5, Math.round(demos * 2.5));
     let html = nav("");
-    html += `<div class="ch-gate explorable fadein">
+    html += `<div class="ch-gate explorable fadein" style="${wv(w)}">
+      ${w.optional ? `<div class="opt-banner" style="${wv(w)}">
+        <span class="ob-mark" aria-hidden="true">◇</span>
+        <div class="ob-main">
+          <div class="ob-t">Optional chapter</div>
+          <p class="ob-d">Nothing later in the course depends on <b>${w.title}</b>. Take it if it interests you, skip it if it doesn't.</p>
+        </div>
+        <button class="btn ob-skip" data-go="#/map">Back to the map →</button>
+      </div>` : ""}
       <div class="ch-gate-head">
         <div class="cg-n">Chapter ${w.n}</div>
         <h1 class="cg-title">${w.title}</h1>
         <p class="cg-intro">${w.intro}</p>
-        <p class="cg-meta">~${core.length * 5} min · ${w.lessons.length} lesson${w.lessons.length > 1 ? "s" : ""} · ${demos} hands-on demos</p>
+        <p class="cg-meta">~${mins} min · ${w.lessons.length} lesson${w.lessons.length > 1 ? "s" : ""} · ${demos} hands-on demos</p>
       </div>
       <div class="cg-modules">`;
     let num = 0;
     w.lessons.forEach((id) => {
       const l = L[id];
       if (!l) return;
-      const done = S.isDone(id), deep = S.DEEP.has(id);
+      const done = S.isDone(id), deep = S.isOptional(id) && !w.optional;
       if (!deep) num++;
       html += `<a href="#/lesson/${id}" class="cg-mod ${done ? "done" : ""}">
         <div class="cgm-icon" style="${done ? `background:${w.color};color:#fff;border:none` : ""}">${done ? "✓" : (l.icon || "•")}</div>
