@@ -76,9 +76,20 @@ export const VIEWS = (function () {
         </div>
       </section>
       <footer style="padding: 16px 24px;">
+        <span id="rsWrapHome" style="display:block; text-align:center; margin-bottom:12px;">
+          ${done} of ${total} explored${done > 0 ? ` · <a id="restartHome" style="cursor:pointer;border-bottom:1px solid var(--line-2)">start over</a>` : ""}
+        </span>
         ${SOCIALS}
       </footer>
       </div>`;
+
+    const rb = document.getElementById("restartHome");
+    if (rb) rb.onclick = () => {
+      const w = document.getElementById("rsWrapHome");
+      w.innerHTML = `<span class="restart-confirm"><b>Erase all progress?</b><a id="rsYesHome" style="margin-left:8px; cursor:pointer;">yes, start over</a><a id="rsNoHome" style="margin-left:8px; cursor:pointer;">keep it</a></span>`;
+      document.getElementById("rsYesHome").onclick = () => { S.reset(); home(); };
+      document.getElementById("rsNoHome").onclick = () => home();
+    };
 
     if (window.APP) window.APP.heroCanvas();
   }
