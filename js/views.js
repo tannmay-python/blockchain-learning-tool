@@ -61,7 +61,7 @@ export const VIEWS = (function () {
   function home() {
     teardown();
     const done = S.totalDone(), total = S.lessonsTotal, resume = done > 0 && done < total, startId = S.firstUndone();
-    const journey = S.WORLDS.map(w => `<a class="jd" href="#/chapter/${w.id}" style="background:${w.color}" aria-label="${w.title}">
+    const journey = S.WORLDS.map(w => `<a class="jd" href="#/chapter/${w.id}" style="background:${w.color}; ${wv(w)}" aria-label="${w.title}">
       <span class="jd-tt"><span class="jd-tt-n mono">Chapter ${w.n}</span><span class="jd-tt-t">${w.title}</span></span>
     </a>`).join(`<span class="jd-link"></span>`)
       + `<span class="jd-link"></span><span class="jd-cap mono">the journey</span>`;

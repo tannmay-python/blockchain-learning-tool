@@ -153,10 +153,10 @@ button { font-family: var(--sans); cursor: pointer; }
 .journey-rail .jd-cap { font-size: 11px; color: var(--ink-4); margin-left: 8px; }
 
 /* Tooltip on hover */
-.journey-rail .jd .jd-tt { position: absolute; bottom: calc(100% + 14px); left: 50%; transform: translateX(-50%) translateY(10px) scale(0.95); opacity: 0; pointer-events: none; background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 10px; box-shadow: 0 12px 24px rgba(0,0,0,0.15); transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; gap: 4px; text-align: center; z-index: 100; width: max-content; }
-.journey-rail .jd .jd-tt::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: var(--ink) transparent transparent transparent; }
+.journey-rail .jd .jd-tt { position: absolute; bottom: calc(100% + 14px); left: 50%; transform: translateX(-50%) translateY(10px) scale(0.95); opacity: 0; pointer-events: none; background: color-mix(in oklch, var(--wca) 15%, color-mix(in oklch, var(--ink) 80%, transparent)); backdrop-filter: blur(12px); color: var(--bg); padding: 10px 14px; border-radius: 10px; box-shadow: 0 12px 24px rgba(0,0,0,0.15), 0 0 0 1px color-mix(in oklch, var(--wca) 30%, transparent); transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; gap: 4px; text-align: center; z-index: 100; width: max-content; }
+.journey-rail .jd .jd-tt::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: color-mix(in oklch, var(--wca) 15%, var(--ink)) transparent transparent transparent; }
 .journey-rail .jd:hover .jd-tt { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-.journey-rail .jd-tt-n { font-size: 11px; opacity: 0.65; font-family: var(--mono); letter-spacing: 0.04em; }
+.journey-rail .jd-tt-n { font-size: 11px; opacity: 0.75; font-family: var(--mono); letter-spacing: 0.04em; color: color-mix(in oklch, var(--wca) 60%, var(--bg)); }
 .journey-rail .jd-tt-t { font-size: 14px; font-weight: 600; font-family: var(--disp); }
 
 
