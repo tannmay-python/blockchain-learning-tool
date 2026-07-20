@@ -11,6 +11,7 @@
    ============================================================ */
 import { LESSONS as L } from './lessons.js';
 import './lessons-plus.js';
+import './lessons-coin.js'; // capstone sandbox; must land before the renumber below
 
 (function () {
   "use strict";
