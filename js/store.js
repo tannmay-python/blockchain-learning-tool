@@ -24,7 +24,7 @@ window.STORE = (function () {
       intro: "A chain everyone verifies is slow and public by design. This chapter covers the engineering that buys the speed back, the cryptography that buys privacy back, and what happens when states pick up the same tools." },
     { id: "history", n: "08", title: "How it went wrong", sub: "The disasters that proved the rules", color: "#9c2a5a", colorText: "#9c2a5a", colorTextDark: "#f28ab5", lessons: ["history"],
       intro: "Mt. Gox, The DAO, Terra, FTX. Every rule this course taught you was written in someone else's losses. One lesson: each disaster, and the exact principle it proved." },
-    { id: "capstone", n: "09", title: "The whole machine", sub: "Watch every piece work together", color: "#d98908", colorText: "#8a5a00", colorTextDark: "#f5b955", lessons: ["recap"],
+    { id: "capstone", n: "09", title: "The whole machine", sub: "Watch every piece work together", color: "#d98908", colorText: "#8a5a00", colorTextDark: "#f5b955", lessons: ["recap", "coin"],
       intro: "You've built every piece by hand: the keys, the signatures, the blocks, and the chain. Now, watch them all come together. This final chapter runs the entire machine as one living, breathing system." },
   ];
   const ORDER = WORLDS.flatMap(w => w.lessons);

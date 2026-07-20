@@ -1225,4 +1225,175 @@
     ],
   };
 
+
+  /* ============================================================
+     final pass: gas (contracts), UTXO (tx), be-the-validator (pos),
+     and the capstone — build your own coin
+     ============================================================ */
+
+  /* contracts — the fuel meter */
+  L.contracts.beats.push({ n: "04", h: "Every step burns fuel", cap: "Code on a shared world computer can't be free — an infinite loop would freeze every node forever. So each operation burns <b>gas</b>, paid up front. Give the program a budget and run it. Too little, and everything it did is undone.",
+    build(s) {
+      const wrap = el("div", "fcard"); let budget = 40;
+      const STEPS = [["check the signature", 8], ["load Ava's balance", 6], ["subtract 5 coins", 7], ["add 5 to Ben", 7], ["write the receipt", 9]];
+      const total = STEPS.reduce((a, x) => a + x[1], 0);
+      wrap.innerHTML = `<div class="srow"><span class="nm">gas budget</span><input type="range" id="gsB" min="10" max="60" value="40"><span class="v" id="gsBv">40</span></div>
+        <div style="margin:14px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span class="note">fuel tank</span><span class="mono" id="gsLeft">40</span></div><div style="height:16px;background:var(--surface-3);border-radius:99px;overflow:hidden;border:1px solid var(--line);margin-top:4px"><i id="gsF" style="display:block;height:100%;width:100%;background:var(--gold);transition:width .3s"></i></div></div>
+        <div class="log" id="gsL"><div class="info">program: pay Ben 5 coins (needs ${total} gas)</div></div>
+        <div class="btn-row" style="justify-content:center;margin-top:12px"><button class="btn gold" id="gsGo">Run the program</button></div>`;
+      s.appendChild(wrap); let running = false;
+      const log = (h, c) => { const l = wrap.querySelector("#gsL"); l.appendChild(el("div", c, h)); l.scrollTop = l.scrollHeight; };
+      wrap.querySelector("#gsB").oninput = e => { if (running) return; budget = +e.target.value; wrap.querySelector("#gsBv").textContent = budget; wrap.querySelector("#gsLeft").textContent = budget; wrap.querySelector("#gsF").style.width = "100%"; };
+      wrap.querySelector("#gsGo").onclick = () => { if (running) return; running = true;
+        wrap.querySelector("#gsL").innerHTML = `<div class="info">program: pay Ben 5 coins (needs ${total} gas)</div>`;
+        let left = budget, i = 0;
+        const step = () => { if (!document.contains(wrap)) return;
+          if (i >= STEPS.length) { log(`done — ${left} gas refunded. The payment stands.`, "ok"); running = false; return; }
+          const [name, cost] = STEPS[i];
+          if (left < cost) { log(`step ${i + 1}: ${name} — needs ${cost}, tank has ${left} → <b>OUT OF GAS</b>`, "bad");
+            log("REVERT: every step above is undone, as if nothing ran. (You still pay for the gas burned — the nodes did the work.)", "bad");
+            log("Same rule as the vending machine: all or nothing. Gas is why a buggy loop can't freeze the chain — it just runs out of money.", "info");
+            wrap.querySelector("#gsF").style.background = "var(--red)"; running = false; return; }
+          left -= cost; i++;
+          wrap.querySelector("#gsLeft").textContent = left; wrap.querySelector("#gsF").style.width = (left / budget * 100) + "%"; wrap.querySelector("#gsF").style.background = "var(--gold)";
+          log(`step ${i}: ${name} · −${cost} gas`, "");
+          setTimeout(step, 420); };
+        step(); };
+    } });
+
+  /* tx — UTXO vs account: where did the change come from? */
+  L.tx.beats.push({ n: "04", h: "Paying 7 with a 10-coin note", cap: "Two ways a chain can do bookkeeping. <b>Account</b> style is a balance that goes up and down (Ethereum). <b>UTXO</b> style is cash: you hold whole \u201cnotes\u201d, spend one entirely, and the <b>change comes back as a new note</b> (Bitcoin). Pay Ben 7 both ways.",
+    build(s) {
+      const wrap = el("div", "fcard"); let mode = "utxo", spent = false;
+      wrap.innerHTML = `<div class="btn-row" style="justify-content:center"><button class="btn" id="uMode">Style: <b id="uMl">UTXO (Bitcoin)</b></button><button class="btn gold" id="uPay">Pay Ben 7 coins</button><button class="btn" id="uRst">Reset</button></div>
+        <div id="uStage" style="margin-top:14px"></div>
+        <div class="note" id="uM" style="text-align:center;margin-top:10px">You hold one 10-coin note.</div>`;
+      s.appendChild(wrap);
+      const note = (amt, who, cls) => `<div class="pos-card" style="min-width:96px${cls === "gone" ? ";opacity:.35;text-decoration:line-through" : cls === "new" ? ";border-color:var(--green)" : ""}"><b>${who}</b><div class="stk" style="font-size:18px">${amt}</div><div class="note" style="font-size:10.5px">${cls === "gone" ? "spent — destroyed" : cls === "new" ? "new note" : "note"}</div></div>`;
+      const draw = () => {
+        const st = wrap.querySelector("#uStage");
+        if (mode === "acct") {
+          st.innerHTML = `<div class="ledgrid"><div class="ledrow"><span class="led-ic" aria-hidden="true">🧑</span><span class="led-name">You</span><span class="led-bal">${spent ? 3 : 10}</span><span class="led-u">COINS</span></div><div class="ledrow"><span class="led-ic" aria-hidden="true">🧔</span><span class="led-name">Ben</span><span class="led-bal">${spent ? 7 : 0}</span><span class="led-u">COINS</span></div></div>`;
+          wrap.querySelector("#uM").innerHTML = spent ? `One number went down, another went up — the ledger from lesson one. Simple, but every payment needs a counter (the account nonce) so it can't be replayed.` : `A balance per person. Pay, and the numbers just move.`;
+        } else {
+          st.innerHTML = `<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">${spent ? note(10, "yours", "gone") + note(7, "→ Ben", "new") + note(3, "→ you (change)", "new") : note(10, "yours", "")}</div>`;
+          wrap.querySelector("#uM").innerHTML = spent ? `The 10-note is <b>destroyed</b>, and two new notes are minted: 7 for Ben, <b>3 back to you as change</b> — exactly like handing over a tenner. This is why Bitcoin explorers show payments \u201cto yourself\u201d: that's your change returning.` : `You hold one 10-coin note. Notes are spent whole — no tearing a corner off.`;
+        }
+      };
+      wrap.querySelector("#uMode").onclick = () => { mode = mode === "utxo" ? "acct" : "utxo"; wrap.querySelector("#uMl").textContent = mode === "utxo" ? "UTXO (Bitcoin)" : "Account (Ethereum)"; draw(); };
+      wrap.querySelector("#uPay").onclick = () => { spent = true; draw(); };
+      wrap.querySelector("#uRst").onclick = () => { spent = false; draw(); };
+      draw();
+    } });
+
+  /* pos — you are the validator */
+  L.pos.beats.push({ n: "03", h: "Your turn: stake it", cap: "Put your own coins on the line. Run 20 epochs and collect rewards in proportion to your stake. Then a briber shows up with an offer. Take it if you like — it's your money.",
+    build(s) {
+      const wrap = el("div", "fcard"); let stake = 32, earned = 0, epochs = 0, out = false, busy = false;
+      wrap.innerHTML = `<div class="srow"><span class="nm">your stake</span><input type="range" id="vsS" min="8" max="96" step="8" value="32"><span class="v" id="vsSv">32Ξ</span></div>
+        <div class="statline" style="margin:14px 0"><div class="s"><span class="n" id="vsE">0</span><span class="l">epochs run</span></div><div class="s"><span class="n" id="vsR" style="color:var(--green)">0.0</span><span class="l">rewards earned</span></div><div class="s"><span class="n" id="vsT">32.0</span><span class="l">total holdings</span></div></div>
+        <div class="btn-row" style="justify-content:center"><button class="btn primary" id="vsRun">Run 20 epochs</button><button class="btn danger" id="vsBribe">Accept the bribe: +5Ξ to double-sign</button><button class="btn" id="vsRst">Reset</button></div>
+        <div class="sig-state" id="vsM" style="margin-top:12px">The network has 320Ξ staked in total. Your odds of proposing each block = your share of it.</div>`;
+      s.appendChild(wrap);
+      const st = (t, c) => { const e = wrap.querySelector("#vsM"); e.innerHTML = t; e.className = "sig-state" + (c ? " " + c : ""); };
+      const draw = () => { wrap.querySelector("#vsSv").textContent = stake + "Ξ"; wrap.querySelector("#vsE").textContent = epochs;
+        wrap.querySelector("#vsR").textContent = earned.toFixed(1); wrap.querySelector("#vsT").textContent = out ? (stake / 2 + earned + 5).toFixed(1) : (stake + earned).toFixed(1); };
+      wrap.querySelector("#vsS").oninput = e => { if (epochs || out) return; stake = +e.target.value; draw(); };
+      wrap.querySelector("#vsRun").onclick = () => { if (busy || out) return; busy = true; let n = 0;
+        const tick = () => { if (!document.contains(wrap)) return;
+          n++; epochs++; for (let b = 0; b < 8; b++) if (Math.random() < stake / 320) earned += 0.1;
+          draw(); if (n < 20) setTimeout(tick, 60); else { busy = false; st(`Steady drip: with ${stake}Ξ of 320Ξ staked you propose ~${Math.round(stake / 320 * 100)}% of blocks. Boring — which is the point. Honest validating is a savings account.`, "ok"); } };
+        tick(); };
+      wrap.querySelector("#vsBribe").onclick = () => { if (out) return; out = true;
+        const burned = stake / 2; draw();
+        st(`You double-signed for a 5Ξ bribe. The proof is public — anyone can submit it. <b>Slashed ${burned.toFixed(0)}Ξ</b> (half your stake) and ejected from the validator set: no more rewards, ever. Net: ${(5 - burned).toFixed(0)}Ξ. The bribe was never going to be worth more than the bond — that's the whole design.`, "bad"); };
+      wrap.querySelector("#vsRst").onclick = () => { stake = 32; earned = 0; epochs = 0; out = false; busy = false; wrap.querySelector("#vsS").value = 32; draw(); st("The network has 320Ξ staked in total. Your odds of proposing each block = your share of it.", ""); };
+      draw();
+    } });
+
+  /* ============================================================
+     CAPSTONE II — build your own coin
+     ============================================================ */
+  L.coin = { world: "capstone", title: "Build your own coin", oneliner: "Name it, mine it, defend it — yours", icon: "◆",
+    hero: "You have watched the machine run. Now assemble one from scratch: name a coin, mine its genesis block, sign its first payment, and hold the chain together while someone attacks it. Everything here is real hashes.",
+    beats: [
+      { n: "01", h: "Name it, then mine block zero", cap: "Every chain starts with a <b>genesis block</b> — mined like any other, but linking back to nothing. Name your coin, set the block reward, and spin the nonce for real. Each block you mine pays the reward to you, and after five blocks the reward <b>halves</b>.",
+        build(s) {
+          const wrap = el("div", "fcard"); let chain = [], reward = 10, mining = false;
+          const name = () => (wrap.querySelector("#cnN").value.trim() || "MyCoin").slice(0, 14);
+          wrap.innerHTML = `<div class="btn-row" style="align-items:center"><span class="note">coin name</span><input class="in" id="cnN" value="MyCoin" maxlength="14" style="width:140px"><span class="note">block reward</span><input class="in mono" id="cnR" value="10" style="width:56px"></div>
+            <div class="statline" style="margin:16px 0"><div class="s"><span class="n" id="cnH">0</span><span class="l">blocks</span></div><div class="s"><span class="n" id="cnS">0</span><span class="l">total supply</span></div><div class="s"><span class="n" id="cnB" style="color:var(--green)">0</span><span class="l">your balance</span></div><div class="s"><span class="n" id="cnRw">10</span><span class="l">current reward</span></div></div>
+            <div class="mchain" id="cnC" style="min-height:50px"></div>
+            <div class="btn-row" style="justify-content:center;margin-top:10px"><button class="btn gold" id="cnGo">⛏ Mine the genesis block</button><button class="btn" id="cnRst">Start over</button></div>
+            <div class="note" id="cnM" style="text-align:center;margin-top:10px">The name goes into the genesis block's data — hashed into everything that follows.</div>`;
+          s.appendChild(wrap);
+          const drawChain = (fresh) => { wrap.querySelector("#cnC").innerHTML = chain.map((b, i) => `${i > 0 ? '<span class="mlink2"></span>' : ""}<div class="mblk2${fresh && i === chain.length - 1 ? " fresh" : ""}"><span class="mb-n">#${b.n}</span><span class="mb-h mono">${short(b.hash, 4, 3)}</span></div>`).join("");
+            const supply = chain.reduce((a, b) => a + b.pay, 0);
+            wrap.querySelector("#cnH").textContent = chain.length; wrap.querySelector("#cnS").textContent = supply;
+            wrap.querySelector("#cnB").textContent = supply; wrap.querySelector("#cnRw").textContent = reward; };
+          wrap.querySelector("#cnGo").onclick = () => { if (mining) return; mining = true;
+            const btn = wrap.querySelector("#cnGo"); btn.disabled = true;
+            const prev = chain.length ? chain[chain.length - 1].hash : "0".repeat(12);
+            const body = (chain.length === 0 ? "genesis of " + name() : name() + " block " + chain.length) + "|reward " + reward + " to you|" + prev;
+            let nonce = 0;
+            const spin = () => { if (!document.contains(wrap)) return;
+              const t0 = performance.now();
+              while (performance.now() - t0 < 35) { if (sha256(body + nonce).startsWith("000")) {
+                chain.push({ n: chain.length, hash: sha256(body + nonce), pay: reward });
+                const msgs = [`<b>${name()}</b> exists. Block #0 mined after ${nonce.toLocaleString()} guesses — reward paid to the only address that exists: yours.`,
+                  `Block #${chain.length - 1} locks onto ${short(prev, 6, 4)}. Your past is already hardening.`];
+                wrap.querySelector("#cnM").innerHTML = chain.length === 5 ? `<b style="color:var(--gold-text)">Halving.</b> Five blocks in, the reward drops ${reward} → ${reward / 2 >> 0}. Scarcity is a schedule you just wrote — same trick as Bitcoin's 21 million cap.` : msgs[Math.min(chain.length - 1, 1)];
+                if (chain.length === 5) reward = reward / 2 >> 0 || 1;
+                btn.textContent = "⛏ Mine the next block"; btn.disabled = false; mining = false;
+                drawChain(true); wrap.querySelector("#cnC").scrollLeft = 1e6; return; }
+                nonce++; }
+              wrap.querySelector("#cnM").innerHTML = `spinning the nonce… ${nonce.toLocaleString()} guesses`; setTimeout(spin, 0); };
+            spin(); };
+          wrap.querySelector("#cnR").onchange = e => { if (!chain.length) { reward = Math.max(1, Math.min(50, parseInt(e.target.value) || 10)); drawChain(); } };
+          wrap.querySelector("#cnRst").onclick = () => { chain = []; reward = Math.max(1, Math.min(50, parseInt(wrap.querySelector("#cnR").value) || 10)); mining = false; const b = wrap.querySelector("#cnGo"); b.textContent = "⛏ Mine the genesis block"; b.disabled = false; drawChain(); wrap.querySelector("#cnM").innerHTML = "The name goes into the genesis block's data — hashed into everything that follows."; };
+          drawChain();
+        } },
+      { n: "02", h: "Its first real payment", cap: "A coin no one can receive is a diary. Two wallets appear on your chain — Ava and Ben. Pay Ava, and your chain checks the signature exactly the way you learned in chapter 02. Then let Ben try to forge one.",
+        build(s) {
+          const wrap = el("div", "fcard");
+          const key = { you: sha256("you"), ava: sha256("ava"), ben: sha256("ben") };
+          const addr = k => "0x" + sha256(k).slice(-10);
+          wrap.innerHTML = `<div class="bfields"><div class="bfield"><div class="k">Ava's address</div><div class="v vi">${addr(key.ava)}</div></div><div class="bfield"><div class="k">Ben's address</div><div class="v vi">${addr(key.ben)}</div></div></div>
+            <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn gold" id="cpPay">Sign &amp; send: you → Ava, 5</button><button class="btn danger" id="cpForge">Ben forges: "Ava → Ben, 5"</button></div>
+            <div class="log" id="cpL" style="margin-top:12px"><div class="info">your chain's mempool</div></div>`;
+          s.appendChild(wrap);
+          const log = (h, c) => { const l = wrap.querySelector("#cpL"); l.appendChild(el("div", c, h)); l.scrollTop = l.scrollHeight; };
+          wrap.querySelector("#cpPay").onclick = () => { const msg = "you→ava:5", sig = sha256(key.you + msg);
+            log(`tx "you → Ava, 5" · sig ${short(sig, 8, 4)}`);
+            log(`verify: sig matches sender's key → <b>VALID</b> — queued for the next block. Ava now truly owns 5 ${""}coins on your chain.`, "ok"); };
+          wrap.querySelector("#cpForge").onclick = () => { const msg = "ava→ben:5", sig = sha256(key.ben + msg);
+            log(`tx "Ava → Ben, 5" · signed with <i>Ben's</i> key · sig ${short(sig, 8, 4)}`, "warn");
+            log(`verify: signature does not match <b>Ava's</b> key → REJECTED. Your chain just defended Ava without knowing her, trusting anyone, or asking you. You built that.`, "bad"); };
+        } },
+      { n: "03", h: "Now survive an attack", cap: "Your coin is worth something now, so someone wants to rewrite it. An attacker with 30% of your network's hashpower forks from block #1 and races your honest chain. You don't need to do anything — <b>that's the point</b>. Watch your machine defend itself.",
+        build(s) {
+          const wrap = el("div", "fcard"); let running = false, survived = 0;
+          wrap.innerHTML = `<div id="atkR"></div>
+            <div class="btn-row" style="justify-content:center;margin-top:12px"><button class="btn danger" id="atkGo">A 30% attacker forks your chain</button></div>
+            <div class="sig-state" id="atkM" style="margin-top:12px">Everything you built this course — the links, the work, the incentives — is about to be tested at once.</div>`;
+          s.appendChild(wrap);
+          wrap.querySelector("#atkR").innerHTML = `<div class="srow" style="gap:8px"><span class="nm" style="width:82px;color:var(--green)">your chain</span><div style="flex:1;height:14px;background:var(--surface-3);border-radius:7px;overflow:hidden;border:1px solid var(--line)"><i id="atkH" style="display:block;height:100%;width:0;background:var(--green)"></i></div><span class="v" style="width:24px;color:var(--green)" id="atkHn">0</span></div>
+            <div class="srow" style="gap:8px;margin-top:5px"><span class="nm" style="width:82px;color:var(--red)">attacker</span><div style="flex:1;height:14px;background:var(--surface-3);border-radius:7px;overflow:hidden;border:1px solid var(--line)"><i id="atkE" style="display:block;height:100%;width:0;background:var(--red)"></i></div><span class="v" style="width:24px;color:var(--red)" id="atkEn">0</span></div>`;
+          wrap.querySelector("#atkGo").onclick = () => { if (running) return; running = true;
+            let h = 2, e = 0, t = 0;
+            const step = () => { if (!document.contains(wrap)) return;
+              t++; Math.random() < 0.3 ? e++ : h++;
+              const sc = Math.max(h, e, 10);
+              wrap.querySelector("#atkH").style.width = h / sc * 100 + "%"; wrap.querySelector("#atkE").style.width = e / sc * 100 + "%";
+              wrap.querySelector("#atkHn").textContent = h; wrap.querySelector("#atkEn").textContent = e;
+              if (e > h) { running = false; const m = wrap.querySelector("#atkM"); m.className = "sig-state bad"; m.innerHTML = `The attacker got lucky and overtook you — it happens, rarely, at 30%. Run it again: over many attempts the maths from the 51% lesson always collects.`; return; }
+              if (h - e > 9) { survived++; running = false; const m = wrap.querySelector("#atkM"); m.className = "sig-state ok";
+                m.innerHTML = `<b>Your chain pulled away${survived > 1 ? " — again (" + survived + " attacks survived)" : ""}.</b> You did nothing, and that was enough: every honest block made the rewrite more expensive, exactly as designed. This is the whole course in one picture — keys prove, hashes lock, work prices, incentives defend. <b>It's your machine now.</b>`; return; }
+              setTimeout(step, 55); };
+            step(); };
+        } },
+    ],
+    deeper: P("Everything in this lesson used the same primitives as the real thing, only smaller: SHA-256 with a 3-zero target instead of ~19, a halving every 5 blocks instead of 210,000, one machine instead of a planet's worth. Nothing conceptual was simplified — a genesis block, coinbase rewards, signature-gated transfers and longest-chain defence are the entire skeleton of Bitcoin. The gap between your coin and a real one is not ideas; it is <i>other people</i>: miners who aren't you, users who disagree, attackers with budgets. A blockchain, in the end, is a machine for surviving other people."),
+    bridge: "That's the course. Strangers keeping one honest record with no one in charge — money no state can freeze, or the most controllable money in history, depending entirely on who holds the keys. Same machine, opposite directions. You now know exactly why." };
+
 })();

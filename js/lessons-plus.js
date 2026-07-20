@@ -465,18 +465,20 @@
       let state = "base";
       function render() {
         if (state === "base") stage.innerHTML = `<div class="frk-line">${blk("2", "ok")}${arm()}${blk("3", "ok")}${arm()}${blk("4", "ok pulse")}</div>`;
-        else if (state === "fork") stage.innerHTML = `<div class="frk-line">${blk("2", "ok")}${arm()}${blk("3", "ok")}${arm()}<div class="frk-split"><div class="frk-line">${blk("4a", "cand pulse")}</div><div class="frk-line">${blk("4b", "cand pulse")}</div></div></div>`;
+        else if (state === "fork") stage.innerHTML = `<div class="frk-line">${blk("2", "ok")}${arm()}${blk("3", "ok")}${arm()}<div class="frk-split"><div class="frk-line">${blk("4a ★", "cand pulse")}<span class="note" style="margin-left:8px;color:var(--gold-text)">← your payment</span></div><div class="frk-line">${blk("4b", "cand pulse")}</div></div></div>`;
         else {
           const aCls = state === "a" ? "ok" : "orphan", bCls = state === "b" ? "ok" : "orphan";
           const aExt = state === "a" ? arm() + blk("5", "ok pop") : "", bExt = state === "b" ? arm() + blk("5", "ok pop") : "";
-          stage.innerHTML = `<div class="frk-line">${blk("2", "ok")}${arm()}${blk("3", "ok")}${arm()}<div class="frk-split"><div class="frk-line">${blk("4a", aCls)}${aExt}</div><div class="frk-line">${blk("4b", bCls)}${bExt}</div></div></div>`;
+          stage.innerHTML = `<div class="frk-line">${blk("2", "ok")}${arm()}${blk("3", "ok")}${arm()}<div class="frk-split"><div class="frk-line">${blk("4a ★", aCls)}${aExt}</div><div class="frk-line">${blk("4b", bCls)}${bExt}</div></div></div>`;
         }
         ctl.innerHTML = "";
         if (state === "base") { const b = el("button", "btn primary", "Two miners find #4 at once"); b.onclick = () => { state = "fork"; msg.innerHTML = `Both #4a and #4b are valid, and the network is <b>split</b> — some nodes heard one first, some the other.`; render(); }; ctl.appendChild(b); }
         else if (state === "fork") { const a = el("button", "btn", "Next block extends #4a"); a.onclick = () => pick("a"); const b = el("button", "btn", "Next block extends #4b"); b.onclick = () => pick("b"); ctl.append(a, b); }
         else { const r = el("button", "btn", "Replay"); r.onclick = () => { state = "base"; msg.innerHTML = `A healthy chain, growing one block at a time.`; render(); }; ctl.appendChild(r); }
       }
-      function pick(which) { state = which; const kept = which === "a" ? "#4a" : "#4b", orph = which === "a" ? "#4b" : "#4a"; msg.innerHTML = `The next block built on ${kept}, so that branch now has the <b>most work</b> and wins. ${orph} is orphaned — every node abandons it, and its transactions return to the waiting pool. The fork lasted one block.`; render(); }
+      function pick(which) { state = which; msg.innerHTML = which === "a"
+        ? `#4a won — <span style="color:var(--green)">your payment survived</span> and is now one block deeper. But notice: it survived by <i>luck of the race</i>, not merit. That's why one confirmation is a coin-flip and six is a wall.`
+        : `#4b won — and <span style="color:var(--red)">your payment just vanished from the chain</span>. Orphaned with its block, it slides back to the waiting pool, unconfirmed. It will ride the next block — but if a merchant had shipped goods at zero confirmations, this exact moment is how they get burned.`; render(); }
       render();
     }
   });
@@ -508,7 +510,7 @@
           <div class="mchain-wrap"><div class="mchain-lab">the chain · <b id="mh">1</b> blocks</div><div class="mchain" id="mchain"></div></div>
           <div class="mnodes-wrap"><div class="mnodes" id="mnodes"></div><div class="mnodes-lab" id="mnlab">network</div></div>
         </div>
-        <div class="btn-row" style="justify-content:center;margin-top:16px"><button class="btn primary" id="mplay">${playing ? "⏸ Pause" : "▶ Play"}</button><button class="btn" id="mspeed">1× speed</button></div>
+        <div class="btn-row" style="justify-content:center;margin-top:16px"><button class="btn primary" id="mplay">${playing ? "⏸ Pause" : "▶ Play"}</button><button class="btn" id="mspeed">1× speed</button><button class="btn danger" id="mforge">Inject a forged payment</button></div>
         <div class="note" id="mmsg" style="text-align:center;margin-top:8px">Press play to run the machine you built.</div>`;
       s.appendChild(wrap);
       const nodesEl = wrap.querySelector("#mnodes");
@@ -545,9 +547,13 @@
         nodesEl.classList.add("lit"); wrap.querySelector("#mnlab").textContent = "new block propagating!";
         setTimeout(() => { if (!document.contains(wrap)) return; flash = false; drawChain(); nodesEl.classList.remove("lit"); wrap.querySelector("#mnlab").textContent = "network"; }, RM ? 0 : 520);
       }
+      let forged = false;
       function step() {
         if (!document.contains(wrap)) { clearTimeout(timer); return; }
         drawStages(); setMsg();
+        if (forged && phase === 0) { forged = false;
+          wrap.querySelector("#mmsg").innerHTML = `<span style="color:var(--red)">Your forged payment hit the Sign check and died instantly</span> — the signature doesn't verify against the sender's key, so every single node drops it before it ever reaches a block. Nobody decided this. No admin acted. <b>The machine defends itself.</b>`;
+          wrap.querySelector("#mnlab").textContent = "forged tx rejected ✕"; }
         if (phase === 0) curTx = "pay:" + ((Math.random() * 1e6) | 0);
         if (phase === 2) mineBlock();
         if (phase === 3) commit();
@@ -559,6 +565,7 @@
         clearTimeout(timer); if (playing) step();
       };
       wrap.querySelector("#mspeed").onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 4 : 1; wrap.querySelector("#mspeed").textContent = speed + "× speed"; };
+      wrap.querySelector("#mforge").onclick = () => { forged = true; if (!playing) { wrap.querySelector("#mplay").click(); } wrap.querySelector("#mmsg").innerHTML = `A payment claiming to spend someone else's coins enters the pipeline — signed with the <b>wrong key</b>. Watch the Sign stage.`; };
       drawStages(); drawChain();
       if (playing) timer = setTimeout(step, 600); else setMsg();
     }

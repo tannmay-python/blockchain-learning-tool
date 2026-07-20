@@ -7,7 +7,7 @@ land only after your hands have built the experience.
 
 **Live:** https://tannmay-python.github.io/blockchain-learning-tool/
 
-## The journey (10 chapters · 28 lessons · 80+ hands-on demos)
+## The journey (10 chapters · 29 lessons · 85+ hands-on demos)
 
 | # | Chapter | What it answers |
 |---|---------|-----------------|
@@ -20,7 +20,7 @@ land only after your hands have built the experience.
 | 06 | **Your keys, your problem** | Wallets & custody, seed-phrase determinism, and staying safe from scams. |
 | 07 | **Scaling, privacy & the state** | Layer 2, zero-knowledge (deep dive), stablecoins & CBDCs. |
 | 08 | **How it went wrong** | Mt. Gox, The DAO, Terra, FTX — each disaster mapped to the rule it proved. |
-| 09 | **The whole machine** | Everything you built, running together. |
+| 09 | **The whole machine** | Everything you built, running together — then build your own coin: name it, mine its genesis, sign its first payment, survive an attack. |
 
 Lessons tick themselves as you pass through; chapter **badges** must be won at each
 chapter's exit gate — a short cumulative quiz that deliberately reaches back into
