@@ -933,7 +933,7 @@ export const QUIZ = (function () {
           draw();
         } }
     ],
-    deeper: P("Maximal Extractable Value (MEV) is the profit a miner or block producer can make by including, excluding, or reordering transactions in the blocks they produce. Because they have dictatorial control over the exact sequence of events, they can insert their own trades immediately before and after yours. In a Sandwich Attack, they see your large buy order pending, buy the asset first to push the price up, let your order execute at the worsened price, and immediately sell the asset back for a profit. The only defense is a 'Private Relay' (like Flashbots) — you submit your transaction directly to a trusted builder who promises not to front-run you, skipping the public mempool entirely."),
+    deeper: P("Maximal Extractable Value (MEV) is the profit a miner or block producer can make by including, excluding, or reordering transactions in the blocks they produce. Because they have dictatorial control over the exact sequence of events, they can insert their own trades immediately before and after yours. In a Sandwich Attack, they see your large buy order pending, buy the asset first to push the price up, let your order execute at the worsened price, and immediately sell the asset back for a profit. The only defense is a 'Private Relay' (like Flashbots), where you submit your transaction directly to a trusted builder who promises not to front-run you, skipping the public mempool entirely."),
     bridge: "The invisible tax of the mempool is real, and dodging it means trusting a central builder, the very thing the chain was supposed to avoid. This tension between decentralisation, security, and scale is exactly what the final engineering chapters address."
   };
 
