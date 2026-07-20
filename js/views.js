@@ -11,8 +11,8 @@ export const VIEWS = (function () {
   "use strict";
   const root = () => document.getElementById("root");
   const go = (h) => { location.hash = h; };
-  const LOGO = `<img src="takshashila-logo-light.svg" alt="The Takshashila Institution" class="logo-light" style="height:38px; display:block;">
-                <img src="takshashila-logo.svg" alt="The Takshashila Institution" class="logo-dark" style="height:38px; display:none;">`;
+  const LOGO = `<img src="takshashila-logo-light.svg" alt="The Takshashila Institution" class="logo-light" style="height:48px; display:block;">
+                <img src="takshashila-logo.svg" alt="The Takshashila Institution" class="logo-dark" style="height:48px; display:none;">`;
 
   const wv = (w) => `--wca:${w.color};--wcl:${w.colorText || w.color};--wcd:${w.colorTextDark || w.color}`;
   /* chapter colours are oklch() strings, so tints are mixed, never concatenated */
