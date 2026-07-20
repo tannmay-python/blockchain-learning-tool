@@ -10,7 +10,9 @@
   if (!L) return;
   const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
   const short = (s, a = 8, b = 6) => s && s.length > a + b + 1 ? s.slice(0, a) + "…" + s.slice(-b) : (s || "");
-  const RM = matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const _rmq = matchMedia && matchMedia("(prefers-reduced-motion: reduce)");
+  let RM = _rmq && _rmq.matches;
+  if (_rmq && _rmq.addEventListener) _rmq.addEventListener("change", e => { RM = e.matches; });
   const setHero = (id, t) => { if (L[id]) L[id].hero = t; };
   const setBeat = (id, i, patch) => { if (L[id] && L[id].beats[i]) Object.assign(L[id].beats[i], patch); };
   const setDeeper = (id, html) => { if (L[id]) L[id].deeper = html; };
@@ -271,7 +273,7 @@
       wrap.innerHTML = `<div class="flabel"><span class="pin"></span>energy to secure one block</div>
         <div class="enrow"><div class="en-lab"><b>Proof of Work</b><span>a country's worth of electricity</span></div><div class="en-bar"><i class="en-fill pow" id="epow"></i><span class="en-bolts" id="ebolts"></span></div><div class="en-pct mono" id="epowp">100%</div></div>
         <div class="enrow"><div class="en-lab"><b>Proof of Stake</b><span>a handful of ordinary servers</span></div><div class="en-bar"><i class="en-fill pos" id="epos"></i></div><div class="en-pct mono" id="eposp">~0.05%</div></div>
-        <div class="note" style="margin-top:12px">Ethereum's 2022 switch from work to stake cut its energy use by about <b>99.9%</b> overnight. The trade critics raise: stake can concentrate with the wealthy.</div>`;
+        <div class="note" style="margin-top:12px">Ethereum's 2022 switch from work to stake cut its energy use by about <b>99.95%</b> overnight. The trade critics raise: stake can concentrate with the wealthy.</div>`;
       s.appendChild(wrap);
       wrap.querySelector("#ebolts").innerHTML = "⚡".repeat(9);
       const fill = () => { wrap.querySelector("#epow").style.width = "100%"; wrap.querySelector("#epos").style.width = "0.6%"; };
@@ -585,7 +587,7 @@
     zk: "Prove something true while revealing nothing else: private payments, cheap scaling, quiet compliance. Now zoom all the way out — this same technology can free money from the state, or hand the state total control.",
     money: "From censorship-proof Bitcoin to a programmable CBDC, it's a spectrum set entirely by <b>who holds the keys</b>. But none of it protects <i>you</i> from being talked out of your own keys — which is how most crypto is actually lost.",
     safety: "Urgency, secrecy, guaranteed upside — that's the shape of every scam, because the chain is hard to attack but people aren't. And that's the last piece. You've now built every part by hand. Time to watch them run <b>together</b>.",
-    recap: "That's the whole machine — strangers keeping one honest record with no one in charge. Take the referee out and you get money no state can freeze; hand a state the keys and you get the most controllable money in history. Same machine, opposite valence. Now you understand exactly why.",
+    recap: "That's the whole machine — strangers keeping one honest record with no one in charge. Take the referee out and you get money no state can freeze; hand a state the keys and you get the most controllable money in history. Same machine, pointed in opposite directions. Now you understand exactly why.",
   };
   Object.keys(BRIDGES).forEach(id => setBridge(id, BRIDGES[id]));
 
@@ -599,7 +601,9 @@
 
   setDeeper("merkle", `<p>The tree's height is <code>log₂(n)</code>, so a million transactions need only about <b>20</b> sibling hashes to prove membership, and a billion need about <b>30</b> — doubling the block size adds a single hash to any proof. That logarithmic scaling is the whole trick.</p>
     <p>The proof is <b>self-verifying</b>: you re-hash your transaction with each supplied sibling, climbing the tree, and you either land on the known Merkle root or you don't. A forged sibling produces the wrong root, so the proof fails safely even when a completely untrusted server hands it to you — you never trust the source, only the root.</p>
-    <p>This is exactly what lets a phone wallet (a "light client") confirm a payment in milliseconds. It stores only the tiny block headers, asks a full node for one short Merkle branch, and checks it against the root already in the header — verifying that a transaction is really in the chain without ever downloading the hundreds of gigabytes of the chain itself.</p>`);
+    <p>This is exactly what lets a phone wallet (a "light client") confirm a payment in milliseconds. It stores only the tiny block headers, asks a full node for one short Merkle branch, and checks it against the root already in the header — verifying that a transaction is really in the chain without ever downloading the hundreds of gigabytes of the chain itself.</p>
+    <p>Satoshi designed for this from day one: the whitepaper gives light clients their own section — §8, “Simplified Payment Verification” — built entirely on the Merkle branch you just clicked through.</p>
+    <blockquote>“It is possible to verify payments without running a full network node. A user only needs to keep a copy of the block headers of the longest proof-of-work chain… and obtain the Merkle branch linking the transaction to the block it's timestamped in.” — <a href="https://bitcoin.org/bitcoin.pdf" target="_blank" rel="noopener">Satoshi Nakamoto, the Bitcoin whitepaper (2008), §8</a></blockquote>`);
 
   setDeeper("tokens", `<p>Under the hood a token contract is almost boringly simple: a single table mapping addresses to numbers — <code>balances[you] = 40</code> — plus a <code>transfer</code> function that subtracts from one row and adds to another. That is the entire "coin." There is no coin object anywhere; there is only the table, and everyone's agreement about it.</p>
     <p>What makes tokens powerful is <b>standards</b>. ERC-20 (fungible) and ERC-721 (non-fungible) fix a shared set of function names, so every wallet, exchange, and contract can handle a token it has never seen before. That common interface is why thousands of different tokens just work everywhere, and why one contract can snap into another — the composability that DeFi is built from.</p>

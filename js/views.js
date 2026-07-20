@@ -29,8 +29,6 @@ window.VIEWS = (function () {
   }
   function wireGo(scope) { (scope || document).querySelectorAll("[data-go]").forEach(e => e.onclick = (ev) => { ev.preventDefault(); go(e.dataset.go); }); }
 
-  function wireGo(scope) { (scope || document).querySelectorAll("[data-go]").forEach(e => e.onclick = (ev) => { ev.preventDefault(); go(e.dataset.go); }); }
-
   function teardown() {
     if (window._lessonIO) { window._lessonIO.disconnect(); window._lessonIO = null; }
     if (window._lessonScroll) { removeEventListener("scroll", window._lessonScroll); window._lessonScroll = null; }
@@ -131,16 +129,18 @@ window.VIEWS = (function () {
       beatsEl.appendChild(beat);
       try { b.build(beat.querySelector(".beat-viz")); } catch (e) { console.error("beat", id, i, e); beat.querySelector(".beat-viz").innerHTML = `<div class="sig-state bad">This demo hit an error: ${e.message}</div>`; }
     });
-    // reveal on scroll
-    window._lessonIO = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); window._lessonIO.unobserve(e.target); } }), { threshold: 0.12 });
+    // silently mark done when the learner moves on — or reaches the end of the page
+    const markDone = () => { if (!S.isDone(id)) { S.setDone(id, true); document.querySelectorAll(".progmini").forEach(p => { p.outerHTML = progMini(); }); } };
+    // reveal on scroll; reaching the lesson-end block also counts as completing the lesson
+    const endEl = root().querySelector(".lesson-end");
+    window._lessonIO = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { if (e.target === endEl) markDone(); e.target.classList.add("in"); window._lessonIO.unobserve(e.target); } }), { threshold: 0.12 });
     root().querySelectorAll(".reveal").forEach(r => window._lessonIO.observe(r));
+    if (endEl) window._lessonIO.observe(endEl);
     // reading progress in the lesson bar
     const fill = document.getElementById("lprogFill");
     window._lessonScroll = () => { if (!fill || !document.contains(fill)) return;
       const h = document.documentElement, max = h.scrollHeight - innerHeight; fill.style.width = (max > 0 ? Math.min(100, h.scrollTop / max * 100) : 0) + "%"; };
     addEventListener("scroll", window._lessonScroll, { passive: true }); window._lessonScroll();
-    // silently mark done when the learner moves on
-    const markDone = () => { if (!S.isDone(id)) { S.setDone(id, true); document.querySelectorAll(".progmini").forEach(p => { p.outerHTML = progMini(); }); } };
     document.getElementById("lPrev").onclick = () => prev && go("#/lesson/" + prev);
     const isChapterEnd = !next || S.worldOf[next] !== w;
     const onNext = () => { 
@@ -185,7 +185,6 @@ window.VIEWS = (function () {
     </div>`;
     root().innerHTML = html;
     wireGo();
-    if (window.APP) window.APP.heroCanvas();
   }
 
   return { home, map, lesson, chapterGate };

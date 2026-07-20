@@ -9,7 +9,9 @@
   const L = window.LESSONS;
   const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
   const short = (s, a = 8, b = 6) => s && s.length > a + b + 1 ? s.slice(0, a) + "…" + s.slice(-b) : (s || "");
-  const RM = matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const _rmq = matchMedia && matchMedia("(prefers-reduced-motion: reduce)");
+  let RM = _rmq && _rmq.matches;
+  if (_rmq && _rmq.addEventListener) _rmq.addEventListener("change", e => { RM = e.matches; });
   const P = (t) => `<p>${t}</p>`;
 
   /* ---------- checkpoint quiz primitive ----------
@@ -63,8 +65,8 @@
     function result() {
       const total = questions.length, pct = score / total;
       const tier = pct === 1 ? ["Nailed it.", "Every one correct — you have this cold."]
-        : pct >= 0.5 ? ["Solid grasp.", "You've got the core. Glance back at the ones you missed and keep moving."]
-        : ["Worth a re-read.", "A couple slipped — the “go deeper” panel above will shore them up."];
+        : pct >= 0.5 ? ["Halfway there.", "Some stuck, some slipped — worth one more look at the ones you missed before moving on."]
+        : ["Worth a re-read.", "A couple slipped — the “go deeper” panel below will shore them up."];
       wrap.className = "quiz result fadein";
       wrap.innerHTML = `<div class="quiz-result">
         <div class="qr-score"><span class="qr-n">${RM ? score : 0}</span><span class="qr-d">/ ${total}</span></div>
@@ -198,8 +200,8 @@
     deeper: P("A transaction is the blockchain's atomic unit: a signed instruction, not a moving object. Bitcoin models it as <b>inputs and outputs</b> (you consume whole previous outputs and create new ones — the “UTXO” model); Ethereum uses running <b>account balances</b> instead. Either way, nodes first check the signature and the rules, then hold it in the <b>mempool</b> until a miner includes it. The <b>nonce</b> stops replay — the same signed payment can't be submitted twice — and the <b>fee</b> is a live auction for scarce block space, which is why fees spike when the network is busy. Nothing is final until it's in a block, and buried under a few more.") };
 
   /* ===================== INCENTIVES — why anyone mines ===================== */
-  L.incentives = { world: "chain", title: "Mining rewards", oneliner: "How mining rewards incentivize honesty", icon: "¤",
-    hero: "Mining burns real electricity on trillions of useless guesses. So why does anyone do it? Because the block itself pays the winner — and that payment is what keeps the whole network honest.",
+  L.incentives = { world: "chain", title: "Mining rewards", oneliner: "How mining rewards incentivise honesty", icon: "¤",
+    hero: "Mining burns real electricity on quintillions of useless guesses. So why does anyone do it? Because the block itself pays the winner — and that payment is what keeps the whole network honest.",
     beats: [
       { n: "01", h: "The block pays its own miner", cap: "Every block's first entry is special: the <b>coinbase</b>, a payment to the winning miner created out of thin air, plus every <b>fee</b> attached to the transactions inside. Pick transactions from the pool and mine — greedy is allowed.",
         build(s) {
@@ -282,7 +284,7 @@
         } },
       { n: "03", h: "Check yourself", cap: "Two questions before moving on.",
         build(s) { quiz(s, [
-          { ask: "Why do miners spend real electricity on trillions of guesses?",
+          { ask: "Why do miners spend real electricity on quintillions of guesses?",
             opts: [
               { t: "The winning block pays them new coins plus fees", ok: true, why: "The coinbase subsidy and the fees inside the block are the entire business model of mining." },
               { t: "The network forces every computer to mine", ok: false, why: "Mining is voluntary. Miners do it because the winning block pays — new coins plus fees." },
@@ -296,10 +298,10 @@
             ] },
         ]); } },
     ],
-    deeper: P("The reward is not a bonus bolted on — it <b>is</b> the security model. Honest mining pays steadily; attacking the chain means forfeiting those rewards and burning electricity on a losing race. Satoshi's insight was economic, not cryptographic: make honesty the most profitable strategy and strangers will secure each other's money out of pure self-interest. The <b>halving</b> (every 210,000 blocks) enforces the 21-million cap, and the open question economists argue about: when the subsidy is gone, will fees alone fund enough mining to keep attacks unprofitable?") };
+    deeper: P("The reward is not a bonus bolted on — it <b>is</b> the security model. Honest mining pays steadily; attacking the chain means forfeiting those rewards and burning electricity on a losing race. Satoshi's insight was economic, not cryptographic: make honesty the most profitable strategy and strangers will secure each other's money out of pure self-interest. The <b>halving</b> (every 210,000 blocks) enforces the 21-million cap, and the open question economists argue about: when the subsidy is gone, will fees alone fund enough mining to keep attacks unprofitable?") + P("Satoshi's own words, on why even an attacker with majority power should choose honesty:") + "<blockquote>“He ought to find it more profitable to play by the rules, such rules that favour him with more new coins than everyone else combined, than to undermine the system and the validity of his own wealth.” — <a href='https://bitcoin.org/bitcoin.pdf' target='_blank' rel='noopener'>Satoshi Nakamoto, the Bitcoin whitepaper (2008), §6</a></blockquote>" };
 
   /* ===================== GOSSIP — the network itself ===================== */
-  L.gossip = { world: "consensus", title: "The network", oneliner: "How information spreads without a center", icon: "◍",
+  L.gossip = { world: "consensus", title: "The network", oneliner: "How information spreads without a centre", icon: "◍",
     hero: "There is no server. When you broadcast a payment, you tell a few computers, they tell a few more, and in seconds the whole planet knows. Watch it ripple — and see where forks really come from.",
     beats: [
       { n: "01", h: "Gossip, hop by hop", cap: "Every node knows only its neighbours. Click <b>any node</b> to broadcast a transaction from it and watch the news spread like a rumour — no coordinator, no master list of who to tell.",
@@ -332,7 +334,7 @@
             setTimeout(step, 420);
           }
         } },
-      { n: "02", h: "Two truths, briefly", cap: "Now the key scene: two miners on <b>opposite sides of the world</b> seal a block at nearly the same moment. Both spread outward. Every node believes whichever block <b>reached it first</b> — and the network genuinely splits, purely because light is not instant.",
+      { n: "02", h: "Two truths, briefly", cap: "Now the key scene: two miners on <b>opposite sides of the world</b> seal a block at nearly the same moment. Both spread outward. Every node believes whichever block <b>reached it first</b> — and the network genuinely splits, purely because news takes time to cross the planet.",
         build(s) {
           const wrap = el("div", "fcard");
           wrap.innerHTML = `<div class="flabel"><span class="pin"></span>a tie, spreading from both ends</div><div class="netbox"><svg id="net2" viewBox="0 0 640 340"></svg></div>
@@ -387,8 +389,8 @@
     deeper: P("Real nodes connect to a handful of peers and relay whatever checks out — <b>gossip protocol</b>. A transaction crosses the globe in a couple of seconds; a block takes a few more because nodes verify before relaying. That delay fixes a design constant: if blocks came every two seconds, ties would be constant and the chain would fray into forks. Bitcoin's ten-minute rhythm makes the network's propagation delay a rounding error. It also explains why each node's <b>mempool</b> — its waiting room of unconfirmed transactions — is slightly different from its neighbour's: everyone hears the news in a slightly different order.") };
 
   /* ===================== SAFETY — practical literacy ===================== */
-  L.safety = { world: "frontier", title: "Staying safe", oneliner: "Recognizing scams and protecting your funds", icon: "‼",
-    hero: "Everything you've learned protects the chain. Nothing protects you from being talked out of your own keys. Scams steal more crypto than hacks ever have — here is the pattern-recognition, by drill.",
+  L.safety = { world: "frontier", title: "Staying safe", oneliner: "Recognising scams and protecting your funds", icon: "‼",
+    hero: "Everything you've learned protects the chain. Nothing protects you from being talked out of your own keys. Scams steal more crypto than hacks ever have — and the only defence is pattern-recognition, so let's drill the patterns.",
     beats: [
       { n: "01", h: "Scam or normal? You decide", cap: "Each card is a real situation. Call it — the pattern matters more than the example.",
         build(s) {
@@ -480,7 +482,7 @@
   addCheck("keys", [
     { ask: "Someone learns your public key and address. What can they do?",
       opts: [
-        { t: "See payments to you — nothing else", ok: true, why: "Public means public. Going backwards to the private key is the discrete-log problem: practically impossible." },
+        { t: "Watch your balance and history — but never spend", ok: true, why: "Public means public: an address exposes its full balance and every transaction, in and out. What it can never do is spend — going backwards to the private key is the discrete-log problem: practically impossible." },
         { t: "Spend your coins", ok: false, why: "Spending requires a signature, and only the private key can produce one. The public key can't be run backwards." },
         { t: "Change your past transactions", ok: false, why: "Past transactions are sealed in the chain; and without your private key, no new signature can be forged either." },
       ] },
@@ -549,6 +551,174 @@
         { t: "Any edit changes a fingerprint, and thousands of copies would disagree", ok: true, why: "Tampering breaks the hash links (visible at once) and every other copy still holds the real history, so the lie is outvoted." },
         { t: "The data is encrypted so no one can read it", ok: false, why: "Blockchain data is usually public, not encrypted. Its defence is that edits are detectable and the honest majority's copy wins." },
         { t: "A firewall protects the main server", ok: false, why: "There is no main server. Safety comes from replication plus hash-linking, not from guarding one machine." },
+      ] },
+  ]);
+
+  addCheck("block", [
+    { ask: "What actually seals a block shut?",
+      opts: [
+        { t: "Its own hash — one fingerprint computed over everything inside", ok: true, why: "The seal is nothing but a hash of the block's contents. Change any transaction and the fingerprint no longer matches — the seal is the contents." },
+        { t: "Encryption — the contents are locked so no one can read them", ok: false, why: "Nothing is encrypted; a block's contents are public. The seal is a hash — anyone can read the data, but no one can change it without the fingerprint giving them away." },
+        { t: "The miner's password", ok: false, why: "There are no passwords anywhere in the system. The seal is the block's own hash, computed over everything inside — it answers to the data, not to any person." },
+      ] },
+    { ask: "You quietly edit one transaction inside a sealed block. What gives you away?",
+      opts: [
+        { t: "The block's fingerprint no longer matches its contents — anyone re-hashing it sees the break", ok: true, why: "The seal was computed over the old contents. One re-hash exposes the mismatch — tampering isn't impossible, it's instantly detectable." },
+        { t: "Nothing — a sealed block physically cannot be edited", ok: false, why: "You can edit your own copy freely — it's just data. What you can't do is edit it undetectably: the stored seal no longer matches the new contents, and one re-hash exposes it." },
+        { t: "The block re-seals itself around the change automatically", ok: false, why: "Nothing updates itself. The old seal stays put, the contents now disagree with it, and anyone who re-hashes the block sees the break at once." },
+      ] },
+    { ask: "Building a block takes a millisecond on any laptop. So where does a block's cost actually come from?",
+      opts: [
+        { t: "From adding it to the chain — the mining work, not the assembly", ok: true, why: "Assembling a block is free; anyone can do it. The expense is the Proof-of-Work race to append it — that's what the nonce and reward lessons build next." },
+        { t: "From the computing power needed to bundle the transactions", ok: false, why: "Bundling is trivial — a laptop does it in a millisecond. The cost lives entirely in the mining that appends the block to the chain." },
+        { t: "From a licence fee blocks must pay to the network", ok: false, why: "There are no licences and no one to pay a fee to. The cost is physical: the electricity burned finding a nonce that seals the block onto the chain." },
+      ] },
+  ]);
+
+  addCheck("merkle", [
+    { ask: "Your transaction sits in a block with a million others. What do you need to prove it's really in there?",
+      opts: [
+        { t: "About 20 sibling hashes — one per level of the tree", ok: true, why: "The proof is one short branch: your transaction plus log₂(n) siblings, re-hashed up to the root. A million transactions, ~20 hashes." },
+        { t: "The whole block, so you can check every transaction", ok: false, why: "That's exactly what the tree spares you. You need only the branch from your transaction to the root — ~20 hashes for a million transactions, not the block itself." },
+        { t: "Just the Merkle root — it already contains your transaction", ok: false, why: "The root alone proves nothing about any single transaction. You need the sibling hashes along your path, so re-hashing lands you on that root." },
+      ] },
+    { ask: "You verify a Merkle proof for your payment. What do you learn about the other transactions in the block?",
+      opts: [
+        { t: "Nothing but a few sibling hashes — their contents stay unseen", ok: true, why: "A proof reveals only fingerprints along your path, never the block's contents. That's why light wallets can verify a payment without downloading anything else." },
+        { t: "Everything — the proof unpacks the whole block", ok: false, why: "The proof carries only sibling hashes, and a hash can't be run backwards. You learn your payment is in the block and nothing at all about the rest." },
+        { t: "Their senders and amounts, since the siblings are raw transactions", ok: false, why: "The siblings are hashes, not transactions — irreversible fingerprints. The proof shows your payment belongs, while every other record stays private to you." },
+      ] },
+    { ask: "An untrusted server hands your phone wallet a forged proof. Why doesn't the lie work?",
+      opts: [
+        { t: "Fake siblings hash up to the wrong root, so the proof fails against the header", ok: true, why: "You re-hash the branch yourself and compare with the root already in the block header. Any forged step lands on a different root — you never trusted the server, only the maths." },
+        { t: "Servers that lie get banned from the network", ok: false, why: "No one polices servers, and no one needs to. The forged branch simply hashes to the wrong root, so your wallet rejects it on the spot — trust the maths, not the source." },
+        { t: "Proofs are signed by miners, and forgers can't sign", ok: false, why: "No signature is involved. The proof checks itself: re-hash the branch and it either lands on the header's Merkle root or it doesn't. A forgery can't survive that." },
+      ] },
+  ]);
+
+  addCheck("nonce", [
+    { ask: "While hunting for a valid block, what is the miner allowed to change?",
+      opts: [
+        { t: "Only the nonce — every other field is frozen", ok: true, why: "The data, the prev link, the merkle root, the time — all fixed. The nonce is the one dial, and mining is nothing but turning it." },
+        { t: "The transactions, to nudge the hash towards zeros", ok: false, why: "Change a transaction and you're mining a different block — and hashes can't be nudged anyway. The only legitimate dial is the nonce." },
+        { t: "The difficulty target, to make its own job easier", ok: false, why: "The target is set by the protocol for everyone at once — no miner touches it. All a miner can turn is the nonce." },
+      ] },
+    { ask: "Mining is often described as ‘solving complex maths problems’. What is a miner actually doing?",
+      opts: [
+        { t: "Guessing — re-rolling one number and re-hashing, hoping to land under the target", ok: true, why: "There is no equation and no cleverness. Hash output is unpredictable, so brute-force re-rolling is the only strategy — quintillions of guesses, pure chance." },
+        { t: "Solving equations too hard for ordinary computers", ok: false, why: "There's nothing to solve. A hash can't be steered, so miners just increment the nonce and re-hash — a lottery, not a puzzle." },
+        { t: "Decrypting the transactions inside the block", ok: false, why: "Nothing is encrypted, so there's nothing to decrypt. Mining is guessing nonces until the block's hash happens to fall in the target zone." },
+      ] },
+    { ask: "Finding a winning nonce takes quintillions of guesses. How much work is it for everyone else to check it?",
+      opts: [
+        { t: "One hash — verification is instant, and that asymmetry powers everything", ok: true, why: "Hash the block once and see the leading zeros for yourself. Staggeringly expensive to produce, one hash to verify — that lopsidedness is what makes Proof of Work usable." },
+        { t: "The same quintillions — checkers must redo the search", ok: false, why: "Only the search is expensive. Verifying takes a single hash of the finished block — that produce-hard, check-easy asymmetry is the whole point." },
+        { t: "None — the network takes the winning miner's word for it", ok: false, why: "No one is trusted, ever. Every node re-hashes the block itself — it just happens that checking costs one hash while finding cost quintillions." },
+      ] },
+  ]);
+
+  addCheck("pos", [
+    { ask: "A validator is caught signing two conflicting blocks. What does it lose?",
+      opts: [
+        { t: "A slice of its staked coins — burned — plus its place in the validator set", ok: true, why: "Slashing destroys the stake itself, not just income. The bond is real money at risk; that threat is the entire security model." },
+        { t: "Only its future rewards — the staked coins themselves are safe", ok: false, why: "That's the expensive misconception. Slashing burns the staked coins — the capital, not just the income stream — and ejects the validator. If only rewards were at risk, cheating would be nearly free." },
+        { t: "Nothing at first — slashing only follows repeat offences", ok: false, why: "There are no warnings. One provable double-sign triggers the burn and ejection immediately — the protocol punishes the act, not a pattern." },
+      ] },
+    { ask: "One validator cheats alone; separately, a third of all validators cheat together. How do the penalties compare?",
+      opts: [
+        { t: "The penalty scales with how many are slashed together — a coordinated attack can burn everything", ok: true, why: "That's the correlation penalty: a lone fault costs a little, but the more stake slashed at once, the bigger every cheater's burn — up to the entire stake. Exactly what makes an organised attack suicidal." },
+        { t: "It's the same fine either way — cheating is cheating", ok: false, why: "The penalty deliberately isn't flat. It scales with the total stake slashed around the same time, so lone accidents stay cheap while coordinated attacks approach total loss." },
+        { t: "Only the organiser is slashed; followers keep their stake", ok: false, why: "Every cheating validator is slashed, and the correlation penalty makes each burn bigger the more of them there are. Joining an attack multiplies your own loss." },
+      ] },
+    { ask: "Why can't an attacker just spin up a thousand fake validators and outvote everyone?",
+      opts: [
+        { t: "Each validator needs its own real stake — a thousand validators cost a thousand bonds", ok: true, why: "Identities are free; capital isn't. It's the same Sybil defence as mining, with money at risk instead of electricity burned." },
+        { t: "The network verifies each validator's real-world identity", ok: false, why: "No one checks identities — the system is permissionless. What stops the swarm is that every validator must post its own stake, so fake identities cost real capital." },
+        { t: "The protocol allows only one validator per computer", ok: false, why: "One machine can happily run many validators. The limit is economic, not technical: each one needs its own staked bond, so influence costs capital." },
+      ] },
+  ]);
+
+  addCheck("contracts", [
+    { ask: "What is a smart contract, really?",
+      opts: [
+        { t: "A program stored on the chain that every node runs identically", ok: true, why: "Deterministic code, executed in lockstep by thousands of computers that all agree on the result. Neither ‘smart’ nor a ‘contract’ — just an unstoppable program." },
+        { t: "A legal agreement uploaded to the blockchain", ok: false, why: "No lawyers involved. It's a program — code that holds funds and moves them by its own rules, which every node runs and agrees on." },
+        { t: "An AI that negotiates deals between users", ok: false, why: "Nothing intelligent about it — that's rather the point. It's plain deterministic code that does exactly what it says, every time, with no judgement." },
+      ] },
+    { ask: "A serious bug is found in a deployed contract holding user funds. What can its developers do, by default?",
+      opts: [
+        { t: "Nothing — deployed code can't be patched, and the flaw is live", ok: true, why: "Immutable code means immutable bugs; that's why exploits have cost billions. (Some teams deploy behind an upgradeable proxy — which fixes patching by reintroducing a trusted party.)" },
+        { t: "Push an update, the way any app does", ok: false, why: "There's no update channel — deployed code is part of the chain's history. Immutable code means immutable bugs, and no admin can pause the drain." },
+        { t: "Ask the miners to vote the bug away", ok: false, why: "Miners order transactions; they don't edit contracts. Rewriting deployed code would mean rewriting the chain itself — the very thing the whole design prevents." },
+      ] },
+    { ask: "Why does every operation in a contract cost gas?",
+      opts: [
+        { t: "Thousands of nodes run your code — gas prices each step, rationing the shared computer and killing infinite loops", ok: true, why: "You're renting the world's most replicated computer. Pricing every operation keeps you honest about its cost — and a loop that can't pay simply halts." },
+        { t: "Gas is the profit of the company that owns the blockchain", ok: false, why: "No company owns the chain. Gas pays the validators who actually execute your code, and it rations a computer that thousands of machines run in unison." },
+        { t: "Gas is a refundable deposit to prove you're serious", ok: false, why: "It's spent, not deposited — payment for computation performed. Each operation costs gas so heavy programs pay their way and endless loops run out of fuel." },
+      ] },
+  ]);
+
+  addCheck("wallets", [
+    { ask: "Where, exactly, are your coins?",
+      opts: [
+        { t: "On the chain — the wallet holds only the keys that control them", ok: true, why: "The balance is an entry in the shared ledger, replicated everywhere. Your wallet holds the secret that can sign it away — keys, never coins." },
+        { t: "Inside the wallet app on your phone", ok: false, why: "The most expensive misunderstanding in crypto. The coins are entries on the chain itself; the app holds only your keys. Delete the app and the coins sit exactly where they were." },
+        { t: "Nowhere until you withdraw them to cash", ok: false, why: "They fully exist — as entries in a ledger thousands of computers agree on. What your wallet contributes is the key that proves those entries answer to you." },
+      ] },
+    { ask: "Your phone — wallet app and all — falls in the sea. Your crypto is…",
+      opts: [
+        { t: "Safe — the seed phrase re-derives every key on any new device", ok: true, why: "The coins never left the chain, and derivation is deterministic: same words in, same keys out, forever. The phrase on paper is the wallet; the phone was only a window." },
+        { t: "At the bottom of the sea with the phone", ok: false, why: "The coins were never in the phone — they're on the chain. Type your seed phrase into any wallet and the same keys are re-derived, exactly as before." },
+        { t: "Recoverable once the wallet company restores your account", ok: false, why: "There's no account and no company holding one — that's the point of self-custody. Recovery is the seed phrase re-deriving your keys; without it, no one can help." },
+      ] },
+    { ask: "You keep your coins on an exchange, in an account with your name on it. Who actually controls them?",
+      opts: [
+        { t: "The exchange — it holds the keys; you hold a promise", ok: true, why: "Custody follows the keys, not the login. Your balance is a claim on the exchange's books — honoured until it freezes withdrawals or fails, as FTX did." },
+        { t: "You — the account is in your name", ok: false, why: "The name on the login changes nothing: the exchange signs, so the exchange controls. ‘Not your keys, not your coins’ is precisely this situation." },
+        { t: "No one — coins on a chain have no controller", ok: false, why: "Whoever holds the key controls the coins — and here that's the exchange. On-chain assets always answer to a key; the only question is whose hand it's in." },
+      ] },
+  ]);
+
+  addCheck("layer2", [
+    { ask: "Why is the base chain so slow — 7 to 15 transactions a second?",
+      opts: [
+        { t: "By design — every node re-checks every transaction, and that redundancy is the security", ok: true, why: "Thousands of independent verifications per transaction is the whole defence. Speed it up by checking less and you're quietly selling the security." },
+        { t: "The code is old and just needs optimising", ok: false, why: "No optimisation closes the gap, because the slowness is bought deliberately: every node verifies everything. Layer 2 works around that constraint instead of breaking it." },
+        { t: "There aren't enough servers yet", ok: false, why: "Adding nodes adds no speed — each one still re-checks every transaction. That total redundancy is the security, which is why scaling has to happen a layer up." },
+      ] },
+    { ask: "How does a rollup actually deliver more transactions per second?",
+      opts: [
+        { t: "It executes them off-chain, then posts a compressed summary and proof back to the main chain", ok: true, why: "The heavy work moves off-chain; only a tiny, checkable summary touches the expensive base layer. Thousands of payments settle in one block's worth of space." },
+        { t: "It's a separate, faster blockchain you simply trust instead", ok: false, why: "That describes a sidechain — different security, your own risk. A rollup posts its data and proofs back to the main chain, so the base layer still underwrites every transaction." },
+        { t: "It skips verification to save time", ok: false, why: "Nothing goes unverified — the batch is either proven valid up front (zk) or open to fraud challenges (optimistic). The saving comes from doing the work off-chain, not from skipping it." },
+      ] },
+    { ask: "Where does a rollup's security ultimately come from?",
+      opts: [
+        { t: "The base chain — data and proofs posted to Layer 1 mean cheating can be caught and proven", ok: true, why: "The rollup inherits Layer 1's security precisely because its data lands there: anyone can reconstruct its state and check or challenge the summary. The operator has nowhere to hide." },
+        { t: "The good reputation of the rollup's operator", ok: false, why: "Reputation is exactly what the design refuses to rely on. Data and proofs posted to Layer 1 make cheating provable by anyone — trust the base chain, not the company." },
+        { t: "Its own separate army of miners", ok: false, why: "A rollup has no miners of its own — that's what keeps it cheap. It borrows the base chain's security by posting its data and proofs there for anyone to verify." },
+      ] },
+  ]);
+
+  addCheck("zk", [
+    { ask: "What does a zero-knowledge proof let Peggy do?",
+      opts: [
+        { t: "Convince Victor a statement is true while revealing nothing else — not even the secret", ok: true, why: "Truth without disclosure: Victor ends up certain, yet learns only that the claim holds. The secret itself never crosses the table." },
+        { t: "Encrypt her secret so Victor can't read it", ok: false, why: "Encryption hides data; it convinces no one of anything. A zero-knowledge proof does the opposite job — it makes Victor certain a claim is true while disclosing nothing." },
+        { t: "Hide her identity from the network completely", ok: false, why: "Anonymity is a different problem. The proof hides the contents of a claim — Victor learns it's true and nothing more. Who is speaking is a separate question." },
+      ] },
+    { ask: "In the cave game, a cheater survives one round half the time. Why does Victor still end up certain?",
+      opts: [
+        { t: "Each round is a fresh 50% chance of exposure — twenty rounds leave a bluffer roughly one-in-a-million odds", ok: true, why: "The halving compounds: ½ × ½ × ½… Confidence is never absolute after any single round, but it grows exponentially — soon indistinguishable from certainty." },
+        { t: "After enough rounds, Victor works out the secret word himself", ok: false, why: "Victor never learns the word — that's the zero-knowledge part. What grows is his statistical certainty: a cheater's survival odds halve every round until bluffing is effectively impossible." },
+        { t: "One passed round is proof enough", ok: false, why: "One round proves little — a cheater passes it half the time by luck. Certainty comes from repetition: each round halves a bluffer's odds, and the halvings multiply." },
+      ] },
+    { ask: "A zk-rollup settles thousands of transactions with one proof. Does that mean your transactions are hidden?",
+      opts: [
+        { t: "Usually not — the ‘zk’ buys a tiny validity proof; most zk-rollups publish their transaction data", ok: true, why: "In rollups the maths is used for compactness, not secrecy: one small proof that the whole batch was valid. The data itself generally lands on the main chain for anyone to read." },
+        { t: "Yes — zero-knowledge means nobody can see what happened", ok: false, why: "A natural guess, but no: most zk-rollups publish all their transaction data to the main chain. The zero-knowledge maths compresses proof of validity — privacy needs a different design, like Zcash." },
+        { t: "Yes — hiding the data is what makes them cheap", ok: false, why: "The saving comes from verification, not secrecy: one tiny proof replaces re-executing thousands of transactions. The data is still published — compressed, but public." },
       ] },
   ]);
 })();
