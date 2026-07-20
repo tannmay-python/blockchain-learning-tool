@@ -243,3 +243,7 @@ export const APP = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   return { heroCanvas, confetti: (originEl) => FX(originEl), toggleTheme, toggleMobileNav };
 })();
+
+/* views.js and lessons-extra.js reach the canvas effects through window.APP.
+   app.js already imports views.js, so they cannot import back without a cycle. */
+window.APP = APP;
