@@ -228,24 +228,33 @@
       const words = ["ocean", "maple", "silver", "tiger", "amber", "ginger", "violet", "harbor", "cedar", "ribbon", "quartz", "meadow"];
       wrap.innerHTML = `<div class="flabel"><span class="pin"></span>hierarchical deterministic wallet</div>
         <div class="casc" id="csc"><div class="casc-seed" id="seed"><div class="cs-k">🔑 secret recovery phrase</div><div class="cs-v" id="seedv">············</div></div><div class="casc-tree" id="tree"></div></div>
-        <button class="btn primary block" id="gen" style="margin-top:14px">Generate a wallet</button>
-        <div class="note" style="text-align:center;margin-top:8px">Same phrase in → same keys out, forever. That is why the phrase alone can restore everything.</div>`;
+        <div class="btn-row" style="margin-top:14px"><input class="in mono" id="phr" placeholder="…or type any phrase yourself" style="flex:1;min-width:180px"><button class="btn primary" id="gen">Random phrase</button></div>
+        <div class="note" id="wmsg" style="text-align:center;margin-top:8px">Same phrase in → same keys out, forever. Type the same words twice and check. Change one letter and check again.</div>`;
       s.appendChild(wrap);
-      wrap.querySelector("#gen").onclick = () => {
-        const seed = Array.from({ length: 4 }, () => words[(Math.random() * words.length) | 0]).join(" ");
+      let last = null;
+      const derive = (seed) => {
         wrap.querySelector("#seedv").textContent = seed;
         const base = window.sha256 ? sha256(seed) : seed;
         const tree = wrap.querySelector("#tree"); tree.innerHTML = "";
+        const addrs = [];
         [0, 1, 2].forEach((i) => {
           const priv = window.sha256 ? sha256(base + "k" + i) : base + i;
           const addr = "0x" + (window.sha256 ? sha256(priv).slice(-16) : "abcd1234");
+          addrs.push(addr);
           const row = el("div", "casc-row");
           row.innerHTML = `<div class="casc-arm"></div><div class="casc-acct"><div class="ca-h">account ${i + 1}</div><div class="ca-r"><span>priv</span><b class="mono" style="color:var(--red)">${short(priv, 8, 4)}</b></div><div class="ca-r"><span>addr</span><b class="mono" style="color:var(--green)">${short(addr, 8, 6)}</b></div></div>`;
           tree.appendChild(row);
           if (!RM) { row.style.animationDelay = (i * 0.16) + "s"; }
           row.classList.add("casc-in");
         });
+        const m = wrap.querySelector("#wmsg");
+        if (last && last.seed === seed) m.innerHTML = `<span style="color:var(--green)">Identical phrase → identical addresses, every time.</span> Nothing is stored anywhere — the phrase <b>is</b> the wallet. That is why it restores everything, and why anyone who reads it owns everything.`;
+        else if (last && last.seed !== seed) { const diff = [...seed].filter((ch, i2) => ch !== last.seed[i2]).length + Math.abs(seed.length - (last.seed || "").length); m.innerHTML = diff <= 2 ? `One character different → <span style="color:var(--red)">a completely unrelated wallet</span> (compare the addresses). There is no "close": mistype one word of a real phrase and you restore someone else's empty universe.` : `A different phrase is simply a different wallet. Try typing the <b>same</b> phrase twice.`; }
+        last = { seed, addrs };
       };
+      wrap.querySelector("#gen").onclick = () => derive(Array.from({ length: 4 }, () => words[(Math.random() * words.length) | 0]).join(" "));
+      wrap.querySelector("#phr").addEventListener("keydown", e => { if (e.key === "Enter" && e.target.value.trim()) derive(e.target.value.trim()); });
+      wrap.querySelector("#phr").addEventListener("change", e => { if (e.target.value.trim()) derive(e.target.value.trim()); });
     }
   });
 

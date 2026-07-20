@@ -9,7 +9,7 @@ const fs = require('fs');
 const ctx2d = () => ({ setTransform() {}, clearRect() {}, fillStyle: '', strokeStyle: '', lineWidth: 1, beginPath() {}, arc() {}, fill() {}, save() {}, restore() {}, translate() {}, rotate() {}, fillRect() {}, moveTo() {}, lineTo() {}, stroke() {} });
 const stubEl = () => ({ innerHTML: '', width: 0, height: 0, style: {}, offsetWidth: 0, dataset: {},
   classList: { add() {}, remove() {}, toggle() {} }, getContext: ctx2d,
-  querySelector: () => null, querySelectorAll: () => ({ forEach() {} }),
+  querySelector: () => stubEl(), querySelectorAll: () => ({ forEach() {} }),
   appendChild() {}, setAttribute() {}, addEventListener() {}, focus() {} });
 
 global.window = {};

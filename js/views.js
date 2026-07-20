@@ -91,13 +91,14 @@ window.VIEWS = (function () {
     const cur = S.firstUndone();
     const nodes = w.lessons.map(id => {
       const l = L[id], done = S.isDone(id), isCur = id === cur && !done;
-      return `<a class="lnode ${done ? "done" : ""} ${isCur ? "cur" : ""}" href="#/lesson/${id}" style="${wv(w)}" aria-label="${l.title}${done ? " (done)" : ""}">
+      const deep = S.DEEP.has(id);
+      return `<a class="lnode ${done ? "done" : ""} ${isCur ? "cur" : ""}${deep ? " deep" : ""}" href="#/lesson/${id}" style="${wv(w)}" aria-label="${l.title}${done ? " (done)" : ""}${deep ? " (optional deep dive)" : ""}">
         ${done ? '<div class="check" aria-hidden="true">✓</div>' : ""}
         <div class="ic" style="background:${w.color}1c">${l.icon}</div>
         <div class="lt">${l.title}</div><div class="lo">${l.oneliner}</div>
-        ${isCur ? '<div class="lx">start here</div>' : ""}</a>`;
+        ${deep ? '<div class="lx">◇ deep dive — optional</div>' : isCur ? '<div class="lx">start here</div>' : ""}</a>`;
     }).join("");
-    return `<div class="world-block"><a class="world-rail" href="#/chapter/${w.id}" title="Go to chapter intro"><span class="wdot" style="background:${w.color}"></span><span class="wt">${w.title}</span><span class="ws">${w.sub}</span><span class="wprog">${S.worldDone(w)}/${w.lessons.length}</span><span class="wgate-arr" style="margin-left:auto;color:var(--line-2);font-size:18px">→</span></a><div class="nodes">${nodes}</div></div>`;
+    return `<div class="world-block"><a class="world-rail" href="#/chapter/${w.id}" title="Go to chapter intro"><span class="wdot" style="background:${w.color}"></span><span class="wt">${w.title}</span><span class="ws">${w.sub}</span><span class="wprog">${S.worldDone(w)}/${w.lessons.length}</span>${S.gatePassed(w.id) ? '<span class="wbadge" title="Exit gate passed">✦</span>' : ""}<span class="wgate-arr" style="margin-left:auto;color:var(--line-2);font-size:18px">→</span></a><div class="nodes">${nodes}</div></div>`;
   }
 
   /* ---------------- LESSON (vertical explorable) ---------------- */
@@ -163,34 +164,45 @@ window.VIEWS = (function () {
     teardown();
     const w = S.WORLDS.find(x => x.id === wId);
     if (!w) return go("#/map");
+    const demos = w.lessons.reduce((a, id) => a + (window.LESSONS[id] ? window.LESSONS[id].beats.length : 0), 0);
+    const core = w.lessons.filter(id => !S.DEEP.has(id));
+    const passed = S.gatePassed(w.id);
     let html = nav("");
     html += `<div class="ch-gate explorable fadein">
       <div class="ch-gate-head">
-        <div class="cg-n">Chapter ${w.n}</div>
+        <div class="cg-n">Chapter ${w.n}${passed ? ' · <span style="color:var(--gold-text)">✦ badge earned</span>' : ""}</div>
         <h1 class="cg-title">${w.title}</h1>
         <p class="cg-intro">${w.intro}</p>
+        <p class="cg-meta">~${core.length * 5} min · ${w.lessons.length} lesson${w.lessons.length > 1 ? "s" : ""} · ${demos} hands-on demos</p>
       </div>
       <div class="cg-modules">`;
-    w.lessons.forEach((id, i) => {
+    let num = 0;
+    w.lessons.forEach((id) => {
       const l = window.LESSONS[id];
       if (!l) return;
-      const done = S.isDone(id);
+      const done = S.isDone(id), deep = S.DEEP.has(id);
+      if (!deep) num++;
       html += `<a href="#/lesson/${id}" class="cg-mod ${done ? "done" : ""}">
         <div class="cgm-icon" style="${done ? `background:${w.color};color:#fff;border:none` : ""}">${done ? "✓" : (l.icon || "•")}</div>
         <div class="cgm-info">
-          <div class="cgm-title">${i + 1}. ${l.title}</div>
+          <div class="cgm-title">${deep ? "◇ " : num + ". "}${l.title}${deep ? ' <span class="deep-chip">optional deep dive</span>' : ""}</div>
           <div class="cgm-sub">${l.oneliner || ""}</div>
         </div>
         <div class="cgm-arrow">→</div>
       </a>`;
     });
+    const gateQs = window.GATES && window.GATES[w.id];
     html += `</div>
       <div class="cg-start">
         <button class="btn primary" style="font-size:16px;padding:14px 32px;background:${w.color};border-color:transparent;color:#fff" data-go="#/lesson/${w.lessons[0]}">Enter Chapter →</button>
       </div>
+      ${gateQs ? `<div class="cg-exit"><div class="cg-exit-h">Exit gate${passed ? " — passed ✦" : ""}</div><p class="cg-exit-p">${passed ? "Badge earned. Retake it any time — the questions reach back into earlier chapters on purpose." : "Answer these — including the reach-back questions from earlier chapters — to earn the chapter badge. Lessons tick themselves; the badge you have to win."}</p><div id="gateQuiz"></div></div>` : ""}
     </div>`;
     root().innerHTML = html;
     wireGo();
+    if (gateQs && window.QUIZ) window.QUIZ(document.getElementById("gateQuiz"), gateQs, { tag: "Exit gate", onDone: (score, total) => {
+      if (score >= total - (total > 2 ? 1 : 0) && !S.gatePassed(w.id)) { S.setGate(w.id); }
+    } });
   }
 
   return { home, map, lesson, chapterGate };

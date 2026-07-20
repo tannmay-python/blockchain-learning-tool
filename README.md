@@ -7,17 +7,25 @@ land only after your hands have built the experience.
 
 **Live:** https://tannmay-python.github.io/blockchain-learning-tool/
 
-## The journey (7 chapters · 25 lessons · 60+ hands-on demos)
+## The journey (10 chapters · 28 lessons · 80+ hands-on demos)
 
 | # | Chapter | What it answers |
 |---|---------|-----------------|
 | 00 | **Start here** | Money is a list. Who keeps the list? Why digital money is hard (double-spend). |
 | 01 | **The big idea** | What a blockchain actually is, and the life of one payment end to end. |
 | 02 | **Cryptography** | Hashing (the fingerprint) and keys & signatures (ownership without trust). |
-| 03 | **Building the chain** | Inside a transaction & the mempool, build a block, Merkle-prove it, mine the nonce, earn the reward, chain the past shut. |
-| 04 | **The network agrees** | Gossip propagation, forks, the 51% attack, Proof of Stake. |
-| 05 | **The ecosystem** | Smart contracts, tokens & NFTs, wallets & custody, Layer 2, zero-knowledge, stablecoins & CBDCs, staying safe from scams. |
-| 06 | **The whole machine** | Everything you built, running together. |
+| 03 | **Building the chain** | Inside a transaction & the mempool, build a block, Merkle-prove it (deep dive), mine the nonce, the difficulty thermostat, rewards & pools, chain the past shut. |
+| 04 | **The network agrees** | Gossip propagation, the Sybil machine (why voting fails), forks, the 51% attack — run the heist yourself — and Proof of Stake. |
+| 05 | **Programmable money** | Smart contracts (order the DAO's withdraw lines yourself), tokens & NFTs, and the automated market — x·y=k, impermanent loss, oracles. |
+| 06 | **Your keys, your problem** | Wallets & custody, seed-phrase determinism, and staying safe from scams. |
+| 07 | **Scaling, privacy & the state** | Layer 2, zero-knowledge (deep dive), stablecoins & CBDCs. |
+| 08 | **How it went wrong** | Mt. Gox, The DAO, Terra, FTX — each disaster mapped to the rule it proved. |
+| 09 | **The whole machine** | Everything you built, running together. |
+
+Lessons tick themselves as you pass through; chapter **badges** must be won at each
+chapter's exit gate — a short cumulative quiz that deliberately reaches back into
+earlier chapters. `merkle` and `zk` are optional **deep dives**: on the map, never
+on the critical path.
 
 Most lessons end with a **checkpoint** — a short quiz that explains *why* every option is
 right or wrong, not just which one to click.

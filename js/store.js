@@ -14,34 +14,45 @@ window.STORE = (function () {
       intro: "Don't let the word 'cryptography' scare you. The entire system is built on just two simple tools: a digital fingerprint that makes it impossible to tamper with data, and a digital signature that proves you own your money. Once you grasp these two tools, the rest of blockchain is just connecting the dots." },
     { id: "chain", n: "03", title: "Building the chain", sub: "Bundling, mining, and locking the past", color: "#8a2057", colorText: "#8a2057", colorTextDark: "#ea86bb", lessons: ["tx", "block", "merkle", "nonce", "incentives", "chainlink"],
       intro: "Now we get our hands dirty. You're going to build the machine yourself: packing transactions into a neat bundle, doing the 'work' to seal them, and linking them together so the past can never be erased. You'll see exactly how a blockchain earns its name." },
-    { id: "consensus", n: "04", title: "The network agrees", sub: "Thousands of strangers, one history", color: "#d2384f", colorText: "#b02540", colorTextDark: "#f2708a", lessons: ["gossip", "forks", "attack", "pos"],
+    { id: "consensus", n: "04", title: "The network agrees", sub: "Thousands of strangers, one history", color: "#d2384f", colorText: "#b02540", colorTextDark: "#f2708a", lessons: ["gossip", "sybil", "forks", "attack", "pos"],
       intro: "Getting one computer to follow the rules is easy. Getting thousands of strangers around the world to agree on the exact same history—without a referee—is the real magic. This chapter explores how the network reaches agreement, handles disagreements, and protects itself from attackers." },
-    { id: "frontier", n: "05", title: "The ecosystem", sub: "Contracts, tokens, wallets, scaling, safety", color: "#2e9e6b", colorText: "#1e7350", colorTextDark: "#4ecb92", lessons: ["contracts", "tokens", "wallets", "layer2", "zk", "money", "safety"],
-      intro: "A secure ledger is just the foundation. Once you have a trusted network, you can build unstoppable programs on top of it. This chapter explores the wild world beyond just moving money: smart contracts, digital art (NFTs), scaling the network, and the very real ways people lose their funds." },
-    { id: "capstone", n: "06", title: "The whole machine", sub: "Watch every piece work together", color: "#d98908", colorText: "#8a5a00", colorTextDark: "#f5b955", lessons: ["recap"],
+    { id: "progmoney", n: "05", title: "Programmable money", sub: "Contracts, tokens, and markets made of code", color: "#2e9e6b", colorText: "#1e7350", colorTextDark: "#4ecb92", lessons: ["contracts", "tokens", "amm"],
+      intro: "A secure ledger is just the foundation. Once a network can store data and agree on it, it can run programs — unstoppable ones. This chapter explores what gets built on top: smart contracts, tokens and NFTs, and markets that trade with no seller on the other side." },
+    { id: "keysworld", n: "06", title: "Your keys, your problem", sub: "Custody, and the ways people lose everything", color: "#b02540", colorText: "#b02540", colorTextDark: "#f2708a", lessons: ["wallets", "safety"],
+      intro: "On a blockchain there is no password reset and no fraud department. A wallet is just a key, and whoever holds the key owns the coins — which makes you both the owner and the single point of failure. This short chapter is about keeping it that way." },
+    { id: "scaling", n: "07", title: "Scaling, privacy & the state", sub: "Layer 2, zero-knowledge, and public money", color: "#c67c05", colorText: "#8a5a00", colorTextDark: "#f8c977", lessons: ["layer2", "zk", "money"],
+      intro: "A chain everyone verifies is slow and public by design. This chapter covers the engineering that buys the speed back, the cryptography that buys privacy back, and what happens when states pick up the same tools." },
+    { id: "history", n: "08", title: "How it went wrong", sub: "The disasters that proved the rules", color: "#9c2a5a", colorText: "#9c2a5a", colorTextDark: "#f28ab5", lessons: ["history"],
+      intro: "Mt. Gox, The DAO, Terra, FTX. Every rule this course taught you was written in someone else's losses. One lesson: each disaster, and the exact principle it proved." },
+    { id: "capstone", n: "09", title: "The whole machine", sub: "Watch every piece work together", color: "#d98908", colorText: "#8a5a00", colorTextDark: "#f5b955", lessons: ["recap"],
       intro: "You've built every piece by hand: the keys, the signatures, the blocks, and the chain. Now, watch them all come together. This final chapter runs the entire machine as one living, breathing system." },
   ];
   const ORDER = WORLDS.flatMap(w => w.lessons);
+  /* optional deep-dive lessons: on the map, never on the critical path */
+  const DEEP = new Set(["merkle", "zk"]);
   const worldOf = {}; WORLDS.forEach(w => w.lessons.forEach(id => worldOf[id] = w));
 
   /* lesson renames across versions: old id -> new id (progress survives) */
   const RENAMES = {};
-  let completed = new Set();
+  let completed = new Set(), gates = new Set();
   try {
     const raw = JSON.parse(localStorage.getItem(LS) || "[]");
     const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.done) ? raw.done : []);
     list.forEach(id => { const cur = RENAMES[id] || id; if (ORDER.includes(cur)) completed.add(cur); });
+    if (raw && Array.isArray(raw.gates)) raw.gates.forEach(id => gates.add(id));
   } catch (e) {}
-  function save() { try { localStorage.setItem(LS, JSON.stringify({ v: 2, done: [...completed] })); } catch (e) {} }
+  function save() { try { localStorage.setItem(LS, JSON.stringify({ v: 2, done: [...completed], gates: [...gates] })); } catch (e) {} }
+  function gatePassed(id) { return gates.has(id); }
+  function setGate(id) { gates.add(id); save(); }
 
   function isDone(id) { return completed.has(id); }
   function setDone(id, v) { if (v) completed.add(id); else completed.delete(id); save(); }
-  function reset() { completed.clear(); save(); }
+  function reset() { completed.clear(); gates.clear(); save(); }
   function worldDone(w) { return w.lessons.filter(isDone).length; }
   function totalDone() { return ORDER.filter(isDone).length; }
   function nextOf(id) { const i = ORDER.indexOf(id); return i >= 0 && i < ORDER.length - 1 ? ORDER[i + 1] : null; }
   function prevOf(id) { const i = ORDER.indexOf(id); return i > 0 ? ORDER[i - 1] : null; }
-  function firstUndone() { return ORDER.find(id => !isDone(id)) || ORDER[0]; }
+  function firstUndone() { return ORDER.find(id => !isDone(id) && !DEEP.has(id)) || ORDER.find(id => !isDone(id)) || ORDER[0]; }
 
-  return { WORLDS, ORDER, worldOf, isDone, setDone, reset, worldDone, totalDone, nextOf, prevOf, firstUndone, lessonsTotal: ORDER.length };
+  return { WORLDS, ORDER, worldOf, DEEP, isDone, setDone, reset, worldDone, totalDone, nextOf, prevOf, firstUndone, gatePassed, setGate, lessonsTotal: ORDER.length };
 })();

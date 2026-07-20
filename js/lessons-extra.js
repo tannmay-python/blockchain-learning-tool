@@ -18,7 +18,8 @@
      q: { ask, opts: [{t, ok, why}] } — one correct option.
      Skippable, progress dots, a scored reveal at the end. Formal, not
      cutesy: mark, explain, tally. */
-  function quiz(host, questions) {
+  function quiz(host, questions, opts) {
+    opts = opts || {};
     let qi = 0, answered = false, score = 0;
     const marks = new Array(questions.length).fill(null); // 'right' | 'wrong' | null
     const wrap = el("div", "quiz");
@@ -29,7 +30,7 @@
     function drawQ() {
       const q = questions[qi];
       wrap.className = "quiz fadein";
-      wrap.innerHTML = `<div class="quiz-head"><span class="quiz-tag">Checkpoint</span>${dots()}<button class="quiz-skip" id="qskip">skip ›</button></div>
+      wrap.innerHTML = `<div class="quiz-head"><span class="quiz-tag">${opts.tag || "Checkpoint"}</span>${dots()}<button class="quiz-skip" id="qskip">skip ›</button></div>
         <div class="quiz-q">${q.ask}</div>
         <div class="quiz-opts">${q.opts.map((o, i) => `<button class="quiz-opt" data-i="${i}"><span class="qo-mk"></span><span class="qo-t">${o.t}</span></button>`).join("")}</div>
         <div class="quiz-why" id="qwhy"></div>
@@ -64,6 +65,7 @@
 
     function result() {
       const total = questions.length, pct = score / total;
+      if (opts.onDone) opts.onDone(score, total);
       const tier = pct === 1 ? ["Nailed it.", "Every one correct — you have this cold."]
         : pct >= 0.5 ? ["Halfway there.", "Some stuck, some slipped — worth one more look at the ones you missed before moving on."]
         : ["Worth a re-read.", "A couple slipped — the “go deeper” panel below will shore them up."];
@@ -723,4 +725,504 @@
         { t: "Yes — hiding the data is what makes them cheap", ok: false, why: "The saving comes from verification, not secrecy: one tiny proof replaces re-executing thousands of transactions. The data is still published — compressed, but public." },
       ] },
   ]);
+
+  /* expose the quiz primitive for chapter exit gates (views.js) */
+  window.QUIZ = quiz;
+
+  /* ============================================================
+     SYBIL — why "one computer, one vote" cannot work
+     ============================================================ */
+  L.sybil = { world: "consensus", title: "The Sybil machine", oneliner: "Why the network cannot simply vote", icon: "⚇",
+    hero: "The obvious way for strangers to agree is to vote. Here is why that fails instantly on the internet — and what mining quietly replaced it with.",
+    beats: [
+      { n: "01", h: "Try consensus by vote", cap: "The network is deciding whether Eve's double-spend is valid. Twelve honest nodes vote no. You are Eve — and on the internet, <b>identities are free</b>. See what that does to a vote.",
+        build(s) {
+          const wrap = el("div", "fcard"); let fakes = 0;
+          wrap.innerHTML = `<div class="flabel"><span class="pin"></span>proposal: "Eve's double-spend is valid" · one node, one vote</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;text-align:center">
+              <div><div class="note" style="margin-bottom:6px;color:var(--green)">honest nodes — NO</div><div class="metric"><span class="n" style="color:var(--green)">12</span></div></div>
+              <div><div class="note" style="margin-bottom:6px;color:var(--red)">your nodes — YES</div><div class="metric"><span class="n" id="syF" style="color:var(--red)">1</span></div></div>
+            </div>
+            <div class="verdict yes" id="syV" style="margin-top:14px">Proposal rejected, 12 votes to 1.</div>
+            <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn danger" id="sySpawn">Spawn 1,000 fake nodes</button><button class="btn" id="syRst">Reset</button></div>
+            <div class="note" id="syM" style="text-align:center;margin-top:10px">A "node" is just a program. Starting another copy costs nothing.</div>`;
+          s.appendChild(wrap);
+          const draw = () => { wrap.querySelector("#syF").textContent = (1 + fakes).toLocaleString(); const v = wrap.querySelector("#syV");
+            if (fakes > 11) { v.className = "verdict no"; v.textContent = `Proposal PASSES, ${(1 + fakes).toLocaleString()} votes to 12. Your double-spend is now "valid".`; wrap.querySelector("#syM").innerHTML = `That took one laptop and a for-loop. <b>Any system where identities are free to create cannot be governed by counting identities.</b> This failure mode is called a Sybil attack.`; }
+            else { v.className = "verdict yes"; v.textContent = "Proposal rejected, 12 votes to 1."; } };
+          wrap.querySelector("#sySpawn").onclick = () => { fakes = 1000; draw(); };
+          wrap.querySelector("#syRst").onclick = () => { fakes = 0; wrap.querySelector("#syM").innerHTML = `A "node" is just a program. Starting another copy costs nothing.`; draw(); };
+          draw();
+        } },
+      { n: "02", h: "Now weight the vote by work", cap: "Same network, same fakes — but now a vote only counts in proportion to the <b>hashes</b> behind it. Your thousand names still share one processor. Try to win now.",
+        build(s) {
+          const wrap = el("div", "fcard"); let rigs = 0; const HONEST = 12; // GH/s
+          wrap.innerHTML = `<div class="flabel"><span class="pin"></span>same proposal · votes weighted by hashpower</div>
+            <div id="syBars"></div>
+            <div class="srow" style="margin-top:14px"><span class="nm">buy real rigs</span><input type="range" id="syR" min="0" max="16" value="0"><span class="v" id="syRv">0</span></div>
+            <div class="verdict yes" id="syV2" style="margin-top:12px"></div>
+            <div class="note" id="syM2" style="text-align:center;margin-top:10px">1,000 fake identities · one shared laptop · 0.1 GH/s total.</div>`;
+          s.appendChild(wrap);
+          const draw = () => { const you = 0.1 + rigs; const tot = you + HONEST;
+            wrap.querySelector("#syRv").textContent = rigs;
+            wrap.querySelector("#syBars").innerHTML = `
+              <div class="srow" style="gap:8px"><span class="nm" style="width:64px;color:var(--green)">honest</span><div style="flex:1;height:16px;background:var(--surface-3);border-radius:7px;overflow:hidden;border:1px solid var(--line)"><i style="display:block;height:100%;width:${HONEST / tot * 100}%;background:var(--green)"></i></div><span class="v" style="width:64px;color:var(--green)">${HONEST} GH/s</span></div>
+              <div class="srow" style="gap:8px;margin-top:6px"><span class="nm" style="width:64px;color:var(--red)">you</span><div style="flex:1;height:16px;background:var(--surface-3);border-radius:7px;overflow:hidden;border:1px solid var(--line)"><i style="display:block;height:100%;width:${you / tot * 100}%;background:var(--red)"></i></div><span class="v" style="width:64px;color:var(--red)">${you.toFixed(1)} GH/s</span></div>`;
+            const v = wrap.querySelector("#syV2");
+            if (you > HONEST) { v.className = "verdict no"; v.textContent = "You finally out-vote the network — after buying more hardware than everyone else combined."; wrap.querySelector("#syM2").innerHTML = `Winning now costs <b>real money</b> — roughly ${rigs} rigs' worth of hardware and electricity. That cost <i>is</i> the defence. "One CPU, one vote" (the whitepaper's phrase) means votes are priced in physics, not names. Proof of stake prices them in capital instead — same trick.`; }
+            else { v.className = "verdict yes"; v.textContent = `Your ${(1000 + (rigs ? 0 : 0)).toLocaleString()} names cast ${(you / tot * 100).toFixed(1)}% of the vote. Proposal rejected.`; wrap.querySelector("#syM2").innerHTML = rigs ? `More rigs help — but every step is paid for. Fakes stopped being free.` : `1,000 fake identities · one shared laptop · 0.1 GH/s total. Names stopped mattering the moment votes cost work.`; } };
+          wrap.querySelector("#syR").oninput = e => { rigs = +e.target.value; draw(); }; draw();
+        } },
+    ],
+    deeper: P("The name comes from <i>Sybil</i>, a 1973 case study of multiple personalities; the attack is faking many identities to swamp a reputation or voting system. Every open network faces it — review sites, social media, DNS votes. Satoshi's insight was not inventing a vote; it was replacing <b>one identity, one vote</b> with <b>one unit of scarce resource, one vote</b>. Proof of work prices identity in electricity; proof of stake prices it in locked capital. Both make the thousand-fake-nodes trick cost a thousand real fortunes. The rule generalises: any permissionless system that counts <i>anything free</i> is already broken."),
+    bridge: "Fake a thousand names and you still own one processor — votes priced in work can't be inflated. But work-weighted voting creates its own drama: two honest miners can win <i>at the same moment</i>. What happens when the chain briefly points two ways?" };
+
+  /* ============================================================
+     AMM — swap with no seller; be the liquidity; oracle feeds
+     ============================================================ */
+  L.amm = { world: "progmoney", title: "The automated market", oneliner: "Trading against a formula, not a seller", icon: "∿",
+    hero: "An exchange with no order book, no counterparty and no opening hours: a pool of two tokens and one line of algebra. You trade against the maths.",
+    beats: [
+      { n: "01", h: "The pool prices your trade", cap: "The pool holds two tokens and keeps their product constant: <code>x · y = k</code>. Your trade moves along that curve — and the <b>bigger</b> the trade, the <b>worse</b> your price gets. Slide and watch the penalty grow.",
+        build(s) {
+          const wrap = el("div", "fcard"); let X = 1000, Y = 1000, amt = 50; // X coin, Y usd
+          wrap.innerHTML = `<div class="flabel"><span class="pin"></span>liquidity pool · constant product</div>
+            <div class="statline"><div class="s"><span class="n" id="amX">1,000</span><span class="l">COIN in pool</span></div><div class="s"><span class="n" id="amY">1,000</span><span class="l">USD in pool</span></div><div class="s"><span class="n" id="amP">1.00</span><span class="l">spot price</span></div></div>
+            <div class="srow" style="margin:16px 0 10px"><span class="nm">spend USD</span><input type="range" id="amA" min="10" max="600" step="10" value="50"><span class="v" id="amAv">50</span></div>
+            <div class="kvs"><div class="kv"><span class="k">COIN you receive</span><span class="v" id="amOut"></span></div><div class="kv"><span class="k">effective price paid</span><span class="v" id="amEff"></span></div><div class="kv"><span class="k">slippage vs spot</span><span class="v" id="amSl"></span></div></div>
+            <div class="btn-row" style="justify-content:center;margin-top:12px"><button class="btn gold" id="amGo">Execute swap →</button><button class="btn" id="amR">Reset pool</button></div>
+            <div class="note" id="amM" style="text-align:center;margin-top:10px">No one is selling to you. The pool itself is the counterparty, and the curve is its price list.</div>`;
+          s.appendChild(wrap);
+          const fmtN = n => n.toLocaleString(undefined, { maximumFractionDigits: 1 });
+          const calc = () => { const k = X * Y; const out = X - k / (Y + amt); const eff = amt / out; const spot = Y / X; const sl = (eff / spot - 1) * 100; return { out, eff, spot, sl }; };
+          const draw = () => { const c = calc();
+            wrap.querySelector("#amX").textContent = fmtN(X); wrap.querySelector("#amY").textContent = fmtN(Y);
+            wrap.querySelector("#amP").textContent = (Y / X).toFixed(2); wrap.querySelector("#amAv").textContent = amt;
+            wrap.querySelector("#amOut").textContent = fmtN(c.out) + " COIN"; wrap.querySelector("#amEff").textContent = "$" + c.eff.toFixed(3);
+            const slEl = wrap.querySelector("#amSl"); slEl.textContent = "+" + c.sl.toFixed(1) + "%"; slEl.style.color = c.sl > 5 ? "var(--red)" : "var(--green)"; };
+          wrap.querySelector("#amA").oninput = e => { amt = +e.target.value; draw(); };
+          wrap.querySelector("#amGo").onclick = () => { const c = calc(); X -= c.out; Y += amt; draw(); wrap.querySelector("#amM").innerHTML = `Swapped <b>$${amt}</b> for <b>${fmtN(c.out)} COIN</b> at $${c.eff.toFixed(3)} each. Note the spot price moved — your own trade pushed it. Trade again the same way and the price keeps worsening: that is the curve defending the pool from being emptied.`; };
+          wrap.querySelector("#amR").onclick = () => { X = 1000; Y = 1000; amt = 50; wrap.querySelector("#amA").value = 50; draw(); wrap.querySelector("#amM").innerHTML = `No one is selling to you. The pool itself is the counterparty, and the curve is its price list.`; };
+          draw();
+        } },
+      { n: "02", h: "Be the pool — and meet impermanent loss", cap: "The pool's tokens come from people like you. Deposit both sides, then let the market price move — and compare what your share is worth against having simply <b>held</b> the tokens.",
+        build(s) {
+          const wrap = el("div", "fcard"); let r = 1; // price ratio vs deposit time
+          wrap.innerHTML = `<div class="flabel"><span class="pin"></span>your deposit: 500 COIN + $500 · pool share 100%</div>
+            <div class="srow"><span class="nm">COIN price now</span><input type="range" id="ilR" min="-8" max="8" value="0"><span class="v" id="ilRv">$1.00</span></div>
+            <div class="statline" style="margin-top:16px"><div class="s"><span class="n" id="ilLP">$1,000</span><span class="l">your pool share</span></div><div class="s"><span class="n" id="ilH">$1,000</span><span class="l">if you had held</span></div><div class="s"><span class="n" id="ilD" style="color:var(--red)">0.0%</span><span class="l">impermanent loss</span></div></div>
+            <div class="note" id="ilM" style="text-align:center;margin-top:12px">Arbitrage constantly rebalances the pool toward the market price — selling your winners for you on the way up.</div>`;
+          s.appendChild(wrap);
+          const draw = () => { const price = Math.pow(2, r / 4); // 0.25x..4x
+            const hold = 500 * price + 500;
+            const lp = 1000 * Math.sqrt(price); // 2*sqrt(k') with k' scaled
+            const il = (lp / hold - 1) * 100;
+            wrap.querySelector("#ilRv").textContent = "$" + price.toFixed(2);
+            wrap.querySelector("#ilLP").textContent = "$" + Math.round(lp).toLocaleString();
+            wrap.querySelector("#ilH").textContent = "$" + Math.round(hold).toLocaleString();
+            const d = wrap.querySelector("#ilD"); d.textContent = il.toFixed(1) + "%"; d.style.color = il < -2 ? "var(--red)" : "var(--ink-3)";
+            wrap.querySelector("#ilM").innerHTML = Math.abs(r) < 1 ? `Arbitrage constantly rebalances the pool toward the market price — selling your winners for you on the way up.` : `The pool sold COIN as it rose (or bought as it fell), so it always underperforms just holding. The gap is <b>impermanent loss</b> — "impermanent" because it vanishes if the price returns, permanent the moment you withdraw. Trading fees exist to pay you for bearing exactly this.`; };
+          wrap.querySelector("#ilR").oninput = e => { r = +e.target.value; draw(); }; draw();
+        } },
+      { n: "03", h: "Where does the machine get its facts?", cap: "A lending contract must know the market price — but contracts cannot browse the web. They ask <b>oracles</b>. Bribe one and see why serious protocols never trust a single source.",
+        build(s) {
+          const wrap = el("div", "fcard"); let lie = false, mode = "one";
+          const feeds = [1.00, 1.01, 0.99, 1.00, 1.02];
+          wrap.innerHTML = `<div class="flabel"><span class="pin"></span>five price feeds · one lending contract</div>
+            <div id="orF" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(86px,1fr));gap:8px"></div>
+            <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn danger" id="orLie">Bribe oracle #3</button><button class="btn" id="orMode">Contract reads: <b id="orMl">one feed</b></button><button class="btn" id="orRst">Reset</button></div>
+            <div class="verdict yes" id="orV" style="margin-top:12px"></div>`;
+          s.appendChild(wrap);
+          const draw = () => { const cur = feeds.map((v, i) => (lie && i === 2) ? 9.90 : v);
+            wrap.querySelector("#orF").innerHTML = cur.map((v, i) => `<div class="pos-card${lie && i === 2 ? " slashed" : ""}"><b>oracle ${i + 1}</b><div class="stk" style="font-size:16px;${lie && i === 2 ? "color:var(--red)" : ""}">$${v.toFixed(2)}</div></div>`).join("");
+            const used = mode === "one" ? cur[2] : cur.slice().sort((a, b) => a - b)[2];
+            wrap.querySelector("#orMl").textContent = mode === "one" ? "one feed" : "median of five";
+            const v = wrap.querySelector("#orV");
+            if (used > 2) { v.className = "verdict no"; v.innerHTML = `Contract believes COIN = $${used.toFixed(2)} → attacker borrows against fake collateral and drains the vault.`; }
+            else { v.className = "verdict yes"; v.innerHTML = lie && mode === "med" ? `Median holds at $${used.toFixed(2)} — the lie is simply outvoted. One dishonest source among many changes nothing.` : `Contract reads COIN = $${used.toFixed(2)}. All quiet.`; } };
+          wrap.querySelector("#orLie").onclick = () => { lie = true; draw(); };
+          wrap.querySelector("#orMode").onclick = () => { mode = mode === "one" ? "med" : "one"; draw(); };
+          wrap.querySelector("#orRst").onclick = () => { lie = false; mode = "one"; draw(); };
+          draw();
+        } },
+    ],
+    deeper: P("The constant-product formula is Uniswap's, and it has a beautiful property: the pool can never be emptied by trading, because each successive coin costs more than the last — the price goes vertical as inventory runs out. Impermanent loss has an exact closed form, <code>2√r/(1+r) − 1</code> for a price ratio <i>r</i>: a 2× move costs ~5.7%, a 4× move ~20%. Fees are the counterweight; a busy pool can out-earn its loss. The oracle demo is the third echo of this course's oldest idea — one keeper of the truth is a target, many keepers with a median is a system. Real oracle networks (Chainlink and kin) add staking and slashing on top, so lying also costs the liar money."),
+    bridge: "Contracts, tokens, and now markets — a whole financial system running on the machine you built. Every piece of it, though, is only yours through a <b>key</b>. Time to talk about where that key lives, and how people actually lose everything." };
+
+  /* ============================================================
+     HISTORY — the disasters that proved the rules
+     ============================================================ */
+  L.history = { world: "history", title: "Five disasters", oneliner: "Each catastrophe proved one rule you now know", icon: "✕",
+    hero: "This course kept saying things like 'not your keys, not your coins' and 'immutable bugs'. None of those rules came from theory. Flip each card to see the bill.",
+    beats: [
+      { n: "01", h: "Flip the cards", cap: "Front: the event, as the world saw it. Back: the exact principle from this course that it proved — and what it cost to learn. Every one of these maps to a lesson you have already done.",
+        build(s) {
+          const wrap = el("div", "fcard");
+          const cards = [
+            ["2010 · The pizza", "A developer pays 10,000 BTC for two pizzas — the first real-world price for a blockchain asset.",
+              "Money is whatever a stranger will accept for goods — <b>The ledger</b>. A network with no users is worthless at any hashrate; the pizza made the ledger real. (Those coins later peaked above $600m — but on the day, two pizzas was the honest price.)"],
+            ["2014 · Mt. Gox", "The exchange handling ~70% of all Bitcoin trades collapses; 850,000 BTC belonging to customers is gone.",
+              "<b>Not your keys, not your coins</b> — Wallets &amp; custody. Customers held a promise from a company, not coins on a chain. The chain itself was never touched; the <i>custodian</i> was the single point of failure, exactly like the frozen account in lesson two."],
+            ["2016 · The DAO", "A crowdfunded contract holding $150m of ETH is drained through a reentrancy bug — the send-before-subtract mistake.",
+              "<b>Immutable code, immutable bugs</b> — Smart contracts. The code ran exactly as written, so the drain was 'legal' by the machine's rules. Ethereum's community forked the chain to undo it — proving the deeper rule: immutability is a <i>social</i> promise, and the split (Ethereum vs Ethereum Classic) is still visible today."],
+            ["2022 · Terra / Luna", "An 'algorithmic' stablecoin with no full reserve loses its peg; $40bn evaporates in a week.",
+              "<b>A peg is only as strong as what backs it</b> — Money &amp; the state. The defending mechanism (mint Luna to buy UST) became the killing mechanism once confidence broke: defending the peg hyperinflated the collateral. A death spiral is the design working as specified."],
+            ["2022 · FTX", "A top-three exchange freezes withdrawals; customer deposits had been quietly lent to its own trading firm.",
+              "<b>Trusted third parties are security holes</b> — the course's very first problem, wearing a new logo. Every rule broken was a chapter of this course: custody (keys), transparency (the public ledger), and the freeze in lesson two, replayed at $8bn scale."],
+          ];
+          wrap.innerHTML = `<div class="flabel"><span class="pin"></span>tap a card to flip it</div>` +
+            cards.map(c => `<button class="flipRow" type="button"><span class="side good"><b class="mono" style="font-size:11px;letter-spacing:.06em">${c[0]}</b><br>${c[1]}</span><span class="side dark">${c[2]}</span></button>`).join("");
+          s.appendChild(wrap);
+          wrap.querySelectorAll(".flipRow").forEach(b => b.onclick = () => b.classList.toggle("flipped"));
+        } },
+    ],
+    deeper: P("A pattern worth noticing: not one of these was a break in the cryptography. SHA-256 has never been reversed; ECDSA has never been forged at scale. Every headline loss was a failure at the <i>edges</i> — custodians holding other people's keys, contracts encoding a bug, economic designs assuming confidence is permanent, and plain fraud. That asymmetry is the course's quiet thesis: the maths is the strongest part of the machine. The people, incentives and institutions around it are where it breaks — which is why the safety lesson was about psychology, not mathematics."),
+    bridge: "Five fortunes paid to prove rules you now get for the price of a course. One thing left: watch every piece you built — keys, blocks, gossip, consensus — run together as a single living machine." };
+
+  /* ============================================================
+     new beats appended to existing lessons (before the plus layer
+     adds its checkpoints, so quizzes stay last)
+     ============================================================ */
+
+  /* nonce — the difficulty thermostat */
+  L.nonce.beats.push({ n: "04", h: "The thermostat", cap: "Miners join and leave constantly, yet blocks keep arriving every ~10 minutes. The network <b>retargets</b>: measure recent block times, adjust the difficulty. Drag the hashrate around and try to make blocks permanently fast.",
+    build(s) {
+      const wrap = el("div", "fcard"); let hash = 100, diff = 100, live = true;
+      wrap.innerHTML = `<div class="srow"><span class="nm">network hashrate</span><input type="range" id="thH" min="25" max="800" value="100"><span class="v" id="thHv">100%</span></div>
+        <div class="statline" style="margin:16px 0"><div class="s"><span class="n" id="thD">100%</span><span class="l">difficulty</span></div><div class="s"><span class="n" id="thT" style="color:var(--green)">10.0</span><span class="l">min / block</span></div></div>
+        <div class="log" id="thL"><div class="info">difficulty retarget log</div></div>
+        <div class="note" id="thM" style="text-align:center;margin-top:10px">Crank the hashrate. Blocks speed up — briefly.</div>`;
+      s.appendChild(wrap);
+      const log = (h, c) => { const l = wrap.querySelector("#thL"); l.appendChild(el("div", c, h)); l.scrollTop = l.scrollHeight; };
+      const draw = () => { const bt = 10 * diff / hash; wrap.querySelector("#thHv").textContent = hash + "%"; wrap.querySelector("#thD").textContent = Math.round(diff) + "%";
+        const t = wrap.querySelector("#thT"); t.textContent = bt.toFixed(1); t.style.color = bt < 8 ? "var(--gold-text)" : bt > 12.5 ? "var(--red)" : "var(--green)"; return bt; };
+      wrap.querySelector("#thH").oninput = e => { hash = +e.target.value; draw(); };
+      const tick = () => { if (!document.contains(wrap)) { live = false; return; }
+        const bt = 10 * diff / hash;
+        if (Math.abs(bt - 10) > 0.8) { const old = diff; diff = Math.min(Math.max(hash, diff / 4), diff * 4); // clamp like Bitcoin's 4x rule
+          log(`retarget: blocks at ${bt.toFixed(1)} min → difficulty ${old > diff ? "eases" : "rises"} to ${Math.round(diff)}%`, old > diff ? "ok" : "warn");
+          wrap.querySelector("#thM").innerHTML = `The thermostat caught it. Whatever the hashrate does, difficulty follows it, and block time walks back to ~10 minutes. <b>You cannot make the chain permanently faster by mining harder</b> — you can only make it more expensive to attack.`; }
+        draw(); setTimeout(tick, 1800); };
+      draw(); setTimeout(tick, 1800);
+    } });
+
+  /* incentives — solo mining vs pools */
+  L.incentives.beats.push({ n: "04", h: "Solo, or join a pool?", cap: "With 0.1% of the network you win a block — worth ~3 coins — about once a month, maybe. A <b>pool</b> shares wins pro-rata for the same expected pay. Fast-forward three months both ways and feel the difference.",
+    build(s) {
+      const wrap = el("div", "fcard"); let day = 0, solo = 0, pool = 0, soloWins = 0;
+      wrap.innerHTML = `<div class="ledgrid">
+          <div class="ledrow"><span class="led-ic" aria-hidden="true">⛏</span><span class="led-name">Solo · 0.1% hashrate</span><span class="led-bal" id="pmS">0.0</span><span class="led-u">COINS</span></div>
+          <div class="ledrow"><span class="led-ic" aria-hidden="true">🤝</span><span class="led-name">In a 25% pool · same 0.1%</span><span class="led-bal" id="pmP">0.0</span><span class="led-u">COINS</span></div>
+        </div>
+        <div class="statline" style="margin:14px 0 0"><div class="s"><span class="n" id="pmD">0</span><span class="l">days</span></div><div class="s"><span class="n" id="pmW">0</span><span class="l">solo blocks won</span></div></div>
+        <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn primary" id="pmGo">Fast-forward 30 days</button><button class="btn" id="pmR">Reset</button></div>
+        <div class="note" id="pmM" style="text-align:center;margin-top:10px">144 blocks a day network-wide. Same expected income — very different months.</div>`;
+      s.appendChild(wrap);
+      const draw = () => { wrap.querySelector("#pmS").textContent = solo.toFixed(1); wrap.querySelector("#pmP").textContent = pool.toFixed(1);
+        wrap.querySelector("#pmD").textContent = day; wrap.querySelector("#pmW").textContent = soloWins; };
+      wrap.querySelector("#pmGo").onclick = () => {
+        for (let d = 0; d < 30; d++) { day++;
+          for (let b = 0; b < 144; b++) { if (Math.random() < 0.001) { solo += 3; soloWins++; } }
+          pool += 144 * 0.25 * (0.001 / 0.25) * 3; } // pool wins 25% of blocks, pays your 0.4% share of them
+        draw();
+        wrap.querySelector("#pmM").innerHTML = soloWins === 0 && day >= 60 ? `<b>${day} days, zero solo blocks.</b> The pool member ate every day. Same expected value — the pool sells you <i>smoothness</i>, for a small fee. The catch: pools aggregate hashpower, and a pool drifting past 50% is exactly the attacker from the last lesson.` : `Solo pay arrives in rare 3-coin lumps; pool pay drips daily. Over years they converge — variance, not expectation, is what the pool removes. But note who now <i>directs</i> that hashpower: pools are how mining centralises.`;
+      };
+      wrap.querySelector("#pmR").onclick = () => { day = 0; solo = 0; pool = 0; soloWins = 0; draw(); wrap.querySelector("#pmM").innerHTML = `144 blocks a day network-wide. Same expected income — very different months.`; };
+      draw();
+    } });
+
+  /* attack — the double-spend heist, played for money */
+  L.attack.beats.push({ n: "03", h: "Run the heist yourself", cap: "Pay a merchant 10 coins, then secretly mine a fork where the payment never happened. The merchant ships after <b>3 confirmations</b>; every secret block costs you 1.5 coins of electricity. Get rich — or find out why nobody does this at 30%.",
+    build(s) {
+      const wrap = el("div", "fcard"); let q = 30, running = false, pnl = 0, runs = 0, wins = 0;
+      wrap.innerHTML = `<div class="srow"><span class="nm">your hashrate</span><input type="range" id="hsQ" min="10" max="48" value="30"><span class="v" id="hsQv">30%</span></div>
+        <div id="hsRace" style="margin:12px 0"></div>
+        <div class="statline"><div class="s"><span class="n" id="hsPnl">0.0</span><span class="l">total profit (coins)</span></div><div class="s"><span class="n" id="hsRuns">0</span><span class="l">heists</span></div><div class="s"><span class="n" id="hsWins">0</span><span class="l">succeeded</span></div></div>
+        <div class="btn-row" style="justify-content:center;margin-top:12px"><button class="btn danger" id="hsGo">Run the heist</button><button class="btn" id="hsR">Reset the books</button></div>
+        <div class="note" id="hsM" style="text-align:center;margin-top:10px">Success pays +10 (goods kept, payment erased). Every secret block mined costs 1.5.</div>`;
+      s.appendChild(wrap);
+      wrap.querySelector("#hsRace").innerHTML = `<div class="srow" style="gap:8px"><span class="nm" style="width:64px;color:var(--green)">honest</span><div style="flex:1;height:14px;background:var(--surface-3);border-radius:7px;overflow:hidden;border:1px solid var(--line)"><i id="hsH" style="display:block;height:100%;width:0;background:var(--green)"></i></div><span class="v" style="width:24px;color:var(--green)" id="hsHn">0</span></div>
+        <div class="srow" style="gap:8px;margin-top:5px"><span class="nm" style="width:64px;color:var(--red)">secret</span><div style="flex:1;height:14px;background:var(--surface-3);border-radius:7px;overflow:hidden;border:1px solid var(--line)"><i id="hsE" style="display:block;height:100%;width:0;background:var(--red)"></i></div><span class="v" style="width:24px;color:var(--red)" id="hsEn">0</span></div>`;
+      const draw = () => { wrap.querySelector("#hsPnl").textContent = pnl.toFixed(1); wrap.querySelector("#hsPnl").style.color = pnl < 0 ? "var(--red)" : "var(--green)";
+        wrap.querySelector("#hsRuns").textContent = runs; wrap.querySelector("#hsWins").textContent = wins; };
+      wrap.querySelector("#hsQ").oninput = e => { q = +e.target.value; wrap.querySelector("#hsQv").textContent = q + "%"; };
+      wrap.querySelector("#hsR").onclick = () => { if (running) return; pnl = 0; runs = 0; wins = 0; draw(); wrap.querySelector("#hsM").innerHTML = `Success pays +10 (goods kept, payment erased). Every secret block mined costs 1.5.`; };
+      wrap.querySelector("#hsGo").onclick = () => { if (running) return; running = true; runs++;
+        const qf = q / 100; let h = 3, e = 0, cost = 0, t = 0; // merchant already has 3 confirmations
+        const step = () => { if (!document.contains(wrap)) { running = false; return; }
+          t++; if (Math.random() < qf) { e++; cost += 1.5; } else h++;
+          const sc = Math.max(h, e, 8);
+          wrap.querySelector("#hsH").style.width = h / sc * 100 + "%"; wrap.querySelector("#hsE").style.width = e / sc * 100 + "%";
+          wrap.querySelector("#hsHn").textContent = h; wrap.querySelector("#hsEn").textContent = e;
+          if (e > h) { wins++; pnl += 10 - cost; running = false; draw();
+            wrap.querySelector("#hsM").innerHTML = `<span style="color:var(--red)">Heist succeeded</span> — fork revealed, payment erased, goods kept. Net this run: <b>+${(10 - cost).toFixed(1)}</b>. Run it again — one win proves nothing.`; return; }
+          if (h - e > 10 || t > 90) { pnl -= cost; running = false; draw();
+            wrap.querySelector("#hsM").innerHTML = `<span style="color:var(--green)">The honest chain pulled away.</span> You quietly abandon the fork: <b>−${cost.toFixed(1)}</b> in electricity, nothing to show. ${pnl < -15 ? "Look at the running total — <b>this is the security model</b>: the attack is not impossible, it is a losing business." : "Watch the running total across a few more heists."}`; return; }
+          setTimeout(step, 60); };
+        step(); };
+      draw();
+    } });
+
+  /* contracts — order the withdraw lines (the DAO bug, earned) */
+  L.contracts.beats.push({ n: "03", h: "You write the withdraw function", cap: "Three lines: check the balance, send the money, subtract the balance. The only decision is whether to <b>send</b> or <b>subtract</b> first. Choose — one order is a bank, the other is a heist.",
+    build(s) {
+      const wrap = el("div", "fcard"); let busy = false;
+      wrap.innerHTML = `<pre class="sc-screen" style="white-space:pre-wrap"><span style="color:#79e0c0">function</span> withdraw(amt) {
+  <span style="color:#ffd479">require</span>(balance[msg.sender] >= amt);
+  <span style="color:#c89bb0" id="cwA">?  // line A: msg.sender.send(amt)</span>
+  <span style="color:#c89bb0" id="cwB">?  // line B: balance[msg.sender] -= amt</span>
+}</pre>
+        <div class="btn-row" style="justify-content:center;margin-top:12px"><button class="btn" id="cwSend">Send first, subtract after</button><button class="btn" id="cwSub">Subtract first, send after</button><button class="btn" id="cwRst">Reset</button></div>
+        <div class="log" id="cwL" style="margin-top:12px"><div class="info">the attacker's contract calls withdraw(100)…</div></div>`;
+      s.appendChild(wrap);
+      const log = (h, c) => { const l = wrap.querySelector("#cwL"); l.appendChild(el("div", c, h)); l.scrollTop = l.scrollHeight; };
+      const reset = () => { wrap.querySelector("#cwL").innerHTML = `<div class="info">the attacker's contract calls withdraw(100)…</div>`; };
+      wrap.querySelector("#cwRst").onclick = () => { busy = false; reset(); };
+      wrap.querySelector("#cwSend").onclick = () => { if (busy) return; busy = true; reset(); let vault = 1000, i = 0;
+        const step = () => { if (!document.contains(wrap) || !busy) return;
+          if (vault <= 0) { log("vault: 0 — drained before a single subtraction ran", "bad"); log("This is reentrancy — the DAO bug, $150m, 2016. 'send' handed control to the attacker's code <i>while the balance still said 100</i>, so it just called withdraw() again. And again.", "warn"); busy = false; return; }
+          log(`require passes (balance still 100) → send(100)… attacker's code runs → it calls withdraw(100) again ${i ? "(re-entering, depth " + (i + 1) + ")" : ""}`, i ? "bad" : "");
+          vault -= 100; i++; setTimeout(step, 380); };
+        step(); };
+      wrap.querySelector("#cwSub").onclick = () => { if (busy) return; busy = true; reset();
+        setTimeout(() => { log("require passes → balance[attacker] -= 100 → balance is now 0", "ok");
+          log("send(100)… attacker's code runs → it calls withdraw(100) again", "");
+          log("require(balance >= 100) FAILS — balance already 0 → REVERT. One withdrawal, as designed.", "ok");
+          log("Same three lines. 'Checks, effects, interactions' — update your own state before you talk to a stranger.", "info"); busy = false; }, 200); };
+    } });
+
+  /* tokens — beat 2 rebuilt: ownership means a signature, not a tap */
+  L.tokens.beats[1] = { n: "02", h: "One of a kind — and provably yours", cap: "An NFT is a ledger row that maps one token ID to one <b>address</b>. Mint it, then watch two transfer attempts: one signed with your key, one with Mallory's. Ownership is not a picture — it is a signature check.",
+    build(s) {
+      const wrap = el("div", "fcard"); let owner = null;
+      const you = "0x" + sha256("you-key").slice(-12), mal = "0x" + sha256("mallory-key").slice(-12);
+      wrap.innerHTML = `<div class="flabel"><span class="pin"></span>ACME Gallery · token #7</div>
+        <div class="bfields"><div class="bfield"><div class="k">token</div><div class="v">#7 · "Marigold Study"</div></div><div class="bfield" id="ownF"><div class="k">owner on the ledger</div><div class="v vi" id="ownV">— unminted —</div></div></div>
+        <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn gold" id="nfMint">Mint to your address</button><button class="btn" id="nfYou" disabled>Transfer — signed with YOUR key</button><button class="btn danger" id="nfMal" disabled>Mallory tries to take it</button></div>
+        <div class="sig-state" id="nfSt" style="margin-top:12px">Your address: <b class="mono">${short(you, 8, 4)}</b> · Mallory's: <b class="mono">${short(mal, 8, 4)}</b></div>`;
+      s.appendChild(wrap);
+      const st = (t, c) => { const e = wrap.querySelector("#nfSt"); e.innerHTML = t; e.className = "sig-state" + (c ? " " + c : ""); };
+      wrap.querySelector("#nfMint").onclick = () => { owner = you; wrap.querySelector("#ownV").textContent = short(you, 8, 4);
+        wrap.querySelector("#nfYou").disabled = false; wrap.querySelector("#nfMal").disabled = false;
+        st(`Minted. The contract's ledger now reads <b class="mono">#7 → ${short(you, 8, 4)}</b>. No file moved — a row was written.`, "ok"); };
+      wrap.querySelector("#nfYou").onclick = () => { if (owner !== you) { st("You no longer own it — the ledger says so.", "bad"); return; }
+        owner = "0x" + sha256("friend").slice(-12); wrap.querySelector("#ownV").textContent = short(owner, 8, 4);
+        st(`transfer(#7) · signature verifies against the <b>owner's</b> address → row updated to ${short(owner, 8, 4)}. Scarcity survived the transfer: still exactly one #7.`, "ok"); };
+      wrap.querySelector("#nfMal").onclick = () => st(`transfer(#7) from Mallory · her signature verifies against <b class="mono">${short(mal, 8, 4)}</b> — but the ledger says #7 belongs to someone else → <b>REVERT</b>. Right-clicking the image copies pixels; it cannot write this row.`, "bad");
+    } };
+
+
+  /* ============================================================
+     chapter exit gates — cumulative quizzes (views.js renders these
+     on the chapter-gate pages; pass = chapter badge)
+     ============================================================ */
+  window.GATES = {
+    primer: [
+      { ask: "Strip everything away — what actually IS money on a ledger?",
+        opts: [
+          { t: "A list of balances that some keeper maintains", ok: true, why: "Money is bookkeeping. The only real questions are who keeps the list and what it costs you when they fail." },
+          { t: "A physical token of value, like digital gold", ok: false, why: "Even cash only works because of the implicit ledger of who holds it. On-chain there is no object at all — only list entries." },
+          { t: "A file on your computer", ok: false, why: "Files copy freely — that is exactly the double-spend problem. Value lives in the shared list, not in any file." },
+        ] },
+      { ask: "Why is digital cash harder to build than digital messaging?",
+        opts: [
+          { t: "A perfect copy of money must not spend twice; a perfect copy of a message is harmless", ok: true, why: "The double-spend problem. Copying is what computers do best — money is the one thing that must not copy." },
+          { t: "Money needs stronger encryption than messages", ok: false, why: "Encryption strength isn't the gap — the gap is agreeing on the ORDER of payments so one coin can't go two ways." },
+          { t: "Banks lobbied against it", ok: false, why: "The blocker was technical: no way for strangers to agree on payment order without a referee, until 2008." },
+        ] },
+      { ask: "A bank freezes an account. Which property of a single keeper does that expose?",
+        opts: [
+          { t: "The keeper of the list controls the money on it", ok: true, why: "Whoever maintains the ledger decides what's on it. Removing that single point of control is the entire motivation for what you build in the next chapters." },
+          { t: "Banks have weak security", ok: false, why: "The freeze is not a breach — it's the system working as designed. The design itself is the issue: control follows the keeper." },
+          { t: "Digital records are unreliable", ok: false, why: "The record was perfectly reliable — that's the problem. Reliable AND controlled by one party." },
+        ] },
+    ],
+    foundations: [
+      { ask: "In one line — what is a blockchain?",
+        opts: [
+          { t: "A list of records, chained by fingerprints, copied across many computers", ok: true, why: "Blocks, chained, replicated. Everything else in this course is machinery to keep that copy honest." },
+          { t: "A cryptocurrency", ok: false, why: "A coin is one thing you can track on a chain. The chain is the record-keeping machine underneath." },
+          { t: "A very secure database run by a company", ok: false, why: "The whole point is that NO single party runs it — thousands of strangers hold identical copies." },
+        ] },
+      { ask: "A payment's life, in order:",
+        opts: [
+          { t: "Sign → broadcast → mine into a block → chain it → settled", ok: true, why: "Five moves, every time. Each of the next chapters builds one of them by hand." },
+          { t: "Broadcast → sign → settle → mine", ok: false, why: "Nothing moves unsigned — the signature comes first, then gossip, then mining, then the chain locks it." },
+          { t: "Mine → sign → broadcast", ok: false, why: "Mining seals transactions that already exist and are already signed. Signature first." },
+        ] },
+      { ask: "(From chapter 00) Why does copying the ledger to thousands of computers help at all?",
+        opts: [
+          { t: "No single keeper can freeze, edit or lose the record alone", ok: true, why: "Replication removes the single point of control — the failure you watched in the very first lessons." },
+          { t: "More copies make the data load faster", ok: false, why: "Performance is actually WORSE with replication — every node re-checks everything. The win is control, not speed." },
+          { t: "It's a backup in case one computer crashes", ok: false, why: "Backups protect against loss; replication with consensus protects against the keeper — a much stronger claim." },
+        ] },
+    ],
+    crypto: [
+      { ask: "You change one letter in a document. Its SHA-256 hash…",
+        opts: [
+          { t: "…changes beyond recognition — about half the bits flip", ok: true, why: "The avalanche effect. There is no such thing as a small edit to a hash." },
+          { t: "…changes by one character", ok: false, why: "That would leak how different two inputs are. A hash hides that completely — half the bits flip on any change." },
+          { t: "…stays the same unless the file size changes", ok: false, why: "Any change of any size scrambles the whole fingerprint." },
+        ] },
+      { ask: "What does a digital signature prove that a hash alone cannot?",
+        opts: [
+          { t: "WHO authorised the exact message — only the private key's holder could produce it", ok: true, why: "A hash proves nothing changed; a signature proves who signed. Together they're ownership without trust." },
+          { t: "That the message was encrypted", ok: false, why: "Signatures don't hide anything — the message stays public. They prove origin, not secrecy." },
+          { t: "That the message reached its recipient", ok: false, why: "Delivery is the network's job. The signature binds an author to bytes, nothing more." },
+        ] },
+      { ask: "Someone learns your PUBLIC key. What can they now do?",
+        opts: [
+          { t: "Verify your signatures and send you money — nothing else", ok: true, why: "Public means public. The one-way math (key derivation, like hashing) means the private key cannot be walked backwards from it." },
+          { t: "Spend your coins", ok: false, why: "Spending needs a signature, and signatures need the PRIVATE key. The public key only verifies." },
+          { t: "Slowly compute your private key", ok: false, why: "That reversal is the discrete-log problem — hopeless at these sizes. Forward is instant, backward is ages-of-the-universe." },
+        ] },
+    ],
+    chain: [
+      { ask: "Why does changing an old block break every block after it?",
+        opts: [
+          { t: "Each block's 'prev' field holds the previous block's hash — the edit changes that hash", ok: true, why: "One edit, and every link downstream stops matching. Tampering is instantly visible to anyone holding a copy." },
+          { t: "Old blocks are stored in read-only memory", ok: false, why: "Nothing physical protects old blocks — pure math does. Anyone CAN edit their copy; they just can't hide it." },
+          { t: "The network deletes modified blocks", ok: false, why: "No deletion needed: the broken fingerprint chain exposes the edit on sight." },
+        ] },
+      { ask: "The nonce exists so that…",
+        opts: [
+          { t: "…sealing a block costs real, verifiable work — millions of failed guesses", ok: true, why: "Everything else in the header is fixed. Spinning the one free dial until the hash lands in the target zone is what makes block production expensive — and checking it cheap." },
+          { t: "…each transaction gets a unique serial number", ok: false, why: "Different nonce — that one counts an account's transactions. The mining nonce is a pure guess-counter." },
+          { t: "…blocks can be encrypted", ok: false, why: "Blocks are public. The nonce buys COST, not secrecy." },
+        ] },
+      { ask: "Why do miners bother burning electricity? (chapter's economic core)",
+        opts: [
+          { t: "The block they seal pays them new coins plus fees — honesty is the profitable strategy", ok: true, why: "The reward turns security from an act of charity into a business. Incentives, not ideals, keep the chain honest." },
+          { t: "Mining is legally required for node operators", ok: false, why: "Nothing is required — that's the point. Mining is voluntary because it pays." },
+          { t: "To keep their hardware warm", ok: false, why: "The electricity buys lottery tickets on the block reward. Warmth is a side effect." },
+        ] },
+      { ask: "(From chapter 02) The chain's links are hashes. What property of hashing makes the links tamper-evident?",
+        opts: [
+          { t: "Any change to a block's contents completely changes its hash", ok: true, why: "The avalanche effect from the hashing lesson is exactly what makes 'prev' mismatches impossible to hide." },
+          { t: "Hashes are encrypted", ok: false, why: "Hashes aren't encryption — they're one-way fingerprints. Visibility, not secrecy, is the protection." },
+          { t: "Hashes are stored on every node", ok: false, why: "Replication spreads the evidence, but the avalanche property is what CREATES the evidence." },
+        ] },
+    ],
+    consensus: [
+      { ask: "Why can't the network settle disagreements with a simple node vote?",
+        opts: [
+          { t: "Identities are free — one attacker can spawn a million 'voters'", ok: true, why: "The Sybil attack. Any open system that counts free identities is already broken; votes must be priced in something scarce." },
+          { t: "Voting would be too slow", ok: false, why: "Speed isn't the issue — counterfeit voters are. A fast fake vote is still fake." },
+          { t: "Nodes can't communicate reliably", ok: false, why: "Gossip spreads information fine. The problem is weighing opinions when names cost nothing." },
+        ] },
+      { ask: "Two miners find a block at the same moment. The network…",
+        opts: [
+          { t: "…briefly splits, then follows whichever branch gets the next block — the other is orphaned", ok: true, why: "Forks resolve by work: the chain with more of it wins, and the orphan's transactions return to the pool." },
+          { t: "…keeps both blocks permanently", ok: false, why: "One history must win, or the same coin could go two ways — the double-spend you met in chapter 00." },
+          { t: "…asks the miners to negotiate", ok: false, why: "No one is in charge, so no negotiation: the longest-chain rule decides mechanically." },
+        ] },
+      { ask: "A 51% attacker still CANNOT…",
+        opts: [
+          { t: "…forge your signature or spend coins they hold no key for", ok: true, why: "Majority hashrate buys reordering of recent history — never the ability to fake cryptography. Chapter 02's math holds regardless of hashpower." },
+          { t: "…reverse their own recent payment", ok: false, why: "That they CAN do — it's the classic double-spend, and exactly why merchants wait for confirmations." },
+          { t: "…censor transactions from blocks", ok: false, why: "Censorship is within a majority's power — signatures and others' coins are not." },
+        ] },
+      { ask: "Proof of stake replaces electricity with…",
+        opts: [
+          { t: "…the validator's own locked capital, burned (slashed) if it cheats", ok: true, why: "Same Sybil defence, different scarce resource: lying costs the liar their stake instead of wasted power." },
+          { t: "…a government licence to validate", ok: false, why: "Permissioned validators would reintroduce the trusted keeper. Stake keeps it open while still making fakes expensive." },
+          { t: "…a reputation score earned over time", ok: false, why: "Reputation is free to farm with patience. Slashable capital is not." },
+        ] },
+    ],
+    progmoney: [
+      { ask: "A smart contract is best described as…",
+        opts: [
+          { t: "A program on the chain that every node runs identically — no off switch, no admin", ok: true, why: "Deterministic code plus consensus: everyone computes the same result, so the program's promises need no company behind them." },
+          { t: "A legal contract stored as a PDF", ok: false, why: "Nothing legal about it — it's executable code whose only 'court' is the machine that runs it." },
+          { t: "A bot operated by the chain's developers", ok: false, why: "Nobody operates it. That's the feature — and, when the code has a bug, the catastrophe." },
+        ] },
+      { ask: "Why does a big trade against an AMM pool get a worse price than a small one?",
+        opts: [
+          { t: "The x·y=k curve — each coin you drain makes the next one cost more", ok: true, why: "Slippage is the pool defending itself. Price impact growing with size is what makes draining a pool by trading impossible." },
+          { t: "The pool charges whales higher fees", ok: false, why: "Fees are flat. The worsening price comes from the constant-product algebra itself." },
+          { t: "Big trades take longer to confirm", ok: false, why: "Time isn't the cost — curvature is." },
+        ] },
+      { ask: "(From this chapter's oracle demo — and chapter 00) Why do serious protocols read a MEDIAN of many price feeds?",
+        opts: [
+          { t: "One lying source is outvoted — no single keeper of the truth", ok: true, why: "The course's oldest idea, third appearance: one keeper is a target; many keepers with a median is a system." },
+          { t: "Averaging many feeds gives more decimal places", ok: false, why: "Precision isn't the point — resistance to a single liar is. (And a mean, unlike a median, CAN be dragged by one wild feed.)" },
+          { t: "It's faster than querying one source", ok: false, why: "It's slower and costs more. Protocols pay that price to remove the single point of failure." },
+        ] },
+    ],
+    keysworld: [
+      { ask: "\u201cNot your keys, not your coins\u201d means…",
+        opts: [
+          { t: "Coins on an exchange are the exchange's promise to you — the chain says THEY own them", ok: true, why: "Custody is the whole question. Mt. Gox and FTX customers held promises, not coins, and the promises broke." },
+          { t: "You should memorise your private key", ok: false, why: "Memorising is neither required nor wise — the point is WHO holds the key, not where you keep it." },
+          { t: "Lost keys can be recovered from the chain", ok: false, why: "Exactly backwards: nobody can restore a lost key. The chain has no help desk." },
+        ] },
+      { ask: "Your seed phrase generates…",
+        opts: [
+          { t: "Every key and address in the wallet, deterministically — same phrase, same wallet, forever", ok: true, why: "The phrase IS the wallet. That's why it restores everything on a new device, and why anyone who reads it owns everything." },
+          { t: "A one-time login code", ok: false, why: "It's not a password to an account — it's the master secret the whole key tree grows from." },
+          { t: "A backup that expires after a year", ok: false, why: "Deterministic derivation never expires. The phrase from a decade ago still unfolds into the same keys." },
+        ] },
+      { ask: "Every crypto scam, under the costume, is one of these. Which?",
+        opts: [
+          { t: "Urgency + secrecy + a guaranteed upside — aimed at your keys or your money", ok: true, why: "The shape never changes because the chain is hard to attack and people are not. Irreversibility means prevention is the entire game." },
+          { t: "A computer virus that breaks the blockchain", ok: false, why: "The chain itself is almost never the target — YOU are. Signatures don't get forged; people get persuaded." },
+          { t: "Hackers reversing transactions", ok: false, why: "Confirmed transactions can't be reversed — which is precisely why scammers need you to send first." },
+        ] },
+    ],
+    scaling: [
+      { ask: "A rollup scales the chain by…",
+        opts: [
+          { t: "Executing transactions off-chain and posting one small proof to the main chain", ok: true, why: "Thousands of transactions, one settlement. The base layer's security still anchors everything — that's the trick." },
+          { t: "Making blocks bigger", ok: false, why: "Bigger blocks push out small verifiers and centralise the chain — the thing decentralisation can't give up." },
+          { t: "Using a faster consensus vote", ok: false, why: "Consensus speed isn't the bottleneck; every node re-checking every transaction is. Rollups shrink what must be checked." },
+        ] },
+      { ask: "A zero-knowledge proof lets you prove…",
+        opts: [
+          { t: "…that a statement is true while revealing nothing else about it", ok: true, why: "Prove you're over 18 without the birthdate, solvent without the balance, or that a million transactions were valid without re-running them." },
+          { t: "…that you know a password by showing it", ok: false, why: "Showing the secret is exactly what ZK avoids — the verifier ends up certain, yet learns nothing." },
+          { t: "…who you are, anonymously", ok: false, why: "Close, but it proves STATEMENTS, not identity — including statements about identity if you choose." },
+        ] },
+      { ask: "(From chapter 06) A CBDC and Bitcoin can use similar technology. The real difference is…",
+        opts: [
+          { t: "Who holds the keys — and therefore who can freeze, reverse or program the money", ok: true, why: "The spectrum runs from no-keeper to perfect-keeper. Same machine, pointed in opposite directions — control follows the keys, as it has since lesson one." },
+          { t: "CBDCs use stronger cryptography", ok: false, why: "The crypto is comparable. The governance is not." },
+          { t: "Bitcoin is faster", ok: false, why: "Speed differences are engineering; key control is the essential, political difference." },
+        ] },
+    ],
+    history: [
+      { ask: "What do Mt. Gox and FTX — eight years apart — have in common?",
+        opts: [
+          { t: "Customers trusted a custodian with their keys, and the custodian failed", ok: true, why: "The original single-keeper problem, replayed at billions of scale. The chain itself was untouched both times." },
+          { t: "Hackers broke the blockchain's cryptography", ok: false, why: "SHA-256 and ECDSA have never been broken. Every headline loss was at the edges — custody, code bugs, economics, fraud." },
+          { t: "Governments shut them down", ok: false, why: "Both collapsed under their own custody failures before any regulator moved." },
+        ] },
+      { ask: "The DAO hack drained $150m through code that ran exactly as written. The lesson:",
+        opts: [
+          { t: "Immutable code means immutable bugs — and 'code is law' cracks when the stakes are high enough", ok: true, why: "The send-before-subtract ordering you chose in the contracts lesson. Ethereum forked to undo it, proving immutability is finally a social promise." },
+          { t: "Smart contracts need antivirus software", ok: false, why: "There's no malware involved — the contract's own logic was the exploit. Reordering three lines would have prevented it." },
+          { t: "Ethereum's cryptography was weak", ok: false, why: "No signature was forged. The bug was in application code — where nearly all real losses happen." },
+        ] },
+      { ask: "Terra's stablecoin death spiral proved that…",
+        opts: [
+          { t: "A peg backed by confidence in its own printed token dies when confidence breaks", ok: true, why: "The defending mechanism became the killing mechanism: minting Luna to buy the peg hyperinflated the collateral. Backing matters — fiat reserves, over-collateral, or nothing." },
+          { t: "All stablecoins are doomed", ok: false, why: "Reserve-backed and over-collateralised designs survived that same week. The failure was specific to unbacked, self-referential collateral." },
+          { t: "Stablecoins need government approval", ok: false, why: "Regulation is a separate question — the collapse was pure economic design." },
+        ] },
+    ],
+    capstone: [
+      { ask: "One sentence for the whole machine. Which is right?",
+        opts: [
+          { t: "Strangers keep one honest record with no one in charge, because lying costs more than it pays", ok: true, why: "Keys prove ownership, hashes lock history, work prices votes, rewards pay for honesty, gossip spreads the result. You built each piece by hand." },
+          { t: "A very fast database with better marketing", ok: false, why: "It's a SLOWER database than any company could run — slow on purpose, buying the one thing databases can't sell: no keeper." },
+          { t: "Encrypted money that governments can't see", ok: false, why: "Base-layer chains are radically public — that transparency is what lets strangers audit the record." },
+        ] },
+      { ask: "(The course's thesis) The machine defends itself. Where does the defence actually live?",
+        opts: [
+          { t: "In incentives — every attack is possible, and every attack is a losing trade", ok: true, why: "The heist you ran, the vote you rigged, the fork you mined: all allowed, all unprofitable. Security here is economics wearing a cryptography coat." },
+          { t: "In unbreakable encryption", ok: false, why: "Hashes and signatures are necessary but not sufficient — the Sybil vote showed math alone can't stop free identities. Cost does." },
+          { t: "In the developers who patch attacks", ok: false, why: "No admin, no patches to the past — the design must price attacks out BEFORE they happen, and it does." },
+        ] },
+    ],
+  };
+
 })();

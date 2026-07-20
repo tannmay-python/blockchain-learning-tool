@@ -24,8 +24,9 @@ window.LESSONS = (function () {
     const hh = (b, prev) => sha256(bodyOf(b) + prev + b.nonce);
     const mine = (b, p) => { const c = MINED[bodyOf(b) + "|" + p + "|" + diff]; b.nonce = c != null ? c : 0; if (c == null || !hh(b, p).startsWith(Z)) { b.nonce = 0; while (!hh(b, p).startsWith(Z)) b.nonce++; } };
     let blocks = opt.blocks.map(b => ({ data: b.data, txs: b.txs ? b.txs.slice() : null }));
+    let costTotal = 0, costBumps = 1, costMsg = "";
     let prev = GEN; blocks.forEach(b => { mine(b, prev); b.prev = prev; b.hash = hh(b, prev); prev = b.hash; });
-    const wrap = el("div", ""); wrap.innerHTML = `<div class="xchain" id="xc"></div>${opt.trace ? `<div class="linkmsg" id="lm">👆 Click any block to see how it locks onto the one before it.</div>` : ""}`; host.appendChild(wrap);
+    const wrap = el("div", ""); wrap.innerHTML = `<div class="xchain" id="xc"></div>${opt.trace ? `<div class="linkmsg" id="lm">👆 Click any block to see how it locks onto the one before it.</div>` : ""}${opt.cost ? `<div class="linkmsg" id="costm"></div>` : ""}`; host.appendChild(wrap);
     const valid = (i) => { const b = blocks[i], rp = i === 0 ? GEN : blocks[i - 1].hash; return b.prev === rp && hh(b, b.prev).startsWith("0".repeat(diff)) && b.hash === hh(b, b.prev); };
     function render(freshIdx) {
       const c = wrap.querySelector("#xc"); c.innerHTML = "";
@@ -44,7 +45,7 @@ window.LESSONS = (function () {
       });
       if (opt.editable) {
         c.querySelectorAll("textarea[data-i]").forEach(t => t.oninput = () => { const i = +t.dataset.i; blocks[i].data = t.value; blocks[i].hash = hh(blocks[i], blocks[i].prev); render(); const tt = wrap.querySelector(`textarea[data-i="${i}"]`); if (tt) tt.focus(); });
-        c.querySelectorAll("button[data-mine]").forEach(btn => btn.onclick = () => { let i = +btn.dataset.mine, p = i === 0 ? GEN : blocks[i - 1].hash; for (let j = i; j < blocks.length; j++) { blocks[j].prev = p; mine(blocks[j], p); blocks[j].hash = hh(blocks[j], p); p = blocks[j].hash; } render(); });
+        c.querySelectorAll("button[data-mine]").forEach(btn => btn.onclick = () => { let i = +btn.dataset.mine, p = i === 0 ? GEN : blocks[i - 1].hash; let guesses = 0, redone = 0; for (let j = i; j < blocks.length; j++) { blocks[j].prev = p; mine(blocks[j], p); guesses += blocks[j].nonce + 1; redone++; blocks[j].hash = hh(blocks[j], p); p = blocks[j].hash; } if (opt.cost) { costTotal += guesses; costMsg = `Repairing your forgery meant re-mining <b>${redone} block${redone > 1 ? "s" : ""}</b> — <b>${costTotal.toLocaleString()} guesses</b> so far. Meanwhile the honest network, which didn't stop, just added block <b>#${blocks.length + costBumps++}</b> to the real chain. You are further behind than when you started.`; } render(); });
       }
       if (opt.trace) {
         c.querySelectorAll(".xblock").forEach(node => { node.tabIndex = 0; node.setAttribute("role", "button"); node.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); node.click(); } }; });
@@ -58,6 +59,7 @@ window.LESSONS = (function () {
           lm.innerHTML = `Block <b>#${i}</b>'s “prev” field is <b>exactly</b> Block <b>#${i - 1}</b>'s fingerprint (both highlighted). Copy any of those digits in your head — they match. <i>That shared value is the link.</i>`;
         });
       }
+      if (opt.cost) { const cm = wrap.querySelector("#costm"); if (cm) cm.innerHTML = costMsg; }
       if (freshIdx != null) c.scrollLeft = c.scrollWidth;
     }
     render();
@@ -245,6 +247,7 @@ window.LESSONS = (function () {
           wrap.querySelector("#kG").onclick = async () => { if (hasSubtle) { keys = await subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]); } else { keys = { _p: sha256("p" + Math.random()) }; } wrap.querySelector("#kE").style.display = "none"; wrap.querySelector("#kS").style.display = "block"; };
           wrap.querySelector("#kSg").onclick = async () => { const m = wrap.querySelector("#kM").value; sig = hasSubtle ? hexOf(await subtle.sign({ name: "ECDSA", hash: "SHA-256" }, keys.privateKey, new TextEncoder().encode(m))) : sha256(keys._p + m); wrap.querySelector("#kSig").textContent = short(sig, 18, 8); wrap.querySelector("#kT").disabled = false; wrap.querySelector("#kV").disabled = false; setS("Signed. Now tamper, then verify.", "ok"); };
           wrap.querySelector("#kT").onclick = () => { wrap.querySelector("#kM").value = "Pay Bob 5000 coins"; setS("Attacker changed 5 → 5000 but kept the signature.", ""); };
+          wrap.querySelector("#kM").oninput = () => { if (sig) setS("You edited the message after signing — that IS tampering. The old signature covers the old bytes. Verify and watch it fail.", ""); };
           wrap.querySelector("#kV").onclick = async () => { const m = wrap.querySelector("#kM").value; const ok = hasSubtle ? await subtle.verify({ name: "ECDSA", hash: "SHA-256" }, keys.publicKey, new Uint8Array(sig.match(/../g).map(h => parseInt(h, 16))), new TextEncoder().encode(m)) : sig === sha256(keys._p + m); ok ? setS("VALID — matches the message and the key.", "ok") : setS("REJECTED — the message was altered after signing.", "bad"); };
         } },
     ],
@@ -317,7 +320,7 @@ window.LESSONS = (function () {
           const b = el("button", "btn primary", "⛏ Mine the next block"); b.onclick = () => { if (busy) return; busy = true; b.disabled = true; b.textContent = "mining…"; c.mineNext(tx[i++ % tx.length], () => { busy = false; b.disabled = false; b.textContent = "⛏ Mine the next block"; }); }; row.appendChild(b); s.appendChild(row);
         } },
       { n: "03", h: "Now try to rewrite the past", cap: "Edit a transaction in an old block. Its seal changes, so the next block's ‘prev’ no longer matches, and every link after it turns <b>red</b> — the tampering is visible to everyone, instantly.",
-        build(s) { richChain(s, { blocks: [{ data: "Genesis" }, { data: "Alice → Bob: 5" }, { data: "Carol → Dan: 2" }, { data: "Eve → Finn: 8" }], editable: true, diff: 3 }); } },
+        build(s) { richChain(s, { blocks: [{ data: "Genesis" }, { data: "Alice → Bob: 5" }, { data: "Carol → Dan: 2" }, { data: "Eve → Finn: 8" }], editable: true, diff: 3, cost: true }); } },
     ],
     deeper: P("Changing the past doesn't just edit one block — it invalidates everything built on top, in plain view. To repair it you'd have to re-mine that block <i>and every block after it</i>, winning the whole Proof-of-Work race again, while the honest network keeps extending the real chain with all its power. Below 50% of the hashrate, you fall further behind every ten minutes. Fingerprints make tampering visible; work makes fixing it a race you lose. That combination is immutability.") };
 
