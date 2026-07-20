@@ -32,13 +32,12 @@ export const STORE = (function () {
   const DEEP = new Set(["merkle", "zk", "mev"]);
   const worldOf = {}; WORLDS.forEach(w => w.lessons.forEach(id => worldOf[id] = w));
 
-  /* lesson renames across versions: old id -> new id (progress survives) */
-  const RENAMES = {};
+
   let completed = new Set();
   try {
     const raw = JSON.parse(localStorage.getItem(LS) || "[]");
     const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.done) ? raw.done : []);
-    list.forEach(id => { const cur = RENAMES[id] || id; if (ORDER.includes(cur)) completed.add(cur); });
+    list.forEach(id => { if (ORDER.includes(id)) completed.add(id); });
   } catch (e) {}
   function save() { try { localStorage.setItem(LS, JSON.stringify({ v: 2, done: [...completed] })); } catch (e) {} }
 
@@ -46,7 +45,7 @@ export const STORE = (function () {
   function setDone(id, v) { if (v) completed.add(id); else completed.delete(id); save(); }
   function reset() { completed.clear(); save(); }
   function worldDone(w) { return w.lessons.filter(isDone).length; }
-  function totalDone() { return ORDER.filter(isDone).length; }
+  function totalDone() { return completed.size; }
   function nextOf(id) { const i = ORDER.indexOf(id); return i >= 0 && i < ORDER.length - 1 ? ORDER[i + 1] : null; }
   function prevOf(id) { const i = ORDER.indexOf(id); return i > 0 ? ORDER[i - 1] : null; }
   function firstUndone() { return ORDER.find(id => !isDone(id) && !DEEP.has(id)) || ORDER.find(id => !isDone(id)) || ORDER[0]; }

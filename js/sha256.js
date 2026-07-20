@@ -31,6 +31,7 @@
     return bytes;
   }
 
+  const W = new Int32Array(64);
   function sha256(message) {
     const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
     const bytes = typeof message === "string" ? utf8Bytes(message) : message;
@@ -43,22 +44,21 @@
     bytes.push(0, 0, 0, 0);
     bytes.push((bitLen >>> 24) & 0xff, (bitLen >>> 16) & 0xff, (bitLen >>> 8) & 0xff, bitLen & 0xff);
 
-    const w = new Array(64);
     for (let i = 0; i < bytes.length; i += 64) {
       for (let t = 0; t < 16; t++) {
-        w[t] = (bytes[i + t * 4] << 24) | (bytes[i + t * 4 + 1] << 16) | (bytes[i + t * 4 + 2] << 8) | (bytes[i + t * 4 + 3]);
+        W[t] = (bytes[i + t * 4] << 24) | (bytes[i + t * 4 + 1] << 16) | (bytes[i + t * 4 + 2] << 8) | (bytes[i + t * 4 + 3]);
       }
       for (let t = 16; t < 64; t++) {
-        const s0 = rrot(w[t - 15], 7) ^ rrot(w[t - 15], 18) ^ (w[t - 15] >>> 3);
-        const s1 = rrot(w[t - 2], 17) ^ rrot(w[t - 2], 19) ^ (w[t - 2] >>> 10);
-        w[t] = (w[t - 16] + s0 + w[t - 7] + s1) | 0;
+        const s0 = rrot(W[t - 15], 7) ^ rrot(W[t - 15], 18) ^ (W[t - 15] >>> 3);
+        const s1 = rrot(W[t - 2], 17) ^ rrot(W[t - 2], 19) ^ (W[t - 2] >>> 10);
+        W[t] = (W[t - 16] + s0 + W[t - 7] + s1) | 0;
       }
 
       let [a, b, c, d, e, f, g, h] = H;
       for (let t = 0; t < 64; t++) {
         const S1 = rrot(e, 6) ^ rrot(e, 11) ^ rrot(e, 25);
         const ch = (e & f) ^ (~e & g);
-        const temp1 = (h + S1 + ch + K[t] + w[t]) | 0;
+        const temp1 = (h + S1 + ch + K[t] + W[t]) | 0;
         const S0 = rrot(a, 2) ^ rrot(a, 13) ^ rrot(a, 22);
         const maj = (a & b) ^ (a & c) ^ (b & c);
         const temp2 = (S0 + maj) | 0;

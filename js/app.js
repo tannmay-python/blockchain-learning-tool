@@ -12,6 +12,8 @@ export const APP = (function () {
   if (_rmq && _rmq.addEventListener) _rmq.addEventListener("change", e => { RM = e.matches; });
   const isDark = () => document.documentElement.dataset.theme === "dark";
 
+  let _starfieldResize = null, _starfieldAnim = null, _heroResize = null, _themeT = null;
+
   function route() {
     toggleMobileNav(false);
     const h = location.hash || "#/";
@@ -43,9 +45,12 @@ export const APP = (function () {
       const cols = PALETTE[isDark() ? "dark" : "light"];
       ctx.clearRect(0, 0, W, H);
       dots.forEach(s => { s.a += s.tw; const al = .08 + Math.abs(Math.sin(s.a)) * .22; s.y += s.vy; if (s.y > H) { s.y = 0; s.x = Math.random() * W; } ctx.fillStyle = `rgba(${cols[s.ci]},${al})`; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill(); });
-      if (!RM) requestAnimationFrame(frame);
+      if (!RM) _starfieldAnim = requestAnimationFrame(frame);
     }
-    size(); addEventListener("resize", size); frame();
+    if (_starfieldResize) removeEventListener("resize", _starfieldResize);
+    if (_starfieldAnim) cancelAnimationFrame(_starfieldAnim);
+    _starfieldResize = size;
+    addEventListener("resize", _starfieldResize); frame();
   }
 
   /* ------------------------------------------------------------------
@@ -179,17 +184,16 @@ export const APP = (function () {
       nodes.forEach((n, i) => { ctx.fillStyle = i % 3 === 0 ? "rgba(241,162,34,0.5)" : `rgba(${plum},${dotAl})`; ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 6.2832); ctx.fill(); });
       if (!RM) requestAnimationFrame(frame); }
     size(true); requestAnimationFrame(() => size(true)); setTimeout(() => size(true), 120);
-    if (window._heroResize) removeEventListener("resize", window._heroResize);
+    if (_heroResize) removeEventListener("resize", _heroResize);
     let hw = 0;
-    window._heroResize = () => { if (!document.contains(cv)) return; const w = dims()[0]; size(w !== hw); hw = w; };
-    addEventListener("resize", window._heroResize); frame();
+    _heroResize = () => { if (!document.contains(cv)) return; const w = dims()[0]; size(w !== hw); hw = w; };
+    addEventListener("resize", _heroResize); frame();
   }
 
   function toggleTheme() {
-    const isDark = document.documentElement.dataset.theme === "dark";
-    const newTheme = isDark ? "light" : "dark";
+    const newTheme = isDark() ? "light" : "dark";
     const de = document.documentElement;
-    if (!RM) { de.classList.add("theming"); clearTimeout(window._themeT); window._themeT = setTimeout(() => de.classList.remove("theming"), 320); }
+    if (!RM) { de.classList.add("theming"); clearTimeout(_themeT); _themeT = setTimeout(() => de.classList.remove("theming"), 320); }
     if (newTheme === "dark") de.dataset.theme = "dark";
     else de.removeAttribute("data-theme");
     localStorage.setItem("theme", newTheme);
@@ -219,8 +223,23 @@ export const APP = (function () {
       if (e.key === "ArrowRight") { const b = document.getElementById("lNext"); if (b) b.click(); }
       else if (e.key === "ArrowLeft") { const b = document.getElementById("lPrev"); if (b && !b.disabled) b.click(); }
     });
+    
+    // Global event delegation for data-action and data-go
+    document.addEventListener("click", (e) => {
+      const act = e.target.closest("[data-action]");
+      if (act) {
+        if (act.dataset.action === "toggleTheme") toggleTheme();
+        else if (act.dataset.action === "toggleMobileNav") toggleMobileNav();
+      }
+      const goEl = e.target.closest("[data-go]:not([href])");
+      if (goEl) {
+        e.preventDefault();
+        const to = goEl.dataset.go;
+        if (to.startsWith("http")) window.open(to, "_blank");
+        else location.hash = to;
+      }
+    });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   return { heroCanvas, confetti: (originEl) => FX(originEl), toggleTheme, toggleMobileNav };
 })();
-window.APP = APP;

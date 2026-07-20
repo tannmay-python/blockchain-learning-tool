@@ -46,7 +46,34 @@ export const LESSONS = (function () {
       });
       if (opt.editable) {
         c.querySelectorAll("textarea[data-i]").forEach(t => t.oninput = () => { const i = +t.dataset.i; blocks[i].data = t.value; blocks[i].hash = hh(blocks[i], blocks[i].prev); render(); const tt = wrap.querySelector(`textarea[data-i="${i}"]`); if (tt) tt.focus(); });
-        c.querySelectorAll("button[data-mine]").forEach(btn => { btn.onclick = () => { let i = +btn.dataset.mine, p = i === 0 ? GEN : blocks[i - 1].hash; let guesses = 0, redone = 0; for (let j = i; j < blocks.length; j++) { blocks[j].prev = p; mine(blocks[j], p); guesses += blocks[j].nonce + 1; redone++; blocks[j].hash = hh(blocks[j], p); p = blocks[j].hash; } if (opt.cost) { costTotal += guesses; costMsg = `Repairing your forgery meant re-mining <b>${redone} block${redone > 1 ? "s" : ""}</b> for <b>${costTotal.toLocaleString()} guesses</b> so far. The honest network didn't stop. It just added block <b>#${blocks.length + costBumps++}</b> to the real chain. You are further behind than when you started.`; } render(); }; });
+        c.querySelectorAll("button[data-mine]").forEach(btn => { btn.onclick = () => {
+          const i = +btn.dataset.mine;
+          let j = i, p = i === 0 ? GEN : blocks[i - 1].hash;
+          let guesses = 0, redone = 0;
+          btn.disabled = true; btn.innerText = "Mining...";
+          blocks[j].nonce = 0; blocks[j].prev = p;
+          
+          const step = () => {
+            if (!document.contains(c)) return;
+            const t0 = performance.now();
+            while (performance.now() - t0 < 12) {
+              if (hh(blocks[j], p).startsWith(Z)) {
+                guesses += blocks[j].nonce + 1; redone++;
+                blocks[j].hash = hh(blocks[j], p); p = blocks[j].hash;
+                j++;
+                if (j < blocks.length) { blocks[j].prev = p; blocks[j].nonce = 0; }
+                else {
+                  if (opt.cost) { costTotal += guesses; costMsg = `Repairing your forgery meant re-mining <b>${redone} block${redone > 1 ? "s" : ""}</b> for <b>${costTotal.toLocaleString()} guesses</b> so far. The honest network didn't stop. It just added block <b>#${blocks.length + costBumps++}</b> to the real chain. You are further behind than when you started.`; }
+                  render(); return;
+                }
+              } else {
+                blocks[j].nonce++;
+              }
+            }
+            requestAnimationFrame(step);
+          };
+          step();
+        }; });
       }
       if (opt.trace) {
         c.querySelectorAll(".xblock").forEach(node => { node.tabIndex = 0; node.setAttribute("role", "button"); node.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); node.click(); } }; });

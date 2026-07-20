@@ -1213,7 +1213,7 @@ export const QUIZ = (function () {
             let nonce = 0;
             const spin = () => { if (!document.contains(wrap)) return;
               const t0 = performance.now();
-              while (performance.now() - t0 < 35) { if (sha256(body + nonce).startsWith("000")) {
+              while (performance.now() - t0 < 12) { if (sha256(body + nonce).startsWith("000")) {
                 chain.push({ n: chain.length, hash: sha256(body + nonce), pay: reward });
                 const msgs = [`<b>${name()}</b> exists. Block #0 mined after ${nonce.toLocaleString()} guesses. reward paid to the only address that exists: yours.`,
                   `Block #${chain.length - 1} locks onto ${short(prev, 6, 4)}. Your past is already hardening.`];

@@ -24,21 +24,23 @@ export const VIEWS = (function () {
     const isDark = document.documentElement.dataset.theme === "dark";
     const sunSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
     const moonSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-    const toggle = `<button class="theme-toggle" onclick="window.APP.toggleTheme()" title="Toggle theme" aria-label="Dark theme" aria-pressed="${isDark}">${isDark ? sunSvg : moonSvg}</button>`;
-    const hamburger = `<button class="hamburger" onclick="window.APP.toggleMobileNav()" aria-label="Menu" aria-expanded="false" aria-controls="mobileNav"><span></span><span></span><span></span></button>`;
+    const toggle = `<button class="theme-toggle" data-action="toggleTheme" title="Toggle theme" aria-label="Dark theme" aria-pressed="${isDark}">${isDark ? sunSvg : moonSvg}</button>`;
+    const hamburger = `<button class="hamburger" data-action="toggleMobileNav" aria-label="Menu" aria-expanded="false" aria-controls="mobileNav"><span></span><span></span><span></span></button>`;
     return `<nav class="nav"><a class="brand" href="#/" title="Home"><div class="mk">${LOGO}</div><span class="bt">The Blockchain <span>Course</span></span></a>
       <div class="links desktop-only"><a href="#/" class="${active === "home" ? "on" : ""}" ${active === "home" ? 'aria-current="page"' : ""}>Home</a><a href="#/map" class="${active === "map" ? "on" : ""}" ${active === "map" ? 'aria-current="page"' : ""}>Map</a></div>
       <div class="right">${toggle}${progMini()}${hamburger}</div></nav>
-      <div id="mobileNav" class="mobile-nav">
-        <a href="#/" class="${active === "home" ? "on" : ""}" onclick="window.APP.toggleMobileNav(false)">Home</a>
-        <a href="#/map" class="${active === "map" ? "on" : ""}" onclick="window.APP.toggleMobileNav(false)">Map</a>
-      </div>`;
+      <nav id="mobileNav" class="mobile-nav">
+        <a href="#/" class="${active === "home" ? "on" : ""}">Home</a>
+        <a href="#/map" class="${active === "map" ? "on" : ""}">Map</a>
+      </nav>`;
   }
-  function wireGo(scope) { (scope || document).querySelectorAll("[data-go]:not([href])").forEach(e => e.onclick = (ev) => { ev.preventDefault(); go(e.dataset.go); }); }
+
+  let _lessonIO = null;
+  let _lessonScroll = null;
 
   function teardown() {
-    if (window._lessonIO) { window._lessonIO.disconnect(); window._lessonIO = null; }
-    if (window._lessonScroll) { removeEventListener("scroll", window._lessonScroll); window._lessonScroll = null; }
+    if (_lessonIO) { _lessonIO.disconnect(); _lessonIO = null; }
+    if (_lessonScroll) { removeEventListener("scroll", _lessonScroll); _lessonScroll = null; }
   }
 
   const SOCIALS = `<div style="display:flex; justify-content:center; align-items:center; gap: 14px; flex-wrap:wrap; margin-top: 12px;">
@@ -77,7 +79,7 @@ export const VIEWS = (function () {
         ${SOCIALS}
       </footer>
       </div>`;
-    wireGo();
+
     if (window.APP) window.APP.heroCanvas();
   }
 
@@ -93,7 +95,7 @@ export const VIEWS = (function () {
         <span id="rsWrap">${done} of ${total} explored${done > 0 ? ` · <a id="restart" style="cursor:pointer;border-bottom:1px solid var(--line-2)">start over</a>` : ""}</span>
         ${SOCIALS}
       </footer>`;
-    wireGo();
+
     const rb = document.getElementById("restart");
     if (rb) rb.onclick = () => {
       const w = document.getElementById("rsWrap");
@@ -151,7 +153,7 @@ export const VIEWS = (function () {
           <div class="kbd-hint">tip: <kbd>←</kbd> <kbd>→</kbd> move between lessons</div>
         </div>
       </div>`;
-    wireGo();
+
     // build beats
     const beatsEl = document.getElementById("beats");
     l.beats.forEach((b, i) => {
@@ -166,14 +168,14 @@ export const VIEWS = (function () {
     const markDone = () => { if (!S.isDone(id)) { S.setDone(id, true); document.querySelectorAll(".progmini").forEach(p => { p.outerHTML = progMini(); }); document.querySelectorAll(".progmini .bar").forEach(b => { b.classList.add("pulse"); setTimeout(() => b.classList.remove("pulse"), 700); }); } };
     // reveal on scroll; reaching the lesson-end block also counts as completing the lesson
     const endEl = root().querySelector(".lesson-end");
-    window._lessonIO = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { if (e.target === endEl) markDone(); e.target.classList.add("in"); window._lessonIO.unobserve(e.target); } }), { threshold: 0.12 });
-    root().querySelectorAll(".reveal").forEach(r => window._lessonIO.observe(r));
-    if (endEl) window._lessonIO.observe(endEl);
+    _lessonIO = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { if (e.target === endEl) markDone(); e.target.classList.add("in"); _lessonIO.unobserve(e.target); } }), { threshold: 0.12 });
+    root().querySelectorAll(".reveal").forEach(r => _lessonIO.observe(r));
+    if (endEl) _lessonIO.observe(endEl);
     // reading progress in the lesson bar
     const fill = document.getElementById("lprogFill");
-    window._lessonScroll = () => { if (!fill || !document.contains(fill)) return;
-      const h = document.documentElement, max = h.scrollHeight - innerHeight; fill.style.width = (max > 0 ? Math.min(100, h.scrollTop / max * 100) : 0) + "%"; };
-    addEventListener("scroll", window._lessonScroll, { passive: true }); window._lessonScroll();
+    _lessonScroll = () => { if (!fill || !document.contains(fill)) return;
+      fill.style.width = Math.min(100, Math.max(0, (scrollY / (document.documentElement.scrollHeight - innerHeight)) * 100)) + "%"; };
+    addEventListener("scroll", _lessonScroll, { passive: true }); _lessonScroll();
     document.getElementById("lPrev").onclick = () => prev && go("#/lesson/" + prev);
     const isChapterEnd = !next || S.worldOf[next] !== w;
     const onNext = () => { 
@@ -222,7 +224,7 @@ export const VIEWS = (function () {
       </div>
     </div>`;
     root().innerHTML = html;
-    wireGo();
+
   }
 
   return { home, map, lesson, chapterGate };
