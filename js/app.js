@@ -19,10 +19,10 @@ export const APP = (function () {
     const h = location.hash || "#/";
     const m = h.match(/^#\/lesson\/(.+)$/);
     const c = h.match(/^#\/chapter\/(.+)$/);
-    if (m) { V.lesson(m[1]); const L = LESSONS[m[1]]; document.title = (L ? L.title : "Lesson") + " · The Blockchain Course"; }
-    else if (c) { V.chapterGate(c[1]); document.title = "Chapter · The Blockchain Course"; }
-    else if (h === "#/map") { V.map(); document.title = "The Journey · The Blockchain Course"; }
-    else { V.home(); document.title = "The Blockchain Course: learn blockchain by doing"; }
+    if (m) { V.lesson(m[1]); const L = LESSONS[m[1]]; document.title = (L ? L.title : "Lesson") + " | The Takshashila Institution"; }
+    else if (c) { V.chapterGate(c[1]); document.title = "Chapter | The Takshashila Institution"; }
+    else if (h === "#/map") { V.map(); document.title = "The Journey | The Takshashila Institution"; }
+    else { V.home(); document.title = "An Interactive Blockchain Course | The Takshashila Institution"; }
     // new view: back to the top, and hand focus to the heading for keyboard/AT users
     scrollTo(0, 0);
     const h1 = document.querySelector("#root h1");
