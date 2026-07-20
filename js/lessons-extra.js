@@ -32,6 +32,7 @@ export const QUIZ = (function () {
 
     function drawQ() {
       const q = questions[qi];
+      if (!q._shuffled) { q._shuffled = true; for (let i = q.opts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [q.opts[i], q.opts[j]] = [q.opts[j], q.opts[i]]; } }
       wrap.className = "quiz fadein";
       wrap.innerHTML = `<div class="quiz-head"><span class="quiz-tag">${opts.tag || "Checkpoint"}</span>${dots()}<button class="quiz-skip" id="qskip">skip ›</button></div>
         <div class="quiz-q">${q.ask}</div>
