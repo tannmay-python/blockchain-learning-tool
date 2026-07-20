@@ -45,7 +45,7 @@ export const VIEWS = (function () {
   }
 
   const SOCIALS = `<div style="display:flex; justify-content:center; align-items:center; gap: 14px; flex-wrap:wrap; margin-top: 12px;">
-          <span>Built by Tannmay Kumarr Baid</span>
+          <span>Built by <a href="https://takshashila.org.in/content/team/tannmay-kumarr-baid.html" target="_blank" rel="noopener noreferrer" style="color:var(--ink-3); text-decoration:none; border-bottom:1px solid var(--line-2); transition:color 0.2s;" onmouseover="this.style.color='var(--plum)'" onmouseout="this.style.color='var(--ink-3)'">Tannmay Kumarr Baid</a></span>
           <a href="https://x.com/tannmaybaid" target="_blank" rel="noopener noreferrer" style="display:flex; align-items:center; color:var(--ink-3); transition:color 0.2s;" onmouseover="this.style.color='var(--plum)'" onmouseout="this.style.color='var(--ink-3)'" aria-label="X (Twitter)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
           </a>
