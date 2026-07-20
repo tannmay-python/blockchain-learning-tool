@@ -193,10 +193,19 @@ export const VIEWS = (function () {
     document.getElementById("lPrev").onclick = () => prev && go("#/lesson/" + prev);
     const isChapterEnd = !next || S.worldOf[next] !== w;
     const onNext = () => { 
+      const wasDone = S.isDone(id);
       markDone(); 
-      if (isChapterEnd && next) go("#/chapter/" + S.worldOf[next].id);
-      else if (!next) go("#/map");
-      else go("#/lesson/" + next);
+      const advance = () => {
+        if (isChapterEnd && next) go("#/chapter/" + S.worldOf[next].id);
+        else if (!next) go("#/map");
+        else go("#/lesson/" + next);
+      };
+      if (!wasDone && isChapterEnd && window.APP && window.APP.confetti) {
+        window.APP.confetti();
+        setTimeout(advance, 750);
+      } else {
+        advance();
+      }
     };
     document.getElementById("lNext").onclick = onNext;
     const en = document.getElementById("endNext"); if (en) en.onclick = onNext;
