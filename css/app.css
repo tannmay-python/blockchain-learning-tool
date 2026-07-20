@@ -477,7 +477,8 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .netedge { stroke: var(--line-2); stroke-width: 1.5; transition: stroke .3s; }
 .netedge.lit { stroke: var(--gold); stroke-width: 2.5; }
 .netnode { fill: var(--surface); stroke: var(--line-2); stroke-width: 2; cursor: pointer; transition: fill .3s, stroke .3s; }
-.netnode:hover { stroke: var(--plum); }
+.netnode:focus { outline: none; }
+.netnode:hover, .netnode:focus-visible { stroke: var(--plum); }
 .netnode.src { stroke-width: 4; }
 .netnode.heard { fill: var(--gold); stroke: var(--gold-2); }
 .netnode.heard-a { fill: #8a2057; stroke: #620d3c; }
