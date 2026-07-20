@@ -60,6 +60,8 @@ button { font-family: var(--sans); cursor: pointer; }
 [tabindex="-1"]:focus { outline: none !important; }
 
 #starfield { position: fixed; inset: 0; z-index: var(--z-bg); pointer-events: none; opacity: .5; }
+/* celebration burst: own layer at full opacity, above everything, inert */
+#fxLayer { position: fixed; top: 0; left: 0; z-index: var(--z-overlay-ui); pointer-events: none; }
 .bg-aura { position: fixed; inset: 0; z-index: var(--z-bg); pointer-events: none;
   background:
     radial-gradient(1000px 680px at 84% -12%, var(--aura-gold), transparent 60%),

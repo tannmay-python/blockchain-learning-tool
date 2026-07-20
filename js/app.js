@@ -29,11 +29,10 @@ export const APP = (function () {
     if (!RM) { const r = document.getElementById("root"); r.classList.remove("viewin"); void r.offsetWidth; r.classList.add("viewin"); }
   }
 
-  let triggerConfetti = () => {};
   /* ambient drifting dots, subtle on a light page */
   function starfield() {
     const cv = document.getElementById("starfield"); if (!cv) return;
-    const ctx = cv.getContext("2d"); let W, H, dpr, dots = [], confetti = [];
+    const ctx = cv.getContext("2d"); let W, H, dpr, dots = [];
     // per-theme dot palettes, resolved every frame so a theme toggle takes effect immediately
     const PALETTE = { light: ["98,13,60", "241,162,34"], dark: ["198,59,135", "241,162,34"] };
     let lastW = 0;
@@ -44,25 +43,125 @@ export const APP = (function () {
       const cols = PALETTE[isDark() ? "dark" : "light"];
       ctx.clearRect(0, 0, W, H);
       dots.forEach(s => { s.a += s.tw; const al = .08 + Math.abs(Math.sin(s.a)) * .22; s.y += s.vy; if (s.y > H) { s.y = 0; s.x = Math.random() * W; } ctx.fillStyle = `rgba(${cols[s.ci]},${al})`; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill(); });
-      if (confetti.length) {
-        let active = [];
-        confetti.forEach(p => {
-          p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.t += p.tr;
-          if (p.y < H + 20) {
-            active.push(p);
-            ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.t); ctx.fillStyle = p.c; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); ctx.restore();
-          }
-        });
-        confetti = active;
-      }
-      if (!RM) requestAnimationFrame(frame); 
+      if (!RM) requestAnimationFrame(frame);
     }
     size(); addEventListener("resize", size); frame();
-    triggerConfetti = () => { 
-      const colors = isDark() ? ["#f1a222", "#c63b87", "#4ecb92", "#f2708a", "#6f9bff"] : ["#f1a222", "#620d3c", "#2e9e6b", "#d2384f", "#2f6df6"];
-      for(let i=0; i<150; i++) confetti.push({ x: Math.random()*W, y: Math.random() * -H * 0.5 - 20, w: Math.random()*8+6, h: Math.random()*12+8, vx: (Math.random()-0.5)*10, vy: Math.random()*4, t: Math.random()*6, tr: (Math.random()-0.5)*0.3, c: colors[Math.floor(Math.random()*colors.length)] }); 
-    };
   }
+
+  /* ------------------------------------------------------------------
+     Celebration burst. Its own full-opacity layer: the starfield canvas
+     sits at opacity .5, which washed the old confetti out. Two angled
+     cones fire from the element that earned them (the score dial), so
+     the burst reads as coming from the result, not raining on the page.
+     ------------------------------------------------------------------ */
+  const FX = (function () {
+    let cv = null, ctx = null, W = 0, H = 0, dpr = 1, bits = [], running = false;
+    const R = Math.random;
+    /* brand palette; a couple of tints so the spray has depth */
+    const COL = {
+      light: ["#f1a222", "#f7c064", "#620d3c", "#8a2057", "#1e7350", "#fdedcf"],
+      dark:  ["#f7c064", "#f1a222", "#e264a6", "#c74a88", "#5cd39d", "#f9cd80"],
+    };
+
+    function ensure() {
+      if (cv) return;
+      cv = document.createElement("canvas");
+      cv.id = "fxLayer"; cv.setAttribute("aria-hidden", "true");
+      document.body.appendChild(cv);
+      ctx = cv.getContext("2d");
+      size(); addEventListener("resize", size);
+    }
+    function size() {
+      dpr = Math.min(2, devicePixelRatio || 1);
+      /* measure the layer's own box: it shares the coordinate space with the
+         getBoundingClientRect() of whatever element we burst from */
+      /* clientWidth/Height is the CSS viewport, the same space getBoundingClientRect()
+         reports in, so a burst origin taken from an element lands where we draw it */
+      const de = document.documentElement;
+      const w = de.clientWidth || innerWidth || 0;
+      const h = de.clientHeight || innerHeight || 0;
+      if (!w || !h) return false;
+      if (w === W && h === H && cv.width) return true; // nothing moved: keep the backing store
+      W = w; H = h;
+      cv.width = W * dpr; cv.height = H * dpr;
+      /* pin the CSS box to the same units W/H were measured in, so canvas
+         coordinates and getBoundingClientRect() coordinates stay in step
+         (same approach as heroCanvas) */
+      cv.style.width = W + "px"; cv.style.height = H + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return true;
+    }
+
+    /* one piece: a ribbon that tumbles on its own axis, with drag and sway */
+    function piece(x, y, angle, speed, cols) {
+      const sq = R() < .18;
+      return {
+        x, y,
+        vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+        w: sq ? R() * 2.5 + 3.5 : R() * 2 + 3,
+        h: sq ? R() * 2.5 + 3.5 : R() * 4 + 6,
+        round: R() < .12,
+        spin: R() * 6.283, spinV: (R() - .5) * .22,
+        flip: R() * 6.283, flipV: R() * .16 + .07, // fake 3D: width scales as it tumbles
+        sway: R() * 6.283, swayV: R() * .05 + .02, swayA: R() * .5 + .2,
+        life: 0, span: R() * 70 + 110,
+        c: cols[(R() * cols.length) | 0],
+      };
+    }
+
+    function frame() {
+      ctx.clearRect(0, 0, W, H);
+      const next = [];
+      for (const p of bits) {
+        p.life++;
+        p.vy += .26;                  // gravity
+        p.vx *= .95; p.vy *= .96;     // heavy air drag: the launch dies fast, then it flutters down
+        p.sway += p.swayV;
+        p.x += p.vx + Math.sin(p.sway) * p.swayA;
+        p.y += p.vy;
+        p.spin += p.spinV; p.spinV *= .995;
+        p.flip += p.flipV;
+        if (p.y > H + 30 || p.life > p.span) continue;
+        next.push(p);
+        // fade out over the last third of the life, so nothing pops out of existence
+        const t = p.life / p.span;
+        ctx.globalAlpha = t > .66 ? 1 - (t - .66) / .34 : 1;
+        const sx = Math.abs(Math.cos(p.flip));   // edge-on = thin sliver
+        ctx.save();
+        ctx.translate(p.x, p.y); ctx.rotate(p.spin); ctx.scale(sx < .12 ? .12 : sx, 1);
+        ctx.fillStyle = p.c;
+        if (p.round) { ctx.beginPath(); ctx.arc(0, 0, p.w / 2, 0, 6.2832); ctx.fill(); }
+        else ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+      bits = next;
+      if (bits.length) requestAnimationFrame(frame);
+      else { running = false; ctx.clearRect(0, 0, W, H); }
+    }
+
+    /* originEl: burst from that element's centre. Falls back to mid-viewport. */
+    return function burst(originEl) {
+      if (RM) return;
+      ensure();
+      if (!size()) return; // viewport not laid out yet; nothing sensible to draw into
+      let ox = W / 2, oy = H * .38;
+      if (originEl && originEl.getBoundingClientRect) {
+        const r = originEl.getBoundingClientRect();
+        if (r.width || r.height) { ox = r.left + r.width / 2; oy = r.top + r.height / 2; }
+      }
+      const cols = COL[isDark() ? "dark" : "light"];
+      const N = innerWidth < 640 ? 44 : 72;
+      for (let i = 0; i < N; i++) {
+        // two cones fired up and outward, ~26° of spread each
+        const dir = i % 2 ? 1 : -1;
+        const angle = (dir > 0 ? -1.02 : -2.12) + (R() - .5) * .9;
+        const speed = R() * 6 + 7;
+        bits.push(piece(ox + (R() - .5) * 24, oy + (R() - .5) * 12, angle, speed, cols));
+      }
+      if (!running) { running = true; requestAnimationFrame(frame); }
+    };
+  })();
 
   /* hero constellation (plum + marigold on light) */
   function heroCanvas() {
@@ -122,6 +221,6 @@ export const APP = (function () {
     });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
-  return { heroCanvas, confetti: () => triggerConfetti(), toggleTheme, toggleMobileNav };
+  return { heroCanvas, confetti: (originEl) => FX(originEl), toggleTheme, toggleMobileNav };
 })();
 window.APP = APP;

@@ -80,7 +80,7 @@ export const QUIZ = (function () {
         <div class="quiz-foot"><button class="btn" id="qretake">Retake checkpoint</button></div></div>`;
       wrap.querySelector("#qretake").onclick = restart;
       if (!RM && score > 0) { 
-        if (pct === 1 && window.APP && window.APP.confetti) window.APP.confetti();
+        if (pct === 1 && window.APP && window.APP.confetti) window.APP.confetti(wrap.querySelector(".qr-score"));
         const n = wrap.querySelector(".qr-n"); let c = 0; const t = setInterval(() => { c++; n.textContent = c; if (c >= score) clearInterval(t); }, 200); 
       }
     }
