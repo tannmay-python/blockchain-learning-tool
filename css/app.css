@@ -71,8 +71,10 @@ button { font-family: var(--sans); cursor: pointer; }
 @keyframes viewfade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 /* ============ nav ============ */
-.nav { position: sticky; top: 0; z-index: var(--z-nav); display: flex; align-items: center; gap: 18px; padding: 13px 26px; background: var(--nav-bg); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
+.nav { position: sticky; top: 0; z-index: var(--z-nav); display: flex; align-items: center; gap: 18px; padding: 0 26px; height: 92px; background: var(--nav-bg); backdrop-filter: blur(16px); border-bottom: 1px solid var(--line); }
 .nav .brand { display: flex; align-items: center; gap: 11px; cursor: pointer; }
+.logo-light { height: 65px; display: block; }
+.logo-dark { height: 65px; display: none; }
 [data-theme="dark"] .logo-light { display: none !important; }
 [data-theme="dark"] .logo-dark { display: block !important; }
 .nav .links { display: flex; gap: 4px; margin-left: 14px; }
@@ -88,7 +90,7 @@ button { font-family: var(--sans); cursor: pointer; }
 .progmini { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); font-weight: 500; }
 .progmini .bar { width: 120px; height: 8px; border-radius: 99px; background: var(--surface-3); overflow: hidden; border: 1px solid var(--line); }
 .progmini .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--plum), var(--gold)); border-radius: 99px; transition: width .6s var(--ease); }
-@media (max-width: 560px) { .nav .bt, .progmini span { display: none; } .progmini .bar { width: 74px; } }
+@media (max-width: 560px) { .nav { height: 56px; padding: 0 16px; } .logo-light, .logo-dark { height: 38px; } .progmini span { display: none; } .progmini .bar { width: 74px; } }
 
 /* Mobile Navigation */
 /* 44x44 touch target; the 28x18 glyph sits centred inside */
@@ -112,7 +114,7 @@ button { font-family: var(--sans); cursor: pointer; }
 @media (max-width: 768px) {
   .desktop-only { display: none !important; }
   .hamburger { display: block; }
-  .nav { padding: 12px 16px; }
+
 }
 
 /* ============ buttons ============ */
