@@ -147,9 +147,17 @@ button { font-family: var(--sans); cursor: pointer; }
 
 /* one dot per chapter, coloured from the chapter palette */
 .journey-rail { margin-top: 52px; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; }
-.journey-rail .jd { width: 11px; height: 11px; border-radius: 50%; box-shadow: 0 0 0 3px var(--bg); }
+.journey-rail .jd { width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 0 4px var(--bg); position: relative; cursor: pointer; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s var(--ease); text-decoration: none; }
+.journey-rail .jd:hover { transform: scale(1.3); box-shadow: 0 0 0 2px var(--bg); z-index: 10; }
 .journey-rail .jd-link { width: 26px; height: 2px; background: var(--line); display: block; }
 .journey-rail .jd-cap { font-size: 11px; color: var(--ink-4); margin-left: 8px; }
+
+/* Tooltip on hover */
+.journey-rail .jd .jd-tt { position: absolute; bottom: calc(100% + 14px); left: 50%; transform: translateX(-50%) translateY(10px) scale(0.95); opacity: 0; pointer-events: none; background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 10px; box-shadow: 0 12px 24px rgba(0,0,0,0.15); transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; gap: 4px; text-align: center; z-index: 100; width: max-content; }
+.journey-rail .jd .jd-tt::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: var(--ink) transparent transparent transparent; }
+.journey-rail .jd:hover .jd-tt { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+.journey-rail .jd-tt-n { font-size: 11px; opacity: 0.65; font-family: var(--mono); letter-spacing: 0.04em; }
+.journey-rail .jd-tt-t { font-size: 14px; font-weight: 600; font-family: var(--disp); }
 
 
 /* ============ MAP ============ */
