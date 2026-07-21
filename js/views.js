@@ -27,7 +27,7 @@ export const VIEWS = (function () {
     const moonSvg = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
     const toggle = `<button class="theme-toggle" data-action="toggleTheme" title="Toggle theme" aria-label="Dark theme" aria-pressed="${isDark}">${isDark ? sunSvg : moonSvg}</button>`;
     const hamburger = `<button class="hamburger" data-action="toggleMobileNav" aria-label="Menu" aria-expanded="false" aria-controls="mobileNav"><span></span><span></span><span></span></button>`;
-    return `<nav class="nav"><a class="brand" href="#/" title="Home">${LOGO}</a>
+    return `<nav class="nav"><a class="brand" href="https://takshashila.org.in/" target="_blank" rel="noopener" title="The Takshashila Institution">${LOGO}</a>
       <div class="links desktop-only"><a href="#/" class="${active === "home" ? "on" : ""}" ${active === "home" ? 'aria-current="page"' : ""}>Home</a><a href="#/map" class="${active === "map" ? "on" : ""}" ${active === "map" ? 'aria-current="page"' : ""}>Map</a></div>
       <div class="right">${toggle}${progMini()}${hamburger}</div></nav>
       <nav id="mobileNav" class="mobile-nav">
