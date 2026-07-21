@@ -35,10 +35,19 @@ global.requestAnimationFrame = () => {};
 global.IntersectionObserver = class { observe() {} unobserve() {} disconnect() {} };
 
 /* ---- load the production script stack, in index.html order ---- */
-for (const f of ['sha256', 'store', 'lessons', 'lessons-extra', 'lessons-plus', 'views', 'app']) {
+for (const f of ['sha256', 'store', 'lessons', 'lessons-extra', 'lessons-plus', 'lessons-coin', 'lessons-v2', 'views', 'app']) {
   let code = fs.readFileSync('js/' + f + '.js', 'utf8');
   let exports = [];
+  code = code.replace(/^\s*import\s+\{([^}]+)\}\s+from\s+[^;]+;/gm, (match, p1) => {
+    return p1.split(',').map(s => {
+      let parts = s.trim().split(/\s+as\s+/);
+      let orig = parts[0];
+      let alias = parts[1] || orig;
+      return `const ${alias} = global.${orig};`;
+    }).join('\n');
+  });
   code = code.replace(/^\s*import\s+.*$/gm, '');
+  
   code = code.replace(/^\s*export\s+(const|let|var|function|class)\s+([a-zA-Z0-9_]+)/gm, (match, p1, p2) => {
     exports.push(p2);
     return `${p1} ${p2}`;
@@ -47,10 +56,6 @@ for (const f of ['sha256', 'store', 'lessons', 'lessons-extra', 'lessons-plus', 
     exports.push(...p1.split(',').map(s => s.trim()));
     return '';
   });
-  
-  if (f === 'lessons-extra' || f === 'lessons-plus') code = `const L = global.LESSONS;\nconst S = global.STORE;\n` + code;
-  if (f === 'views') code = `const S = global.STORE;\nconst L = global.LESSONS;\nconst QUIZ = global.QUIZ;\n` + code;
-  if (f === 'app') code = `const V = global.VIEWS;\nconst L = global.LESSONS;\n` + code;
   
   const exportAssignments = exports.map(e => `global.${e} = ${e};`).join('\n');
   eval(`(function() { ${code}\n${exportAssignments} })()`);
