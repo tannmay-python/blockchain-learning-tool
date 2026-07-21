@@ -216,7 +216,7 @@ import { sha256 } from './sha256.js';
      ============================================================ */
   const beatRules = {
     n: "01", h: "Write its rules, then mine block zero",
-    cap: "Every chain begins with a <b>genesis block</b>, and with a decision nobody can take back afterwards: how much money will ever exist. Set the reward, set how often it halves, and watch the supply curve you are writing. Then mine block zero for real. Those rules are sealed into it.",
+    cap: "Every chain begins with a <b>genesis block</b>, which locks in a decision you can't undo afterwards: how much money will ever exist. Set the reward, how often it halves, and the difficulty, and watch the supply curve move as you change them. Then mine block zero for real. Those rules get sealed into its hash.",
     build(s) {
       const w = card(s, "your coin's constitution", `
         <div class="cxgrid">
@@ -267,7 +267,7 @@ import { sha256 } from './sha256.js';
         curve();
         if (launched && !$("cM").dataset.live) {
           $("cM").dataset.live = "1";
-          setMsg(`<b>${esc(C.name)}</b> is live. Genesis hashes to <span class="mono">${zeros(short(hashOf(C.chain[0]), 10, 6))}</span>, and the rules above are now part of that hash. Changing one would change the hash, break every block after it, and produce a different coin. That is what "hard fork" means.`, "ok");
+          setMsg(`<b>${esc(C.name)}</b> is live. Genesis hashes to <span class="mono">${zeros(short(hashOf(C.chain[0]), 10, 6))}</span>, and the rules above are now hashed into it. Change any one of them and the hash changes, every block after it breaks, and what you have is a different coin. That's what "hard fork" means.`, "ok");
         } else if (!launched) {
           setMsg(`Nothing exists yet. The name and the reward schedule go into block zero's data, and get hashed into everything that follows.`);
         }
@@ -306,7 +306,7 @@ import { sha256 } from './sha256.js';
      ============================================================ */
   const beatPay = {
     n: "02", h: "Open it to other people",
-    cap: "A coin only you can hold is a diary. Two strangers turn up with keys of their own. Pay one of them and your transaction sits in the <b>mempool</b> until a block picks it up. Then let the other one try to sign a payment out of a wallet that isn't his.",
+    cap: "Right now you're the only one holding this coin, which makes it a private ledger, not money. Two strangers turn up with keys of their own. Pay one of them and your transaction sits in the <b>mempool</b> until a block picks it up. Then watch the other one try to sign a payment out of a wallet that isn't his.",
     build(s) {
       const w = card(s, "wallets on your chain", `
         <div class="cxw" id="pW"></div>
@@ -319,7 +319,7 @@ import { sha256 } from './sha256.js';
           <span class="v mono" id="pFeeV">1</span>
           <button class="btn gold" id="pGo">Sign &amp; broadcast</button>
         </div>
-        <div class="btn-row" style="justify-content:center;margin-top:4px"><button class="btn danger" id="pForge">Ben signs “Ava → Ben, 20” with his own key</button></div>
+        <div class="btn-row" style="justify-content:center;margin-top:4px"><button class="btn danger" id="pForge">Ben signs "Ava → Ben, 20" with his own key</button></div>
         <div class="cxpool" id="pPool"></div>
         <div class="log" id="pL" style="margin-top:12px"><div class="info">your node's transaction log</div></div>`);
 
@@ -351,7 +351,7 @@ import { sha256 } from './sha256.js';
         const t = { from: "you", to, amt, fee, n: nonceOf("you") };
         t.sig = sign("you", t);
         C.pool.push(t);
-        log(`signed “You → ${NAMES[to]}, ${amt}” · sig ${short(t.sig, 8, 4)}`);
+        log(`signed "You → ${NAMES[to]}, ${amt}" · sig ${short(t.sig, 8, 4)}`);
         log(`verified against your public key → VALID. Broadcast, and waiting in the mempool.`, "ok");
         commit();
       };
@@ -361,12 +361,12 @@ import { sha256 } from './sha256.js';
            with the only key he has. Everything about it is correct except that */
         const t = { from: "ava", to: "ben", amt: 20, fee: 1, n: nonceOf("ava") };
         t.sig = sign("ben", t);
-        log(`incoming: “Ava → Ben, 20” · sig ${short(t.sig, 8, 4)}`, "warn");
+        log(`incoming: "Ava → Ben, 20" · sig ${short(t.sig, 8, 4)}`, "warn");
         log(`expected sha256(Ava's key + message) = ${short(sign("ava", t), 8, 4)}`, "warn");
-        log(`got ${short(t.sig, 8, 4)} → REJECTED, never enters the mempool. Your chain just defended a woman it has never met, without asking you, because the only thing that moves coins here is the key.`, "bad");
+        log(`got ${short(t.sig, 8, 4)} → REJECTED, never enters the mempool. Nobody had to step in: the signature doesn't match Ava's key, so verification fails automatically, with no human in the loop.`, "bad");
       };
 
-      if (!C.chain.length) gate(w, "Your chain has no blocks and no money yet. Mine genesis in the step above, and these wallets come alive.");
+      if (!C.chain.length) gate(w, "Your chain has no blocks and no money yet. Mine genesis in the step above and these wallets get balances.");
       sub(w, render);
     }
   };
@@ -430,7 +430,7 @@ import { sha256 } from './sha256.js';
             <div class="bfield"><div class="k">guesses it took</div><div class="v go">${fmt(b.guesses || b.nonce + 1)}</div></div>
             <div class="bfield full ${ok ? "" : "hl"}"><div class="k">sha256(header + nonce) — must start with ${Z()}</div><div class="v ${ok ? "hash" : ""}">${zeros(esc(h))}</div></div>
           </div>
-          <div class="cxdl">its transactions. the amounts are editable, because the interesting question is what happens when you edit one</div>
+          <div class="cxdl">its transactions. the amounts are editable, so you can see exactly what breaks when you change one</div>
           <div class="cxtxs">${b.txs.map((t, k) => txLine(t, k, !t.cb)).join("")}</div>
           <div class="note" style="margin-top:8px">Miner took ${rewardAt(b.i)} newly minted${fees ? ` plus ${fees} in fees` : ""}.</div>
           ${ok ? "" : `<div class="btn-row" style="justify-content:center;margin-top:12px"><button class="btn danger" id="xFix">Re-mine this block and every block after it</button></div>`}`;
@@ -456,7 +456,7 @@ import { sha256 } from './sha256.js';
           const next = () => {
             if (j >= C.chain.length) {
               busy = false;
-              setMsg(`Repaired. It cost <b>${fmt(spent)} guesses</b> to re-mine ${C.chain.length - start} block${C.chain.length - start > 1 ? "s" : ""}, on top of the ${fmt(C.spent)} you had already spent building this history honestly. And you are the only miner here. On a real chain the rest of the network would have kept extending the honest history the entire time you were catching up, which is the reason nobody does this.`, "ok");
+              setMsg(`Repaired. It cost <b>${fmt(spent)} guesses</b> to re-mine ${C.chain.length - start} block${C.chain.length - start > 1 ? "s" : ""}, on top of the ${fmt(C.spent)} you had already spent building this history honestly. And you are the only miner here. On a real chain, the rest of the network keeps extending the honest history the entire time you're catching up, so outpacing all of them at once is why deep reorgs almost never happen there.`, "ok");
               C.spent += spent; commit(); return;
             }
             C.chain[j].prev = prevOf(j);
@@ -478,7 +478,7 @@ import { sha256 } from './sha256.js';
           busy = false; $("xGo").disabled = false; $("xGo5").disabled = false;
           const halved = h % C.halve === 0 && h > 0;
           setMsg(halved
-            ? `<b style="color:var(--gold-text)">Halving.</b> Block #${h} is the first paying ${rewardAt(h)} instead of ${rewardAt(h - 1)}. Nobody voted on that. You wrote it into the rules before any of this existed, and the schedule has simply arrived. Same trick as Bitcoin's 21 million.`
+            ? `<b style="color:var(--gold-text)">Halving.</b> Block #${h} is the first paying ${rewardAt(h)} instead of ${rewardAt(h - 1)}. Nobody voted on that. You set the schedule before genesis even existed, and this is just the block where it takes effect. Same mechanism as Bitcoin's 21 million cap.`
             : `Block #${h} sealed after ${fmt(done.guesses)} guesses${included.length ? `, carrying ${included.length} payment${included.length > 1 ? "s" : ""} out of the mempool` : ""}. Click it to read what went in.`, halved ? "" : "ok");
           commit();
           if (after) after();
@@ -521,7 +521,7 @@ import { sha256 } from './sha256.js';
           <div class="cxlane"><span class="cxln bad">attacker's private fork</span><div class="mchain" id="aE"></div></div>
         </div>
         <div class="cxwallet" id="aW"></div>
-        <div class="sig-state" id="aM" style="margin-top:12px">Ava is a merchant. She will not hand over the goods until your payment is buried under a few blocks. How many is enough?</div>`);
+        <div class="sig-state" id="aM" style="margin-top:12px">Ava is a merchant. She won't hand over the goods until your payment is buried under enough confirmations. Set how many below.</div>`);
 
       const $ = (id) => w.querySelector("#" + id);
       const setMsg = (t, cls) => { const m = $("aM"); m.innerHTML = t; m.className = "sig-state" + (cls ? " " + cls : ""); };
@@ -538,7 +538,7 @@ import { sha256 } from './sha256.js';
         const p = q >= 0.5 ? 1 : Math.pow(q / (1 - q), k);
         $("aQv").textContent = Math.round(q * 100) + "%";
         $("aKv").textContent = k;
-        $("aOdds").innerHTML = `On paper: an attacker holding <b>${Math.round(q * 100)}%</b> catches up from <b>${k}</b> block${k > 1 ? "s" : ""} behind with probability <b>${q >= 0.5 ? "1 — certainty, given time" : (p * 100 < 0.01 ? "under 0.01%" : (p * 100).toFixed(2) + "%")}</b>. Below is one actual attempt.`;
+        $("aOdds").innerHTML = `On paper: an attacker holding <b>${Math.round(q * 100)}%</b> catches up from <b>${k}</b> block${k > 1 ? "s" : ""} behind with probability <b>${q >= 0.5 ? "1 (certainty, given time)" : (p * 100 < 0.01 ? "under 0.01%" : (p * 100).toFixed(2) + "%")}</b>. Below is one actual attempt.`;
       }
       $("aQ").oninput = odds; $("aK").oninput = odds;
 
@@ -620,7 +620,7 @@ import { sha256 } from './sha256.js';
             const gone = avaTx ? avaTx.amt : 0;
             forkAt = null; // the scenario is over; the chain underneath it changed
             commit(); wallets();
-            setMsg(`<b>The fork won.</b> Your node did nothing wrong: it saw a longer chain, and the rule it has followed since block zero is to take the longest one. Ava's ${gone} ${esc(C.ticker)} is not "reversed". In the history the network now holds, <b>you never paid her</b>, and she has already handed over the goods. It took the attacker ${fmt(burned)} guesses and ${rounds} rounds. That is what she was really buying when she waited for confirmations, and she did not wait long enough.`, "bad");
+            setMsg(`<b>The fork won.</b> Your node saw a longer chain and switched to it, the same rule it has followed since block zero. Ava's ${gone} ${esc(C.ticker)} never made it into this history: <b>you never paid her</b>, and she has already handed over the goods. The attacker got there in ${fmt(burned)} guesses across ${rounds} rounds, more than her ${waited}-confirmation wait covered.`, "bad");
             return;
           }
           /* the attacker started `waited` blocks behind. it gives up once it has
@@ -633,10 +633,10 @@ import { sha256 } from './sha256.js';
             C.chain = C.chain.slice(0, forkAt).concat(honest);
             forkAt = null; // one scenario per setup: another go starts a fresh payment
             const wasted = evil.length
-              ? `burned <b>${fmt(burned)} guesses</b> on ${evil.length} block${evil.length === 1 ? "" : "s"} that no one will ever see, and earned nothing for any of them`
-              : `never found a single block. Every guess it made bought it nothing at all`;
+              ? `burned <b>${fmt(burned)} guesses</b> on ${evil.length} block${evil.length === 1 ? "" : "s"} that no one will ever see, for zero reward`
+              : `never found a single block, so none of its guesses paid off`;
             commit(); wallets();
-            setMsg(`<b>The attack is abandoned.</b> It started ${waited} block${waited > 1 ? "s" : ""} behind and is now ${honest.length - evil.length} behind, so the gap is widening and the fork can never catch up. The attacker ${wasted}. Meanwhile your chain simply kept going, and those blocks are now real. Ava keeps her ${avaTx ? avaTx.amt : 0}. Nobody defended her. The arithmetic did.`, "ok");
+            setMsg(`<b>The attack is abandoned.</b> It started ${waited} block${waited > 1 ? "s" : ""} behind and is now ${honest.length - evil.length} behind, so the gap is widening and the fork has no way to catch up. The attacker ${wasted}. Your chain kept going the whole time, and those blocks are now permanent. Ava keeps her ${avaTx ? avaTx.amt : 0}, because the honest chain simply stayed the longer one throughout.`, "ok");
             return;
           }
           setTimeout(step, 90);
@@ -662,10 +662,10 @@ import { sha256 } from './sha256.js';
      ============================================================ */
   L.coin = {
     world: "capstone", title: "Build your own coin", oneliner: "Write its rules, mine it, defend it", icon: "◆",
-    hero: "You have taken the machine apart. Now build one that runs. Write a monetary policy, mine a genesis block that never existed before you pressed the button, open your wallet to strangers, and then stand there while someone tries to rewrite what you made. Every hash on this page is real, and the chain is yours. it is still here when you come back.",
+    hero: "You've taken the machine apart. Now build one that runs: write a monetary policy, mine a genesis block that has never existed until you press the button, open your wallet to two other people, and then watch someone try to rewrite what you made. Every hash on this page is real, and the chain is saved in your browser, so it's still there next time you load this page.",
     beats: [beatRules, beatPay, beatMine, beatAttack],
-    deeper: P("Everything here uses the same primitives as the real thing, only smaller: SHA-256 over a real header, a merkle root over real transactions, a target of three leading zeros instead of nineteen, a halving every few blocks instead of every 210,000. Nothing conceptual was cut. A genesis block, a coinbase, fee-priority block assembly, signature-gated transfers, a longest-chain rule and a reorg that quietly deletes a settled payment <i>are</i> the skeleton of Bitcoin.<br><br>The one thing the sandbox cannot give you is the thing that actually makes it work. Here you are the network: you mine every honest block, you set the difficulty, and the attacker only exists when you press a button. A real chain is thousands of strangers who have never spoken, most of whom would happily take your money, held in line by nothing but the fact that following the rules pays better than breaking them. The gap between your coin and a real one is not ideas. It is <i>other people</i>. A blockchain, in the end, is a machine for surviving them."),
-    bridge: "That's the course. Strangers keeping one honest record with no one in charge. money no state can freeze, or the most controllable money in history, depending entirely on who holds the keys. Same machine, opposite directions. You now know exactly why."
+    deeper: P("Everything here uses the same primitives as the real thing, only smaller: SHA-256 over a real header, a merkle root over real transactions, a target of three leading zeros instead of nineteen, a halving every few blocks instead of every 210,000. Nothing conceptual was cut. A genesis block, a coinbase, fee-priority block assembly, signature-gated transfers, a longest-chain rule and a reorg that quietly deletes a settled payment <i>are</i> the skeleton of Bitcoin.<br><br>The one thing the sandbox cannot give you is the thing that actually makes it work. Here you are the network: you mine every honest block, you set the difficulty, and the attacker only exists when you press a button. A real chain is thousands of strangers who have never spoken, most of whom would happily take your money, held in line by nothing but the fact that following the rules pays better than breaking them. That's the real gap between your coin and a real one: a real chain has to keep thousands of mutually distrusting strangers honest using nothing but incentives, while yours only ever has to survive the one attacker you summon by clicking a button."),
+    bridge: "That's the whole course: strangers keeping one shared, honest record with nobody in charge of it. The same mechanism can produce money no government can freeze, or a currency more controllable than any before it, and the difference comes down to who holds the keys."
   };
 
 })();

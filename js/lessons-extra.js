@@ -72,7 +72,7 @@ export const QUIZ = (function () {
       if (opts.onDone) opts.onDone(score, total);
       const tier = pct === 1 ? ["Nailed it.", "Every one correct. You have this cold."]
         : pct >= 0.5 ? ["Halfway there.", "Some stuck, some slipped. Take another look at the ones you missed before moving on."]
-        : ["Worth a re-read.", "A couple slipped. The “go deeper” panel below will shore them up."];
+        : ["Worth a re-read.", "A couple slipped. The \"go deeper\" panel below will shore them up."];
       wrap.className = "quiz result fadein";
       wrap.innerHTML = `<div class="quiz-result">
         <div class="qr-score"><span class="qr-n">${RM ? score : 0}</span><span class="qr-d">/ ${total}</span></div>
@@ -90,9 +90,9 @@ export const QUIZ = (function () {
 
   /* ===================== TRANSACTION: the atomic unit ===================== */
   L.tx = { world: "chain", title: "Inside a transaction", oneliner: "The core unit that moves value", icon: "⇄",
-    hero: "You just signed a payment. That signed bundle has a proper name: a <b>transaction</b>. It is the only thing a blockchain ever really moves. Before it can be packed into a block, look at what it is made of, and where it waits its turn.",
+    hero: "You just signed a payment. That signed bundle is called a <b>transaction</b>, the only thing a blockchain really moves. Before it can be packed into a block, look at what it's made of and where it waits its turn.",
     beats: [
-      { n: "01", h: "What a transaction is actually made of", cap: "It isn't a coin changing hands. It is a tiny <b>signed record</b>. Nudge the amount and the signature re-seals to match it. Then tamper with it, and watch the seal break.",
+      { n: "01", h: "What a transaction is made of", cap: "A transaction is a tiny <b>signed record</b>, not a coin changing hands. Nudge the amount and the signature re-seals to match it. Tamper with it after signing instead, and watch the seal break.",
         build(s) {
           const FROM = "0x" + sha256("you-wallet-v1").slice(-16), TO = "0x" + sha256("bob-wallet-v1").slice(-16);
           let amt = 5, nonce = 12, sig = null, tampered = false;
@@ -117,7 +117,7 @@ export const QUIZ = (function () {
           function draw() {
             wrap.querySelector("#txp").innerHTML = rows().map(([k, v, note]) => `<div class="txrow"><div class="txrow-top"><span class="txk">${k}</span><span class="txv">${v}</span></div><span class="txn">${note}</span></div>`).join("");
             const ok = valid();
-            wrap.querySelector("#txsig").innerHTML = `<div class="txsig-in ${ok ? "ok" : "bad"}"><div class="txrow-top"><span class="txk">signature</span><span class="txv">${short(sig, 12, 10)}</span></div><span class="txn">${ok ? "✓ seals these exact fields (only your secret key could have produced it" : "✕ the amount changed after signing, so the signature no longer matches. Every node rejects it as a forgery."}</span></div>`;
+            wrap.querySelector("#txsig").innerHTML = `<div class="txsig-in ${ok ? "ok" : "bad"}"><div class="txrow-top"><span class="txk">signature</span><span class="txv">${short(sig, 12, 10)}</span></div><span class="txn">${ok ? "✓ seals these exact fields (only your secret key could have produced it)" : "✕ the amount changed after signing, so the signature no longer matches. Every node rejects it as a forgery."}</span></div>`;
           }
           const reseal = (d) => { amt = Math.max(1, amt + d); nonce++; sign(); draw(); wrap.querySelector("#msg").innerHTML = `You changed the amount and <b>re-signed</b>, creating a fresh, valid transaction. This is the normal case.`; };
           wrap.querySelector("#inc").onclick = () => reseal(1);
@@ -126,7 +126,7 @@ export const QUIZ = (function () {
           wrap.querySelector("#rst").onclick = () => { amt = 5; nonce = 12; sign(); draw(); wrap.querySelector("#msg").innerHTML = `The signature covers <b>every field above</b>. Change any of them and it stops matching.`; };
           draw();
         } },
-      { n: "02", h: "Where it waits: the mempool", cap: "A broadcast transaction doesn't drop straight into the chain. It lands in the <b>mempool</b> (a shared waiting room every node keeps) and sits there until a miner picks it up. Blocks are small, so miners take the <b>highest fees first</b>.",
+      { n: "02", h: "Where it waits: the mempool", cap: "A broadcast transaction lands first in the <b>mempool</b>, a shared waiting room every node keeps, and sits there until a miner picks it up. Blocks are small, so miners take the <b>highest fees first</b>.",
         build(s) {
           const BLK = 4;
           const OTHERS = [
@@ -178,7 +178,7 @@ export const QUIZ = (function () {
               if (yoursIn) { broadcast = false; done = true; } // yours left the pool, demo complete
               draw();
               wrap.querySelector("#msg").innerHTML = yoursIn
-                ? `<span style="color:var(--green)">Your transaction made the block (confirmed.</span> It paid a competitive fee, so the miner picked it up.`
+                ? `<span style="color:var(--green)">Your transaction made the block, confirmed.</span> It paid a competitive fee, so the miner picked it up.`
                 : hadYours
                   ? `The miner took the top ${BLK} fees; your <b>${yourFee.toFixed(1)}</b> lost the auction and is <b>still waiting</b>. Raise your fee and mine again.`
                   : `Block sealed with the top ${BLK} fees. Broadcast yours and try again.`;
@@ -189,7 +189,7 @@ export const QUIZ = (function () {
         } },
       { n: "03", h: "Check yourself", cap: "Two quick questions.",
         build(s) { quiz(s, [
-          { ask: "What is a “transaction” on a blockchain?",
+          { ask: "What is a \"transaction\" on a blockchain?",
             opts: [
               { t: "A small signed record that moves value from one address to another", ok: true, why: "That is it: from, to, amount, fee, nonce, and a signature over all of them. Blocks are just bundles of these." },
               { t: "A coin object that physically travels between wallets", ok: false, why: "Nothing physical moves. A transaction is a signed record; balances are just the running total of everyone's records." },
@@ -203,7 +203,7 @@ export const QUIZ = (function () {
             ] },
         ]); } },
     ],
-    deeper: P("A transaction is the blockchain's atomic unit: a signed instruction, not a moving object. Bitcoin models it as <b>inputs and outputs</b> (you consume whole previous outputs and create new ones, known as the “UTXO” model); Ethereum uses running <b>account balances</b> instead. Either way, nodes first check the signature and the rules, then hold it in the <b>mempool</b> until a miner includes it. The <b>nonce</b> stops replay. The same signed payment can't be submitted twice. and the <b>fee</b> is a live auction for scarce block space, which is why fees spike when the network is busy. Nothing is final until it's in a block, and buried under a few more.") };
+    deeper: P("A transaction is the blockchain's atomic unit, a signed instruction rather than a moving object. Bitcoin models it as <b>inputs and outputs</b> (you consume whole previous outputs and create new ones, known as the \"UTXO\" model); Ethereum uses running <b>account balances</b> instead. Either way, nodes first check the signature and the rules, then hold it in the <b>mempool</b> until a miner includes it. The <b>nonce</b> stops replay, so the same signed payment can't be submitted twice, and the <b>fee</b> is a live auction for scarce block space, which is why fees spike when the network is busy. Nothing is final until it's in a block, and buried under a few more.") };
 
   /* ===================== INCENTIVES: why anyone mines ===================== */
   L.incentives = { world: "chain", title: "Mining rewards", oneliner: "How mining rewards incentivise honesty", icon: "¤",
@@ -284,7 +284,7 @@ export const QUIZ = (function () {
               y < 2013 ? "Early days: 50 new coins per block, miners on laptops." :
               y < 2030 ? "The subsidy is already small. Fees matter more every cycle." :
               y < 2050 ? "New coins have slowed to a trickle. <b>Fees now carry the security budget.</b>" :
-              "Near zero forever. If fees can't pay for enough mining, security itself gets cheaper to attack (an open question.";
+              "Near zero forever. If fees can't pay for enough mining, security itself gets cheaper to attack (an open question).";
           }
           wrap.querySelector("#yr").oninput = upd; upd();
         } },
@@ -304,16 +304,16 @@ export const QUIZ = (function () {
             ] },
         ]); } },
     ],
-    deeper: P("The reward is not a bonus bolted on. It <b>is</b> the security model. Honest mining pays steadily; attacking the chain means forfeiting those rewards and burning electricity on a losing race. Satoshi's insight was economic, not cryptographic: make honesty the most profitable strategy and strangers will secure each other's money out of pure self-interest. The <b>halving</b> (every 210,000 blocks) enforces the 21-million cap, and the open question economists argue about: when the subsidy is gone, will fees alone fund enough mining to keep attacks unprofitable?") + P("Satoshi's own words, on why even an attacker with majority power should choose honesty:") + "<blockquote>“He ought to find it more profitable to play by the rules, such rules that favour him with more new coins than everyone else combined, than to undermine the system and the validity of his own wealth.” - <a href='https://bitcoin.org/bitcoin.pdf' target='_blank' rel='noopener'>Satoshi Nakamoto, the Bitcoin whitepaper (2008), §6</a></blockquote>" };
+    deeper: P("The reward <b>is</b> the security model, not an add-on to it. Honest mining pays steadily; attacking the chain means forfeiting those rewards and burning electricity on a losing race. Satoshi's insight was economic rather than cryptographic: make honesty the most profitable strategy, and strangers will secure each other's money out of pure self-interest. The <b>halving</b> (every 210,000 blocks) enforces the 21-million cap. Economists still argue over what happens after: when the subsidy is gone, will fees alone fund enough mining to keep attacks unprofitable?") + P("Satoshi's own words on why even an attacker with majority power should choose honesty:") + "<blockquote>\"He ought to find it more profitable to play by the rules, such rules that favour him with more new coins than everyone else combined, than to undermine the system and the validity of his own wealth.\" - <a href='https://bitcoin.org/bitcoin.pdf' target='_blank' rel='noopener'>Satoshi Nakamoto, the Bitcoin whitepaper (2008), §6</a></blockquote>" };
 
   /* ===================== GOSSIP: the network itself ===================== */
   L.gossip = { world: "consensus", title: "The network", oneliner: "How information spreads without a centre", icon: "◍",
-    hero: "There is no server. When you broadcast a payment, you tell a few computers, they tell a few more, and in seconds the whole planet knows. Watch it ripple, and see where forks really come from.",
+    hero: "There is no server. When you broadcast a payment, you tell a few computers, they tell a few more, and in seconds the whole planet knows. Watch it ripple, and see where forks come from.",
     beats: [
       { n: "01", h: "Gossip, hop by hop", cap: "Every node knows only its neighbours. Click <b>any node</b> to broadcast a transaction from it and watch the news spread like a rumour. There is no coordinator, no master list of who to tell.",
         build(s) {
           const wrap = el("div", "fcard");
-          wrap.innerHTML = `<div class="flabel"><span class="pin"></span>a peer-to-peer network (click a node</div><div class="netbox"><svg id="net" viewBox="0 0 640 340"></svg></div><div class="note" id="gmsg" style="text-align:center;margin-top:10px">Each hop takes real time. That delay is the seed of every fork.</div>`;
+          wrap.innerHTML = `<div class="flabel"><span class="pin"></span>a peer-to-peer network (click a node)</div><div class="netbox"><svg id="net" viewBox="0 0 640 340"></svg></div><div class="note" id="gmsg" style="text-align:center;margin-top:10px">Each hop takes real time. That delay is the seed of every fork.</div>`;
           s.appendChild(wrap);
           const svg = wrap.querySelector("#net"), NS = "http://www.w3.org/2000/svg";
           // fixed layout: organic but deterministic
@@ -348,7 +348,7 @@ export const QUIZ = (function () {
           wrap.innerHTML = `<div class="flabel"><span class="pin"></span>a tie, spreading from both ends</div><div class="netbox"><svg id="net2" viewBox="0 0 640 340"></svg></div>
             <div class="btn-row" style="justify-content:center;margin-top:12px"><button class="btn primary" id="race">Both miners find a block</button><button class="btn" id="rr">Reset</button></div>
             <div class="race-legend"><span><i class="sw a"></i>heard miner A's block first</span><span><i class="sw b"></i>heard miner B's block first</span></div>
-            <div class="note" id="g2msg" style="text-align:center;margin-top:8px">This split is a <b>fork</b> (the subject of the next lesson.</div>`;
+            <div class="note" id="g2msg" style="text-align:center;margin-top:8px">This split is a <b>fork</b> (the subject of the next lesson).</div>`;
           s.appendChild(wrap);
           const svg = wrap.querySelector("#net2"), NS = "http://www.w3.org/2000/svg";
           const pts = [[45,80],[150,50],[280,80],[410,55],[540,80],[600,150],[80,160],[210,170],[340,160],[470,180],[45,250],[170,280],[300,260],[430,290],[560,260],[250,120]];
@@ -358,7 +358,7 @@ export const QUIZ = (function () {
           edges.forEach(([a, b]) => { const ln = document.createElementNS(NS, "line"); ln.setAttribute("x1", pts[a][0]); ln.setAttribute("y1", pts[a][1]); ln.setAttribute("x2", pts[b][0]); ln.setAttribute("y2", pts[b][1]); ln.setAttribute("class", "netedge"); svg.appendChild(ln); });
           pts.forEach((p, i) => { const c = document.createElementNS(NS, "circle"); c.setAttribute("cx", p[0]); c.setAttribute("cy", p[1]); c.setAttribute("r", 11); c.setAttribute("class", "netnode"); svg.appendChild(c); dots.push(c); });
           const A = 0, B = 14; // far corners
-          function reset() { dots.forEach(d => d.setAttribute("class", "netnode")); wrap.querySelector("#g2msg").innerHTML = "This split is a <b>fork</b> (the subject of the next lesson."; }
+          function reset() { dots.forEach(d => d.setAttribute("class", "netnode")); wrap.querySelector("#g2msg").innerHTML = "This split is a <b>fork</b> (the subject of the next lesson)."; }
           wrap.querySelector("#rr").onclick = () => { if (!busy) reset(); };
           wrap.querySelector("#race").onclick = () => {
             if (busy) return; busy = true; reset();
@@ -398,23 +398,23 @@ export const QUIZ = (function () {
 
   /* ===================== SAFETY: practical literacy ===================== */
   L.safety = { world: "frontier", title: "Staying safe", oneliner: "Recognising scams and protecting your funds", icon: "‼",
-    hero: "Everything you've learned protects the chain. Nothing protects you from being talked out of your own keys. Scams steal more crypto than hacks ever have. The only defence is pattern-recognition, so let's drill the patterns.",
+    hero: "Everything you've learned so far protects the chain. None of it protects you from being talked out of your own keys. Scams take more crypto than hacks do, and the only real defence is recognising the pattern before you're inside it.",
     beats: [
       { n: "01", h: "Scam or normal? You decide", cap: "Each card is a real situation. Call it. The pattern matters more than the example.",
         build(s) {
           const CARDS = [
-            { t: "“Support” DMs you: “your wallet is compromised. Send us your 12-word recovery phrase and we'll secure it.”", scam: true,
-              why: "Nobody legitimate ever asks for a seed phrase. Whoever holds those words <b>is</b> the wallet. This is the single most common crypto theft." },
+            { t: "\"Support\" DMs you: \"your wallet is compromised. Send us your 12-word recovery phrase and we'll secure it.\"", scam: true,
+              why: "Nobody legitimate ever asks for a seed phrase. Whoever holds those words <b>is</b> the wallet, which makes this the single most common crypto theft." },
             { t: "During setup, your wallet app asks you to write 12 words on paper and keep them offline.", scam: false,
-              why: "That is normal self-custody. The red flag is never the phrase existing. It is anyone <b>asking to see it</b>." },
-            { t: "An investment platform guarantees 2% daily returns, “risk-free, powered by AI trading.”", scam: true,
+              why: "That's normal self-custody. Anyone <b>asking to see</b> the phrase afterward is the red flag, not the phrase existing." },
+            { t: "An investment platform guarantees 2% daily returns, \"risk-free, powered by AI trading.\"", scam: true,
               why: "2% daily is ~137,000% a year. Guaranteed returns at that scale are mathematically a Ponzi: early exits are paid with later deposits." },
-            { t: "A famous person's account posts: “send 1 coin, receive 2 back. Giveaway, 30 minutes only!”", scam: true,
-              why: "The giveaway scam. You now know why it's unfixable: <b>a confirmed transaction cannot be reversed</b>. Sent is gone." },
-            { t: "A token's website shows anonymous founders, a 7-day-old contract, and “100× guaranteed, get in before the crowd.”", scam: true,
+            { t: "A famous person's account posts: \"send 1 coin, receive 2 back. Giveaway, 30 minutes only!\"", scam: true,
+              why: "This is the giveaway scam, and it works because <b>a confirmed transaction cannot be reversed</b>. Once you've sent it, it's gone." },
+            { t: "A token's website shows anonymous founders, a 7-day-old contract, and \"100× guaranteed, get in before the crowd.\"", scam: true,
               why: "The rug-pull profile: anonymous team, fresh contract, urgency. The creators hold most tokens and sell into your buying." },
             { t: "An exchange emails that withdrawals are paused for scheduled maintenance, announced on its official status page too.", scam: false,
-              why: "Verified on the official site, this is routine. The lesson from FTX still stands though: paused withdrawals with <b>no</b> credible explanation is the moment to worry." },
+              why: "Confirmed on the official site, this is routine. What isn't routine, as FTX showed, is a pause with <b>no</b> credible explanation." },
           ];
           let i = 0, score = 0, locked = false;
           const wrap = el("div", "fcard");
@@ -439,7 +439,7 @@ export const QUIZ = (function () {
               wrap.querySelector("#next").textContent = i < CARDS.length - 1 ? "Next →" : "Finish";
               wrap.querySelector("#next").onclick = () => {
                 if (i < CARDS.length - 1) { i++; draw(); }
-                else wrap.querySelector("#why").innerHTML += `<div style="margin-top:10px"><b>${score}/${CARDS.length}.</b> The pattern behind every card: <b>urgency + secrecy + guaranteed upside = scam.</b></div>`;
+                else wrap.querySelector("#why").innerHTML += `<div style="margin-top:10px"><b>${score}/${CARDS.length}.</b> Every scam card shared the same three features: urgency, secrecy, and a guaranteed upside.</div>`;
               };
             };
             wrap.querySelector("#scam").onclick = () => judge(true);
@@ -463,7 +463,7 @@ export const QUIZ = (function () {
           wrap.querySelectorAll(".flipRow").forEach(b => b.onclick = () => b.classList.toggle("flipped"));
         } },
     ],
-    deeper: P("Three rules cover almost everything. <b>One:</b> the seed phrase is never typed anywhere, never photographed, never told to anyone (no exceptions, and every exception someone offers you is the scam. <b>Two:</b> guaranteed returns do not exist; anyone promising them is paying old investors with new deposits until the music stops. <b>Three:</b> irreversibility means prevention is the whole game. Verify addresses and sites <i>before</i> sending, because there is no after. In 2024 alone, scams took multiples of what protocol hacks did. The chain is hard to attack; people are not.") };
+    deeper: P("A few rules cover almost everything here. The seed phrase is never typed anywhere, photographed, or told to anyone, no exceptions, and every exception someone offers you is itself the scam. Guaranteed returns don't exist at this scale; anyone promising them is paying old investors with new deposits, which works only until the deposits stop arriving. And because a confirmed transaction can't be undone, prevention is the whole defence: verify addresses and sites <i>before</i> sending, since there is no after. In 2024 alone, scams took several times what protocol hacks did, which fits the pattern from the history lesson: the cryptography holds up, and the people around it are what break.") };
 
   /* ===================== checkpoint injections into existing lessons ===================== */
   function addCheck(id, questions) {
@@ -551,7 +551,7 @@ export const QUIZ = (function () {
     { ask: "In one line: what is a blockchain?",
       opts: [
         { t: "A shared record, chained by fingerprints, copied to everyone", ok: true, why: "Blocks of records, linked by hashes, replicated across a network. Every other lesson is just how each of those parts works." },
-        { t: "A faster kind of database", ok: false, why: "It's actually far slower than a database. The point isn't speed, it's a shared record nobody can quietly rewrite." },
+        { t: "A faster kind of database", ok: false, why: "It's actually slower than an ordinary database. What it offers instead is a shared record nobody can rewrite without everyone else noticing." },
         { t: "A company that processes payments", ok: false, why: "There is no company and no centre. It is just a record kept identically by thousands of computers." },
       ] },
     { ask: "What actually makes a blockchain hard to tamper with?",
@@ -588,13 +588,13 @@ export const QUIZ = (function () {
       opts: [
         { t: "About 20 sibling hashes: one per level of the tree", ok: true, why: "The proof is one short branch: your transaction plus log₂(n) siblings, re-hashed up to the root. A million transactions, ~20 hashes." },
         { t: "The whole block, so you can check every transaction", ok: false, why: "That's exactly what the tree spares you. You need only the branch from your transaction to the root. ~20 hashes for a million transactions, not the block itself." },
-        { t: "Just the Merkle root. it already contains your transaction", ok: false, why: "The root alone proves nothing about any single transaction. You need the sibling hashes along your path, so re-hashing lands you on that root." },
+        { t: "Just the Merkle root, since it already contains your transaction", ok: false, why: "The root alone proves nothing about any single transaction. You need the sibling hashes along your path, so re-hashing lands you on that root." },
       ] },
     { ask: "You verify a Merkle proof for your payment. What do you learn about the other transactions in the block?",
       opts: [
-        { t: "Nothing but a few sibling hashes. their contents stay unseen", ok: true, why: "A proof reveals only fingerprints along your path, never the block's contents. That's why light wallets can verify a payment without downloading anything else." },
-        { t: "Everything. the proof unpacks the whole block", ok: false, why: "The proof carries only sibling hashes, and a hash can't be run backwards. You learn your payment is in the block and nothing at all about the rest." },
-        { t: "Their senders and amounts, since the siblings are raw transactions", ok: false, why: "The siblings are hashes, not transactions. irreversible fingerprints. The proof shows your payment belongs, while every other record stays private to you." },
+        { t: "Nothing but a few sibling hashes, their contents stay unseen", ok: true, why: "A proof reveals only fingerprints along your path, never the block's contents. That's why light wallets can verify a payment without downloading anything else." },
+        { t: "Everything, since the proof unpacks the whole block", ok: false, why: "The proof carries only sibling hashes, and a hash can't be run backwards. You learn your payment is in the block and nothing at all about the rest." },
+        { t: "Their senders and amounts, since the siblings are raw transactions", ok: false, why: "The siblings are hashes, not transactions, so they're irreversible fingerprints. The proof shows your payment belongs, while every other record stays private to you." },
       ] },
     { ask: "An untrusted server hands your phone wallet a forged proof. Why doesn't the lie work?",
       opts: [
@@ -611,7 +611,7 @@ export const QUIZ = (function () {
         { t: "The transactions, to nudge the hash towards zeros", ok: false, why: "Change a transaction and you're mining a different block, and hashes can't be nudged anyway. The only legitimate dial is the nonce." },
         { t: "The difficulty target, to make its own job easier", ok: false, why: "The target is set by the protocol for everyone at once. No miner touches it. All a miner can turn is the nonce." },
       ] },
-    { ask: "Mining is often described as ‘solving complex maths problems’. What is a miner actually doing?",
+    { ask: "Mining is often described as 'solving complex maths problems'. What is a miner actually doing?",
       opts: [
         { t: "Guessing: re-rolling one number and re-hashing, hoping to land under the target", ok: true, why: "There is no equation and no cleverness. Hash output is unpredictable, so brute-force re-rolling is the only strategy. Quintillions of guesses, pure chance." },
         { t: "Solving equations too hard for ordinary computers", ok: false, why: "There's nothing to solve. A hash can't be steered, so miners just increment the nonce and re-hash, a lottery, not a puzzle." },
@@ -629,7 +629,7 @@ export const QUIZ = (function () {
     { ask: "A validator is caught signing two conflicting blocks. What does it lose?",
       opts: [
         { t: "A slice of its staked coins (burned) plus its place in the validator set", ok: true, why: "Slashing destroys the stake itself, not just income. The bond is real money at risk; that threat is the entire security model." },
-        { t: "Only its future rewards. The staked coins themselves are safe", ok: false, why: "That's the expensive misconception. Slashing burns the staked coins. the capital, not just the income stream, and ejects the validator. If only rewards were at risk, cheating would be nearly free." },
+        { t: "Only its future rewards. The staked coins themselves are safe", ok: false, why: "That's the expensive misconception. Slashing burns the staked coins, the capital itself, not just the income stream, and ejects the validator. If only rewards were at risk, cheating would be nearly free." },
         { t: "Nothing at first. Slashing only follows repeat offences", ok: false, why: "There are no warnings. One provable double-sign triggers the burn and ejection immediately. The protocol punishes the act, not a pattern." },
       ] },
     { ask: "One validator cheats alone; separately, a third of all validators cheat together. How do the penalties compare?",
@@ -649,13 +649,13 @@ export const QUIZ = (function () {
   addCheck("contracts", [
     { ask: "What is a smart contract, really?",
       opts: [
-        { t: "A program stored on the chain that every node runs identically", ok: true, why: "Deterministic code, executed in lockstep by thousands of computers that all agree on the result. Neither ‘smart’ nor a ‘contract’, just an unstoppable program." },
+        { t: "A program stored on the chain that every node runs identically", ok: true, why: "Deterministic code, executed in lockstep by thousands of computers that all agree on the result. It's neither 'smart' nor a 'contract' in the usual sense, just an unstoppable program." },
         { t: "A legal agreement uploaded to the blockchain", ok: false, why: "No lawyers involved. It's a program: code that holds funds and moves them by its own rules, which every node runs and agrees on." },
         { t: "An AI that negotiates deals between users", ok: false, why: "Nothing intelligent about it. That is rather the point. It's plain deterministic code that does exactly what it says, every time, with no judgement." },
       ] },
     { ask: "A serious bug is found in a deployed contract holding user funds. What can its developers do, by default?",
       opts: [
-        { t: "Nothing. Deployed code can't be patched, and the flaw is live", ok: true, why: "Immutable code means immutable bugs; that's why exploits have cost billions. (Some teams deploy behind an upgradeable proxy (which fixes patching by reintroducing a trusted party.)" },
+        { t: "Nothing. Deployed code can't be patched, and the flaw is live", ok: true, why: "Immutable code means immutable bugs; that's why exploits have cost billions. (Some teams deploy behind an upgradeable proxy, which fixes the patching problem by reintroducing a trusted party.)" },
         { t: "Push an update, the way any app does", ok: false, why: "There's no update channel. Deployed code is part of the chain's history. Immutable code means immutable bugs, and no admin can pause the drain." },
         { t: "Ask the miners to vote the bug away", ok: false, why: "Miners order transactions; they don't edit contracts. Rewriting deployed code would mean rewriting the chain itself, the very thing the whole design prevents." },
       ] },
@@ -683,7 +683,7 @@ export const QUIZ = (function () {
     { ask: "You keep your coins on an exchange, in an account with your name on it. Who actually controls them?",
       opts: [
         { t: "The exchange. It holds the keys; you hold a promise", ok: true, why: "Custody follows the keys, not the login. Your balance is a claim on the exchange's books, honoured until it freezes withdrawals or fails, as FTX did." },
-        { t: "You. The account is in your name", ok: false, why: "The name on the login changes nothing: the exchange signs, so the exchange controls. ‘Not your keys, not your coins’ is precisely this situation." },
+        { t: "You. The account is in your name", ok: false, why: "The name on the login changes nothing: the exchange signs, so the exchange controls. This is exactly what 'not your keys, not your coins' means." },
         { t: "No one. Coins on a chain have no controller", ok: false, why: "Whoever holds the key controls the coins, and here that's the exchange. On-chain assets always answer to a key; the only question is whose hand it's in." },
       ] },
   ]);
@@ -724,7 +724,7 @@ export const QUIZ = (function () {
       ] },
     { ask: "A zk-rollup settles thousands of transactions with one proof. Does that mean your transactions are hidden?",
       opts: [
-        { t: "Usually not. The ‘zk’ buys a tiny validity proof; most zk-rollups publish their transaction data", ok: true, why: "In rollups the maths is used for compactness, not secrecy: one small proof that the whole batch was valid. The data itself generally lands on the main chain for anyone to read." },
+        { t: "Usually not. The 'zk' buys a tiny validity proof; most zk-rollups publish their transaction data", ok: true, why: "In rollups the maths is used for compactness rather than secrecy: one small proof that the whole batch was valid. The data itself generally lands on the main chain for anyone to read." },
         { t: "Yes. Zero-knowledge means nobody can see what happened", ok: false, why: "A natural guess, but no: most zk-rollups publish all their transaction data to the main chain. The zero-knowledge maths compresses proof of validity. Privacy needs a different design, like Zcash." },
         { t: "Yes. Hiding the data is what makes them cheap", ok: false, why: "The saving comes from verification, not secrecy: one tiny proof replaces re-executing thousands of transactions. The data is still published: compressed, but public." },
       ] },
@@ -738,7 +738,7 @@ export const QUIZ = (function () {
      SYBIL: why "one computer, one vote" cannot work
      ============================================================ */
   L.sybil = { world: "consensus", title: "The Sybil machine", oneliner: "Why the network cannot simply vote", icon: "⚇",
-    hero: "The obvious way for strangers to agree is to vote. Here is why that fails instantly on the internet, and what mining quietly replaced it with.",
+    hero: "The obvious way for strangers to agree is to vote. Here's why that fails instantly on the internet, and what mining replaced it with instead.",
     beats: [
       { n: "01", h: "Try consensus by vote", cap: "The network is deciding whether Eve's double-spend is valid. Twelve honest nodes vote no. You are Eve, and on the internet, <b>identities are free</b>. See what that does to a vote.",
         build(s) {
@@ -787,14 +787,14 @@ export const QUIZ = (function () {
           wrap.querySelector("#syR").oninput = e => { rigs = +e.target.value; draw(); }; draw();
         } },
     ],
-    deeper: P("The name comes from <i>Sybil</i>, a 1973 case study of multiple personalities; the attack is faking many identities to swamp a reputation or voting system. Every open network faces it: review sites, social media, DNS votes. Satoshi's insight was not inventing a vote; it was replacing <b>one identity, one vote</b> with <b>one unit of scarce resource, one vote</b>. Proof of work prices identity in electricity; proof of stake prices it in locked capital. Both make the thousand-fake-nodes trick cost a thousand real fortunes. The rule generalises: any permissionless system that counts <i>anything free</i> is already broken."),
-    bridge: "Fake a thousand names and you still own one processor. Votes priced in work can't be inflated. But work-weighted voting creates its own drama: two honest miners can win <i>at the same moment</i>. What happens when the chain briefly points two ways?" };
+    deeper: P("The name comes from <i>Sybil</i>, a 1973 case study of multiple personalities; the attack is faking many identities to swamp a reputation or voting system. Every open network faces it: review sites, social media, DNS votes. Satoshi's insight was to replace <b>one identity, one vote</b> with <b>one unit of scarce resource, one vote</b>. Proof of work prices identity in electricity; proof of stake prices it in locked capital. Both turn the thousand-fake-nodes trick into a cost of a thousand real fortunes. Any permissionless system that counts <i>anything free</i>, whether that's accounts, reviews, or IP addresses, can be swamped the same way."),
+    bridge: "Fake a thousand names and you still own one processor: votes priced in work can't be inflated for free. But work-weighted voting creates a problem of its own. Two honest miners can each find a valid block at <i>nearly the same moment</i>, and for a while the chain points two ways at once. The next lesson covers what happens then." };
 
   /* ============================================================
      AMM: swap with no seller; be the liquidity; oracle feeds
      ============================================================ */
   L.amm = { world: "progmoney", title: "The automated market", oneliner: "Trading against a formula, not a seller", icon: "∿",
-    hero: "An exchange with no order book, no counterparty and no opening hours: a pool of two tokens and one line of algebra. You trade against the maths.",
+    hero: "An exchange with no order book and no counterparty, open at every hour: a pool of two tokens and one line of algebra. You trade against the maths.",
     beats: [
       { n: "01", h: "The pool prices your trade", cap: "The pool holds two tokens and keeps their product constant: <code>x · y = k</code>. Your trade moves along that curve, and the <b>bigger</b> the trade, the <b>worse</b> your price gets. Slide and watch the penalty grow.",
         build(s) {
@@ -859,8 +859,8 @@ export const QUIZ = (function () {
           draw();
         } },
     ],
-    deeper: P("The constant-product formula is Uniswap's, and it has a beautiful property: the pool can never be emptied by trading, because each successive coin costs more than the last. the price goes vertical as inventory runs out. Impermanent loss has an exact closed form, <code>2√r/(1+r) − 1</code> for a price ratio <i>r</i>: a 2× move costs ~5.7%, a 4× move ~20%. Fees are the counterweight; a busy pool can out-earn its loss. The oracle demo is the third echo of this course's oldest idea. one keeper of the truth is a target, many keepers with a median is a system. Real oracle networks (Chainlink and kin) add staking and slashing on top, so lying also costs the liar money."),
-    bridge: "Contracts, tokens, and now markets. a whole financial system running on the machine you built. Every piece of it, though, is only yours through a <b>key</b>. Time to talk about where that key lives, and how people actually lose everything." };
+    deeper: P("The constant-product formula is Uniswap's. It has one useful property: the pool can never be emptied by trading, because each successive coin costs more than the last, and the price goes vertical as inventory runs out. Impermanent loss has an exact closed form, <code>2√r/(1+r) − 1</code> for a price ratio <i>r</i>: a 2× move costs about 5.7%, a 4× move about 20%. Fees are the counterweight; a busy pool can out-earn its loss. The oracle demo repeats an idea from earlier in the course: a single source of truth is a target, while a median across several independent sources is much harder to move. Real oracle networks like Chainlink add staking and slashing on top, so lying costs the liar money too."),
+    bridge: "Contracts, tokens, and now markets: a financial system running on the machine you built. Every piece of it is only yours through a <b>key</b>, so the next lesson covers where that key lives and the ordinary ways people lose it." };
 
   L.mev = { world: "progmoney", title: "The Invisible Tax (MEV)", oneliner: "Extract risk-free profit by reordering the mempool", icon: "⇿", deep: true,
     hero: "You are the block producer. You have dictatorial power over the order of transactions. Watch how that power turns a naive user's trade into your risk-free profit.",
@@ -935,7 +935,7 @@ export const QUIZ = (function () {
         } }
     ],
     deeper: P("Maximal Extractable Value (MEV) is the profit a miner or block producer can make by including, excluding, or reordering transactions in the blocks they produce. Because they have dictatorial control over the exact sequence of events, they can insert their own trades immediately before and after yours. In a Sandwich Attack, they see your large buy order pending, buy the asset first to push the price up, let your order execute at the worsened price, and immediately sell the asset back for a profit. The only defense is a 'Private Relay' (like Flashbots), where you submit your transaction directly to a trusted builder who promises not to front-run you, skipping the public mempool entirely."),
-    bridge: "The invisible tax of the mempool is real, and dodging it means trusting a central builder, the very thing the chain was supposed to avoid. This tension between decentralisation, security, and scale is exactly what the final engineering chapters address."
+    bridge: "Avoiding the mempool tax means trusting a central builder, the exact kind of middleman the chain was built to avoid. The final chapters take on that tension between decentralisation, security, and scale directly."
   };
 
   /* ============================================================
@@ -949,15 +949,15 @@ export const QUIZ = (function () {
           const wrap = el("div", "fcard");
           const cards = [
             ["2010 · The pizza", "A developer pays 10,000 BTC for two pizzas: the first real-world price for a blockchain asset.",
-              "Money is whatever a stranger will accept for goods: <b>The ledger</b>. A network with no users is worthless at any hashrate; the pizza made the ledger real. (Those coins later peaked above $600m. but on the day, two pizzas was the honest price.)"],
+              "<b>Money is whatever a stranger will accept for goods.</b> The ledger. A network with no users is worthless at any hashrate; the pizza made the ledger real. (Those coins later peaked above $600m, but on the day, two pizzas was the honest price.)"],
             ["2014 · Mt. Gox", "The exchange handling ~70% of all Bitcoin trades collapses; 850,000 BTC belonging to customers is gone.",
-              "<b>Not your keys, not your coins</b>. Wallets &amp; custody. Customers held a promise from a company, not coins on a chain. The chain itself was never touched; the <i>custodian</i> was the single point of failure, exactly like the frozen account in lesson two."],
-            ["2016 · The DAO", "A crowdfunded contract holding $150m of ETH is drained through a reentrancy bug (the send-before-subtract mistake.",
-              "<b>Immutable code, immutable bugs</b>. Smart contracts. The code ran exactly as written, so the drain was 'legal' by the machine's rules. Ethereum's community forked the chain to undo it, proving the deeper rule: immutability is a <i>social</i> promise, and the split (Ethereum vs Ethereum Classic) is still visible today."],
+              "<b>Not your keys, not your coins</b>. Wallets &amp; custody. Customers held a company's promise, not coins on a chain. The chain itself was never touched; the <i>custodian</i> was the single point of failure, the same frozen-account problem from lesson two at a much larger scale."],
+            ["2016 · The DAO", "A crowdfunded contract holding $150m of ETH is drained through a reentrancy bug (the send-before-subtract mistake).",
+              "<b>Immutable code, immutable bugs</b>. Smart contracts. The code ran exactly as written, so the drain was 'legal' by the machine's own rules. Ethereum's community forked the chain to reverse it anyway, which showed that immutability is a <i>social</i> promise as much as a technical one; the split into Ethereum and Ethereum Classic is still visible today."],
             ["2022 · Terra / Luna", "An 'algorithmic' stablecoin with no full reserve loses its peg; $40bn evaporates in a week.",
-              "<b>A peg is only as strong as what backs it</b>. Money &amp; the state. The defending mechanism (mint Luna to buy UST) became the killing mechanism once confidence broke: defending the peg hyperinflated the collateral. A death spiral is the design working as specified."],
-            ["2022 · FTX", "A top-three exchange freezes withdrawals; customer deposits had been quietly lent to its own trading firm.",
-              "<b>Trusted third parties are security holes</b>. the course's very first problem, wearing a new logo. Every rule broken was a chapter of this course: custody (keys), transparency (the public ledger), and the freeze in lesson two, replayed at $8bn scale."],
+              "<b>A peg is only as strong as what backs it</b>. Money &amp; the state. The same mechanism built to defend the peg, minting Luna to buy UST, hyperinflated the collateral once confidence broke. The death spiral was the design working as specified, not a malfunction."],
+            ["2022 · FTX", "A top-three exchange freezes withdrawals; customer deposits had been lent, without disclosure, to its own trading firm.",
+              "<b>Trusted third parties are security holes</b>. This is the course's first problem, recurring at a much larger scale. Every rule it broke was one this course already covered: custody (keys), transparency (the public ledger), and the freeze from lesson two, now replayed at $8bn."],
           ];
           wrap.innerHTML = `<div class="flabel"><span class="pin"></span>tap a card to flip it</div>` +
             cards.map(c => `<button class="flipRow" type="button"><span class="side good"><b class="mono" style="font-size:11px;letter-spacing:.06em">${c[0]}</b><br>${c[1]}</span><span class="side dark">${c[2]}</span></button>`).join("");
@@ -965,8 +965,8 @@ export const QUIZ = (function () {
           wrap.querySelectorAll(".flipRow").forEach(b => b.onclick = () => b.classList.toggle("flipped"));
         } },
     ],
-    deeper: P("A pattern worth noticing: not one of these was a break in the cryptography. SHA-256 has never been reversed; ECDSA has never been forged at scale. Every headline loss was a failure at the <i>edges</i>: custodians holding other people's keys, contracts encoding a bug, economic designs assuming confidence is permanent, and plain fraud. That asymmetry is the course's quiet thesis: the maths is the strongest part of the machine. The people, incentives and institutions around it are where it breaks, which is why the safety lesson was about psychology, not mathematics."),
-    bridge: "Five fortunes paid to prove rules you now get for the price of a course. One thing left: watch every piece you built (keys, blocks, gossip, consensus) run together as a single living machine." };
+    deeper: P("None of these failures broke the cryptography itself. SHA-256 has never been reversed; ECDSA has never been forged at scale. Every headline loss happened at the <i>edges</i>: a custodian holding other people's keys, a contract encoding a bug, an economic design that assumed confidence was permanent, and plain fraud. The maths held in every one of these cases. The people, incentives, and institutions around it did not, which is why the safety lesson was about psychology rather than mathematics."),
+    bridge: "These five failures cost real fortunes to learn the hard way; this course gave you the same rules for free. One thing is left: watch keys, blocks, gossip, and consensus run together as a single working system." };
 
   /* ============================================================
      new beats appended to existing lessons (before the plus layer
@@ -996,7 +996,7 @@ export const QUIZ = (function () {
     } });
 
   /* incentives: solo mining vs pools */
-  L.incentives.beats.push({ n: "04", h: "Solo, or join a pool?", cap: "With 0.1% of the network you win a block. worth ~3 coins, about once a month, maybe. A <b>pool</b> shares wins pro-rata for the same expected pay. Fast-forward three months both ways and feel the difference.",
+  L.incentives.beats.push({ n: "04", h: "Solo, or join a pool?", cap: "With 0.1% of the network, you win a block worth ~3 coins about once a month, maybe. A <b>pool</b> shares wins pro-rata for the same expected pay. Fast-forward three months both ways and feel the difference.",
     build(s) {
       const wrap = el("div", "fcard"); let day = 0, solo = 0, pool = 0, soloWins = 0;
       wrap.innerHTML = `<div class="ledgrid">
@@ -1014,7 +1014,7 @@ export const QUIZ = (function () {
           for (let b = 0; b < 144; b++) { if (Math.random() < 0.001) { solo += 3; soloWins++; } }
           pool += 144 * 0.25 * (0.001 / 0.25) * 3; } // pool wins 25% of blocks, pays your 0.4% share of them
         draw();
-        wrap.querySelector("#pmM").innerHTML = soloWins === 0 && day >= 60 ? `<b>${day} days, zero solo blocks.</b> The pool member ate every day. Same expected value. The pool sells you <i>smoothness</i> for a small fee. The catch: pools aggregate hashpower, and a pool drifting past 50% is exactly the attacker from the last lesson.` : `Solo pay arrives in rare 3-coin lumps; pool pay drips daily. Over years they converge. Variance, not expectation, is what the pool removes. But note who now <i>directs</i> that hashpower: pools are how mining centralises.`;
+        wrap.querySelector("#pmM").innerHTML = soloWins === 0 && day >= 60 ? `<b>${day} days, zero solo blocks.</b> The pool member got paid every day for the same expected value. The pool is selling you <i>smoothness</i> for a small fee. The catch: pools aggregate hashpower, and a pool drifting past 50% is exactly the attacker from the last lesson.` : `Solo pay arrives in rare 3-coin lumps; pool pay drips daily. Over years they converge to the same total. The pool smooths out variance; expected value stays the same. But note who now <i>directs</i> that hashpower: pools are how mining centralises.`;
       };
       wrap.querySelector("#pmR").onclick = () => { day = 0; solo = 0; pool = 0; soloWins = 0; draw(); wrap.querySelector("#pmM").innerHTML = `144 blocks a day network-wide. Same expected income: very different months.`; };
       draw();
@@ -1046,7 +1046,7 @@ export const QUIZ = (function () {
           if (e > h) { wins++; pnl += 10 - cost; running = false; draw();
             wrap.querySelector("#hsM").innerHTML = `<span style="color:var(--red)">Heist succeeded</span>. Fork revealed, payment erased, goods kept. Net this run: <b>+${(10 - cost).toFixed(1)}</b>. Run it again, one win proves nothing.`; return; }
           if (h - e > 10 || t > 90) { pnl -= cost; running = false; draw();
-            wrap.querySelector("#hsM").innerHTML = `<span style="color:var(--green)">The honest chain pulled away.</span> You quietly abandon the fork, losing <b>−${cost.toFixed(1)}</b> in electricity with nothing to show. ${pnl < -15 ? "Look at the running total. <b>This is the security model</b>: the attack is not impossible, it is a losing business." : "Watch the running total across a few more heists."}`; return; }
+            wrap.querySelector("#hsM").innerHTML = `<span style="color:var(--green)">The honest chain pulled away.</span> You quietly abandon the fork, losing <b>−${cost.toFixed(1)}</b> in electricity with nothing to show. ${pnl < -15 ? "Look at the running total. <b>This is the security model</b>: the attack costs more than it pays, which is what keeps miners honest." : "Watch the running total across a few more heists."}`; return; }
           setTimeout(step, 60); };
         step(); };
       draw();
@@ -1069,7 +1069,7 @@ export const QUIZ = (function () {
       wrap.querySelector("#cwRst").onclick = () => { busy = false; reset(); };
       wrap.querySelector("#cwSend").onclick = () => { if (busy) return; busy = true; reset(); let vault = 1000, i = 0;
         const step = () => { if (!document.contains(wrap) || !busy) return;
-          if (vault <= 0) { log("vault: 0. drained before a single subtraction ran", "bad"); log("This is reentrancy, the DAO bug, $150m, 2016. 'send' handed control to the attacker's code <i>while the balance still said 100</i>, so it just called withdraw() again. And again.", "warn"); busy = false; return; }
+          if (vault <= 0) { log("vault: 0. drained before a single subtraction ran", "bad"); log("This is reentrancy, the DAO bug, $150m, 2016. 'send' handed control to the attacker's code <i>while the balance still said 100</i>, so it called withdraw() again, and kept calling it.", "warn"); busy = false; return; }
           log(`require passes (balance still 100) → send(100)… attacker's code runs → it calls withdraw(100) again ${i ? "(re-entering, depth " + (i + 1) + ")" : ""}`, i ? "bad" : "");
           vault -= 100; i++; setTimeout(step, 380); };
         step(); };
@@ -1077,24 +1077,24 @@ export const QUIZ = (function () {
         setTimeout(() => { log("require passes → balance[attacker] -= 100 → balance is now 0", "ok");
           log("send(100)… attacker's code runs → it calls withdraw(100) again", "");
           log("require(balance >= 100) FAILS. balance already 0 → REVERT. One withdrawal, as designed.", "ok");
-          log("Same three lines. 'Checks, effects, interactions'. update your own state before you talk to a stranger.", "info"); busy = false; }, 200); };
+          log("Same three lines. 'Checks, effects, interactions.' Update your own state before you talk to a stranger.", "info"); busy = false; }, 200); };
     } });
 
   /* tokens. beat 2 rebuilt: ownership means a signature, not a tap */
-  L.tokens.beats[1] = { n: "02", h: "One of a kind. and provably yours", cap: "An NFT is a ledger row that maps one token ID to one <b>address</b>. Mint it, then watch two transfer attempts: one signed with your key, one with Mallory's. Ownership is not a picture. it is a signature check.",
+  L.tokens.beats[1] = { n: "02", h: "One of a kind, and provably yours", cap: "An NFT is a ledger row that maps one token ID to one <b>address</b>. Mint it, then watch two transfer attempts: one signed with your key, one with Mallory's. Ownership isn't a picture, it's a signature check.",
     build(s) {
       const wrap = el("div", "fcard"); let owner = null;
       const you = "0x" + sha256("you-key").slice(-12), mal = "0x" + sha256("mallory-key").slice(-12);
       wrap.innerHTML = `<div class="flabel"><span class="pin"></span>ACME Gallery · token #7</div>
         <div class="bfields"><div class="bfield"><div class="k">token</div><div class="v">#7 · "Marigold Study"</div></div><div class="bfield" id="ownF"><div class="k">owner on the ledger</div><div class="v vi" id="ownV">- unminted -</div></div></div>
-        <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn gold" id="nfMint">Mint to your address</button><button class="btn" id="nfYou" disabled>Transfer. signed with YOUR key</button><button class="btn danger" id="nfMal" disabled>Mallory tries to take it</button></div>
+        <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="btn gold" id="nfMint">Mint to your address</button><button class="btn" id="nfYou" disabled>Transfer, signed with YOUR key</button><button class="btn danger" id="nfMal" disabled>Mallory tries to take it</button></div>
         <div class="sig-state" id="nfSt" style="margin-top:12px">Your address: <b class="mono">${short(you, 8, 4)}</b> · Mallory's: <b class="mono">${short(mal, 8, 4)}</b></div>`;
       s.appendChild(wrap);
       const st = (t, c) => { const e = wrap.querySelector("#nfSt"); e.innerHTML = t; e.className = "sig-state" + (c ? " " + c : ""); };
       wrap.querySelector("#nfMint").onclick = () => { owner = you; wrap.querySelector("#ownV").textContent = short(you, 8, 4);
         wrap.querySelector("#nfYou").disabled = false; wrap.querySelector("#nfMal").disabled = false;
-        st(`Minted. The contract's ledger now reads <b class="mono">#7 → ${short(you, 8, 4)}</b>. No file moved. a row was written.`, "ok"); };
-      wrap.querySelector("#nfYou").onclick = () => { if (owner !== you) { st("You no longer own it. the ledger says so.", "bad"); return; }
+        st(`Minted. The contract's ledger now reads <b class="mono">#7 → ${short(you, 8, 4)}</b>. No file moved, a row was written.`, "ok"); };
+      wrap.querySelector("#nfYou").onclick = () => { if (owner !== you) { st("You no longer own it. The ledger says so.", "bad"); return; }
         owner = "0x" + sha256("friend").slice(-12); wrap.querySelector("#ownV").textContent = short(owner, 8, 4);
         st(`transfer(#7) · signature verifies against the <b>owner's</b> address → row updated to ${short(owner, 8, 4)}. Scarcity survived the transfer: still exactly one #7.`, "ok"); };
       wrap.querySelector("#nfMal").onclick = () => st(`transfer(#7) from Mallory · her signature verifies against <b class="mono">${short(mal, 8, 4)}</b>. but the ledger says #7 belongs to someone else → <b>REVERT</b>. Right-clicking the image copies pixels; it cannot write this row.`, "bad");
@@ -1107,7 +1107,7 @@ export const QUIZ = (function () {
      ============================================================ */
 
   /* contracts. the fuel meter */
-  L.contracts.beats.push({ n: "04", h: "Every step burns fuel", cap: "Code on a shared world computer can't be free. an infinite loop would freeze every node forever. So each operation burns <b>gas</b>, paid up front. Give the program a budget and run it. Too little, and everything it did is undone.",
+  L.contracts.beats.push({ n: "04", h: "Every step burns fuel", cap: "Code on a shared world computer can't be free, or an infinite loop would freeze every node forever. So each operation burns <b>gas</b>, paid up front. Give the program a budget and run it. Too little, and everything it did is undone.",
     build(s) {
       const wrap = el("div", "fcard"); let budget = 40;
       const STEPS = [["check the signature", 8], ["load Ava's balance", 6], ["subtract 5 coins", 7], ["add 5 to Ben", 7], ["write the receipt", 9]];
@@ -1126,8 +1126,8 @@ export const QUIZ = (function () {
           if (i >= STEPS.length) { log(`done. ${left} gas refunded. The payment stands.`, "ok"); running = false; return; }
           const [name, cost] = STEPS[i];
           if (left < cost) { log(`step ${i + 1}: ${name}. needs ${cost}, tank has ${left} → <b>OUT OF GAS</b>`, "bad");
-            log("REVERT: every step above is undone, as if nothing ran. (You still pay for the gas burned. the nodes did the work.)", "bad");
-            log("Same rule as the vending machine: all or nothing. Gas is why a buggy loop can't freeze the chain. it just runs out of money.", "info");
+            log("REVERT: every step above is undone, as if nothing ran. (You still pay for the gas burned, since the nodes did the work.)", "bad");
+            log("Same rule as the vending machine: all or nothing. Gas is why a buggy loop can't freeze the chain, it just runs out of money.", "info");
             wrap.querySelector("#gsF").style.background = "var(--red)"; running = false; return; }
           left -= cost; i++;
           wrap.querySelector("#gsLeft").textContent = left; wrap.querySelector("#gsF").style.width = (left / budget * 100) + "%"; wrap.querySelector("#gsF").style.background = "var(--gold)";
@@ -1137,7 +1137,7 @@ export const QUIZ = (function () {
     } });
 
   /* tx. UTXO vs account: where did the change come from? */
-  L.tx.beats.push({ n: "04", h: "Paying 7 with a 10-coin note", cap: "Two ways a chain can do bookkeeping. <b>Account</b> style is a balance that goes up and down (Ethereum). <b>UTXO</b> style is cash: you hold whole \u201cnotes\u201d, spend one entirely, and the <b>change comes back as a new note</b> (Bitcoin). Pay Ben 7 both ways.",
+  L.tx.beats.push({ n: "04", h: "Paying 7 with a 10-coin note", cap: "Two ways a chain can do bookkeeping. <b>Account</b> style is a balance that goes up and down (Ethereum). <b>UTXO</b> style is cash: you hold whole \"notes\", spend one entirely, and the <b>change comes back as a new note</b> (Bitcoin). Pay Ben 7 both ways.",
     build(s) {
       const wrap = el("div", "fcard"); let mode = "utxo", spent = false;
       wrap.innerHTML = `<div class="btn-row" style="justify-content:center"><button class="btn" id="uMode">Style: <b id="uMl">UTXO (Bitcoin)</b></button><button class="btn gold" id="uPay">Pay Ben 7 coins</button><button class="btn" id="uRst">Reset</button></div>
@@ -1149,10 +1149,10 @@ export const QUIZ = (function () {
         const st = wrap.querySelector("#uStage");
         if (mode === "acct") {
           st.innerHTML = `<div class="ledgrid"><div class="ledrow"><span class="led-ic" aria-hidden="true">🧑</span><span class="led-name">You</span><span class="led-bal">${spent ? 3 : 10}</span><span class="led-u">COINS</span></div><div class="ledrow"><span class="led-ic" aria-hidden="true">🧔</span><span class="led-name">Ben</span><span class="led-bal">${spent ? 7 : 0}</span><span class="led-u">COINS</span></div></div>`;
-          wrap.querySelector("#uM").innerHTML = spent ? `One number went down, another went up. the ledger from lesson one. Simple, but every payment needs a counter (the account nonce) so it can't be replayed.` : `A balance per person. Pay, and the numbers just move.`;
+          wrap.querySelector("#uM").innerHTML = spent ? `One number went down, another went up, the same ledger idea from lesson one. Simple, but every payment needs a counter (the account nonce) so it can't be replayed.` : `A balance per person. Pay, and the numbers just move.`;
         } else {
           st.innerHTML = `<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">${spent ? note(10, "yours", "gone") + note(7, "→ Ben", "new") + note(3, "→ you (change)", "new") : note(10, "yours", "")}</div>`;
-          wrap.querySelector("#uM").innerHTML = spent ? `The 10-note is <b>destroyed</b>, and two new notes are minted: 7 for Ben, <b>3 back to you as change</b>. exactly like handing over a tenner. This is why Bitcoin explorers show payments \u201cto yourself\u201d: that's your change returning.` : `You hold one 10-coin note. Notes are spent whole. no tearing a corner off.`;
+          wrap.querySelector("#uM").innerHTML = spent ? `The 10-note is <b>destroyed</b>, and two new notes are minted: 7 for Ben, <b>3 back to you as change</b>, exactly like handing over a tenner. This is why Bitcoin explorers show payments "to yourself": that's your change returning.` : `You hold one 10-coin note. Notes are spent whole, no tearing a corner off.`;
         }
       };
       wrap.querySelector("#uMode").onclick = () => { mode = mode === "utxo" ? "acct" : "utxo"; wrap.querySelector("#uMl").textContent = mode === "utxo" ? "UTXO (Bitcoin)" : "Account (Ethereum)"; draw(); };
@@ -1162,7 +1162,7 @@ export const QUIZ = (function () {
     } });
 
   /* pos. you are the validator */
-  L.pos.beats.push({ n: "03", h: "Your turn: stake it", cap: "Put your own coins on the line. Run 20 epochs and collect rewards in proportion to your stake. Then a briber shows up with an offer. Take it if you like. it's your money.",
+  L.pos.beats.push({ n: "03", h: "Your turn: stake it", cap: "Put your own coins on the line. Run 20 epochs and collect rewards in proportion to your stake. Then a briber shows up with an offer. Take it if you like, it's your money.",
     build(s) {
       const wrap = el("div", "fcard"); let stake = 32, earned = 0, epochs = 0, out = false, busy = false;
       wrap.innerHTML = `<div class="srow"><span class="nm">your stake</span><input type="range" id="vsS" min="8" max="96" step="8" value="32"><span class="v" id="vsSv">32Ξ</span></div>
@@ -1177,11 +1177,11 @@ export const QUIZ = (function () {
       wrap.querySelector("#vsRun").onclick = () => { if (busy || out) return; busy = true; let n = 0;
         const tick = () => { if (!document.contains(wrap)) return;
           n++; epochs++; for (let b = 0; b < 8; b++) if (Math.random() < stake / 320) earned += 0.1;
-          draw(); if (n < 20) setTimeout(tick, 60); else { busy = false; st(`Steady drip: with ${stake}Ξ of 320Ξ staked you propose ~${Math.round(stake / 320 * 100)}% of blocks. Boring. which is the point. Honest validating is a savings account.`, "ok"); } };
+          draw(); if (n < 20) setTimeout(tick, 60); else { busy = false; st(`Steady drip: with ${stake}Ξ of 320Ξ staked you propose ~${Math.round(stake / 320 * 100)}% of blocks. Boring, which is the point. Honest validating is a savings account.`, "ok"); } };
         tick(); };
       wrap.querySelector("#vsBribe").onclick = () => { if (out) return; out = true;
         const burned = stake / 2; draw();
-        st(`You double-signed for a 5Ξ bribe. The proof is public. anyone can submit it. <b>Slashed ${burned.toFixed(0)}Ξ</b> (half your stake) and ejected from the validator set: no more rewards, ever. Net: ${(5 - burned).toFixed(0)}Ξ. The bribe was never going to be worth more than the bond. that's the whole design.`, "bad"); };
+        st(`You double-signed for a 5Ξ bribe. The proof is public, and anyone can submit it. <b>Slashed ${burned.toFixed(0)}Ξ</b> (half your stake) and ejected from the validator set: no more rewards, ever. Net: ${(5 - burned).toFixed(0)}Ξ. The bribe was never going to be worth more than the bond, that's the whole design.`, "bad"); };
       wrap.querySelector("#vsRst").onclick = () => { stake = 32; earned = 0; epochs = 0; out = false; busy = false; wrap.querySelector("#vsS").value = 32; draw(); st("The network has 320Ξ staked in total. Your odds of proposing each block = your share of it.", ""); };
       draw();
     } });

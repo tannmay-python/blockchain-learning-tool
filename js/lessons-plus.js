@@ -49,7 +49,7 @@ import './lessons-extra.js'; // Ensure extra runs first
       };
       wrap.querySelector("#kill").onclick = () => {
         const live = [...Array(N).keys()].filter(i => !dead.has(i));
-        if (live.length <= 1) { wrap.querySelector("#msg").className = "sig-state bad"; wrap.querySelector("#msg").innerHTML = `Only one computer left. Take it down too and the ledger is finally gone. But knocking out a whole <b>global</b> network at once is the part that is practically impossible.`; return; }
+        if (live.length <= 1) { wrap.querySelector("#msg").className = "sig-state bad"; wrap.querySelector("#msg").innerHTML = `Only one computer left. Take it down too and the ledger is finally gone. Knocking out an entire <b>global</b> network at once is, in practice, impossible.`; return; }
         dead.add(live[(Math.random() * live.length) | 0]); draw();
         wrap.querySelector("#msg").className = "sig-state ok";
         wrap.querySelector("#msg").innerHTML = `${dead.size} down, <b>${N - dead.size} still holding the record</b>. Every survivor has the full history, meaning nothing is lost. That redundancy is the whole point.`;
@@ -61,7 +61,7 @@ import './lessons-extra.js'; // Ensure extra runs first
   setBeat("why", 1, {
     cap: "Everything sits with one party. Press either button (a frozen account or a dead server) and your money is suddenly out of reach, with no one to appeal to.",
   });
-  setHero("why", "Why go to all this trouble? Because handing your records to a single keeper has real costs. Sometimes, when you need your funds the most, you simply cannot access them.");
+  setHero("why", "Handing your records to a single keeper has a real cost: sometimes, right when you need your funds most, you simply can't reach them. That's the trouble this whole approach is built to avoid.");
 
   /* ============================================================
      TOUR: replace the click-through with an ANIMATED payment
@@ -126,7 +126,7 @@ import './lessons-extra.js'; // Ensure extra runs first
   /* ============================================================
      TOKENS, beat 1: coins physically fly between holders
      ============================================================ */
-  setHero("tokens", "Once a chain can run code, it can track far more than one coin. A token is just a row in a contract's ledger. An NFT is simply a row that happens to be one of a kind.");
+  setHero("tokens", "Once a chain can run code, it can track far more than one coin. A token is just a row in a contract's ledger. An NFT is a row that happens to be one of a kind.");
   setBeat("tokens", 0, {
     h: "Mint tokens, then watch them move",
     cap: "A token balance is only a number the contract keeps. Mint some to yourself, then send a few. The coins <b>fly</b> between accounts, but all that really changes is the contract's bookkeeping.",
@@ -222,7 +222,7 @@ import './lessons-extra.js'; // Ensure extra runs first
   /* ============================================================
      WALLETS, beat 1: the seed→keys cascade, animated
      ============================================================ */
-  setHero("wallets", "A wallet does not hold coins. It holds <i>keys</i>. The coins are entries on the chain, and your key is simply what proves they are yours.");
+  setHero("wallets", "A wallet holds <i>keys</i>, not coins. The coins are entries on the chain; your key is what proves they're yours.");
   setBeat("wallets", 0, {
     h: "One phrase unfolds into every key you own",
     cap: "From a single secret phrase, a wallet <b>derives</b> a whole tree of keys and addresses deterministically. It works the same every time. Generate one and watch it cascade down.",
@@ -252,7 +252,7 @@ import './lessons-extra.js'; // Ensure extra runs first
         });
         const m = wrap.querySelector("#wmsg");
         if (last && last.seed === seed) m.innerHTML = `<span style="color:var(--green)">Identical phrase → identical addresses, every time.</span> Nothing is stored anywhere. The phrase <b>is</b> the wallet. That is why it restores everything, and why anyone who reads it owns everything.`;
-        else if (last && last.seed !== seed) { const diff = [...seed].filter((ch, i2) => ch !== last.seed[i2]).length + Math.abs(seed.length - (last.seed || "").length); m.innerHTML = diff <= 2 ? `One character different → <span style="color:var(--red)">a completely unrelated wallet</span> (compare the addresses). There is no "close": mistype one word of a real phrase and you restore someone else's empty universe.` : `A different phrase is simply a different wallet. Try typing the <b>same</b> phrase twice.`; }
+        else if (last && last.seed !== seed) { const diff = [...seed].filter((ch, i2) => ch !== last.seed[i2]).length + Math.abs(seed.length - (last.seed || "").length); m.innerHTML = diff <= 2 ? `One character different → <span style="color:var(--red)">a completely unrelated wallet</span> (compare the addresses). There is no "close": mistype one word of a real phrase and you land in someone else's completely empty wallet.` : `A different phrase is simply a different wallet. Try typing the <b>same</b> phrase twice.`; }
         last = { seed, addrs };
       };
       wrap.querySelector("#gen").onclick = () => derive(Array.from({ length: 4 }, () => words[(Math.random() * words.length) | 0]).join(" "));
@@ -264,22 +264,22 @@ import './lessons-extra.js'; // Ensure extra runs first
   /* ============================================================
      copy-only polish across the remaining lessons
      ============================================================ */
-  setHero("ledger", "Money isn't gold, and it isn't paper. It's a <i>list</i> of who owns what. Get that, and every other piece of this course clicks into place.");
-  setHero("doublespend", "Physical cash can't be in two places at once. A digital file copies perfectly and endlessly. That gap is trivial to state but brutal to close. It is the problem blockchains exist to solve.");
-  setHero("whatis", "Forget the buzzwords. A blockchain is a list of blocks, copied across many computers, that nobody can quietly rewrite. Let's build that picture from nothing.");
+  setHero("ledger", "Money is a record of who owns what. Gold coins and paper bills are just physical tokens for updating that <i>record</i>.");
+  setHero("doublespend", "Physical cash can't be in two places at once. A digital file copies perfectly and endlessly. Closing that gap is the exact problem blockchains exist to solve.");
+  setHero("whatis", "Forget the buzzwords. A blockchain is a list of blocks, copied across many computers, that nobody can secretly rewrite.");
   setHero("hashing", "Feed in anything (a word, a novel, an entire hard drive) and get back one short fingerprint. This single tool seals records, links blocks, and powers all of mining.");
-  setHero("keys", "No usernames. No passwords. A single secret number is the only thing standing between you and everything you own on a chain.");
-  setHero("contracts", "Once a chain can store data and agree on it, it can run <i>programs</i>. These are unstoppable, with no off switch and no one to call.");
+  setHero("keys", "There are no usernames or passwords here: a single secret number is the only thing standing between you and everything you own on a chain.");
+  setHero("contracts", "Once a chain can store data and agree on it, it can run <i>programs</i>. Once deployed, nobody can switch them off, and there's no support line to call if something goes wrong.");
   setHero("money", "The very same technology can free money from the state, or hand the state perfect control over it. Nothing about the tech decides which. It only matters who holds the keys.");
-  setHero("pos", "Same defence, radically different cost. Instead of burning electricity, validators put their own money on the line and lose it if they cheat.");
-  setHero("zk", "Prove you know a secret without revealing the secret itself. It sounds impossible; it's real, it's provable, and it's quietly reshaping privacy and scaling.");
+  setHero("pos", "It offers the same defence against attackers for a fraction of the energy. Instead of burning electricity, validators put their own money on the line and lose it if they cheat.");
+  setHero("zk", "Prove you know a secret without revealing the secret itself. It sounds impossible, but it's real and provable, and it's already reshaping privacy and scaling.");
 
   /* ============================================================
      POS, beat 2: a live, animated energy comparison
      ============================================================ */
   setBeat("pos", 1, {
     h: "And it sips energy instead of guzzling it",
-    cap: "Same security, a rounding error of the power. Proof of work runs a planet's worth of machines flat out; proof of stake just checks who put up a bond. Watch the two draw down.",
+    cap: "It gives comparable security for a rounding error of the energy. Proof of work runs a planet's worth of machines flat out; proof of stake just checks who put up a bond. Watch the two draw down below.",
     build(s) {
       const wrap = el("div", "fcard");
       wrap.innerHTML = `<div class="flabel"><span class="pin"></span>energy to secure one block</div>
@@ -301,7 +301,7 @@ import './lessons-extra.js'; // Ensure extra runs first
      ============================================================ */
   setBeat("doublespend", 0, {
     h: "A coin is a file, and files copy perfectly",
-    cap: "Spend the very same coin to two people at once. Two flawless copies fly out; both look completely real. Nothing physical stops you. So what <i>could</i>?",
+    cap: "Nothing physical stops you from sending the very same coin to two people at once. Both copies look completely real. Digital cash needs a rule for rejecting one of the two payments; try it below and see what happens without one.",
     build(s) {
       const wrap = el("div", "fcard");
       wrap.innerHTML = `<div class="dsp">
@@ -337,13 +337,13 @@ import './lessons-extra.js'; // Ensure extra runs first
     }
   });
   setBeat("forks", 1, {
-    cap: "Each new block stacked on top of yours makes undoing it exponentially harder. Stack a few and watch the chance of reversal fall off a cliff. This is why merchants ‘wait for confirmations’.",
+    cap: "Each new block stacked on top of yours makes undoing it exponentially harder. Stack a few and watch the chance of reversal fall off a cliff. This is why merchants 'wait for confirmations'.",
   });
   setBeat("contracts", 1, {
-    cap: "A deployed contract can't be patched, so a single flaw is a vault with a hole and no plumber. Trigger the bug and watch the funds drain. There is no admin, no pause button, and no undo.",
+    cap: "A deployed contract can't be patched, so a single flaw stays open once it's found. Trigger the bug and watch the funds drain. There's no admin to step in, no pause button to hit, and no way to undo it.",
   });
   setBeat("zk", 1, {
-    cap: "That one move (prove something is true while revealing nothing else) quietly unlocks three enormous things.",
+    cap: "That one move (proving something is true while revealing nothing else) is the basis for private payments, cheaper scaling, and provable compliance.",
   });
   setBeat("money", 1, {
     cap: "A stablecoin is engineered to stay worth exactly one dollar. There are three ways to pull that off, and they are nowhere near equally safe.",
@@ -353,7 +353,7 @@ import './lessons-extra.js'; // Ensure extra runs first
      LEDGER, beat 1: the first interactive. Coins fly, but the
      lesson is that nothing physical moves, only the record.
      ============================================================ */
-  setHero("ledger", "Money isn't gold, and it isn't paper. It's a <i>list</i> of who owns what. Get that one idea and every other piece of this course clicks into place.");
+  setHero("ledger", "Money is a record of who owns what. Gold coins and paper bills are just physical tokens for updating that <i>record</i>.");
   setBeat("ledger", 0, {
     h: "Money is just a list of balances",
     cap: "Press send. A coin appears to fly between people, but watch closely. Nothing physical moves: one number drops, another rises. That list <b>is</b> the money.",
@@ -401,7 +401,7 @@ import './lessons-extra.js'; // Ensure extra runs first
      ============================================================ */
   setBeat("doublespend", 1, {
     h: "The fix: everyone agrees on the order",
-    cap: "Both payments are validly signed. Cryptography proves <b>who</b>, never <b>when</b>. Broadcast both, then let the network settle on one order. The first one in wins; the second is rejected as a double-spend.",
+    cap: "Both payments are validly signed. Cryptography proves <b>who</b> signed a message, but says nothing about <b>when</b> it arrived. Broadcast both, then let the network settle on one order. The first one in wins; the second is rejected as a double-spend.",
     build(s) {
       const wrap = el("div", "fcard");
       wrap.innerHTML = `<div class="dord">
@@ -480,7 +480,7 @@ import './lessons-extra.js'; // Ensure extra runs first
         else { const r = el("button", "btn", "Replay"); r.onclick = () => { state = "base"; msg.innerHTML = `A healthy chain, growing one block at a time.`; render(); }; ctl.appendChild(r); }
       }
       function pick(which) { state = which; msg.innerHTML = which === "a"
-        ? `#4a won. <span style="color:var(--green)">Your payment survived</span> and is now one block deeper. But notice: it survived by <i>luck of the race</i>, not merit. That's why one confirmation is a coin-flip and six is a wall.`
+        ? `#4a won. <span style="color:var(--green)">Your payment survived</span> and is now one block deeper, but only because of the <i>luck of the race</i>, not because it was more valid. That's why one confirmation is a coin-flip and six is a wall.`
         : `#4b won, and <span style="color:var(--red)">your payment just vanished from the chain</span>. Orphaned with its block, it slides back to the waiting pool, unconfirmed. It will ride the next block. If a merchant had shipped goods at zero confirmations, this exact moment is how they get burned.`; render(); }
       render();
     }
@@ -555,7 +555,7 @@ import './lessons-extra.js'; // Ensure extra runs first
         if (!document.contains(wrap)) { clearTimeout(timer); return; }
         drawStages(); setMsg();
         if (forged && phase === 0) { forged = false;
-          wrap.querySelector("#mmsg").innerHTML = `<span style="color:var(--red)">Your forged payment hit the Sign check and died instantly</span>. The signature doesn't verify against the sender's key, so every single node drops it before it ever reaches a block. Nobody decided this. No admin acted. <b>The machine defends itself.</b>`;
+          wrap.querySelector("#mmsg").innerHTML = `<span style="color:var(--red)">Your forged payment hit the Sign check and died instantly</span>. The signature doesn't verify against the sender's key, so every single node drops it before it ever reaches a block. <b>There's no admin and no vote: just an automatic check failing.</b>`;
           wrap.querySelector("#mnlab").textContent = "forged tx rejected ✕"; }
         if (phase === 0) curTx = "pay:" + ((Math.random() * 1e6) | 0);
         if (phase === 2) mineBlock();
@@ -582,31 +582,31 @@ import './lessons-extra.js'; // Ensure extra runs first
      ============================================================ */
   const setBridge = (id, html) => { if (L[id]) L[id].bridge = html; };
   const BRIDGES = {
-    ledger: "You've seen that money is nothing but a <b>list of balances</b>. But a list has to live somewhere, kept by someone. The real question becomes: <i>who do you trust to hold it, and what happens the day they fail you?</i>",
-    why: "A single keeper is a single point of control and failure. Handing the list to <b>everyone</b> removes that keeper, but it tears open a new hole: if a coin is just data, and data copies perfectly, what stops you spending the same coin twice?",
-    doublespend: "So the hard part was never <i>sending</i> digital money. It is getting strangers to agree on the <b>order</b> of payments with no referee. That agreement machine has a name. Next you'll see its whole shape at once.",
+    ledger: "Money is nothing but a <b>list of balances</b>, and that list has to live somewhere, kept by someone. Today, banks keep it. That works fine until an account is frozen, the bank fails, or a regulator orders a change the account holder never agreed to.",
+    why: "A single keeper is a single point of control and failure. Handing the list to <b>everyone</b> removes that keeper, but it opens a new hole: a coin is just data, and data copies perfectly. The next lesson covers what stops you from spending the same coin twice.",
+    doublespend: "Sending digital money turns out to be the easy part. The hard part is getting strangers to agree on the <b>order</b> of payments with no referee, and that's exactly what a blockchain is built to do. The next lesson lays out its whole shape.",
     whatis: "That's the model: <b>blocks</b> of records, <b>chained</b> by fingerprints, <b>copied</b> everywhere. Before we forge each piece, watch one real payment travel the entire machine, end to end.",
     tour: "Sign, broadcast, mine, chain, settle. Five moves and the payment is permanent. Every one of them leans on a single tool you haven't met yet: the <b>fingerprint</b>. Start there.",
-    hashing: "A hash proves nothing was <i>changed</i>. But it can't prove <i>who</i> changed it, as anyone can hash anything. To actually own money, you need a fingerprint that <b>only you</b> can produce.",
-    keys: "A signature proves <b>you</b> authorised one specific message. Bundle that signature with a from, a to, and an amount, and you've built the only thing a blockchain ever really moves: a <b>transaction</b>.",
-    tx: "One signed transaction, waiting in the mempool. Now the miner's job: scoop a batch of them into a box and <b>seal it shut</b>, so no one can ever reshuffle what's inside.",
-    block: "You sealed a block with one fingerprint. But a real block holds <b>thousands</b> of transactions. How does a single short hash stand in for all of them, and still let you prove any one is inside?",
-    merkle: "The Merkle root crushes a whole block into one hash for the header. But building a block is <i>easy</i>, anyone can do it. What makes <b>adding</b> one to the chain cost real money is the single number you tune next.",
-    nonce: "Mining is just spinning that dial until the hash lands in the target zone. It requires millions of guesses and real electricity burned. This raises the obvious question: <i>why would anyone pay to do that?</i>",
-    incentives: "The block pays its own miner, so honesty is simply the profitable move. Now the last piece of the chain itself: how each sealed block <b>locks onto the one before it</b>, and why that makes the past unrewritable.",
-    chainlink: "Fingerprints make tampering visible; work makes fixing it a race you lose. That is <i>one</i> computer's chain, but there are thousands. How does a new block reach all of them, and what happens when two appear at once?",
-    gossip: "News spreads with no coordinator, hop by hop. Because light isn't instant, two miners can win at nearly the same moment. When the network briefly <b>splits in two</b>, which block is real?",
-    forks: "The longest chain wins, and every confirmation buries your payment deeper. That whole safety rests on one bet: that no single miner controls most of the power. <i>What if someone did?</i>",
-    attack: "Even a majority can only reverse its <i>own</i> recent payments. It cannot forge signatures or mint coins from nothing. Proof of work makes attacks expensive with <b>electricity</b>. There is a second way to make them expensive: money on the line.",
-    pos: "Work or stake, the trick is identical: make lying cost more than it pays. You now understand how a chain of pure <b>payments</b> stays honest. The next leap: what happens when the chain can run <i>programs</i>?",
+    hashing: "A hash proves nothing was <i>changed</i>. It can't prove <i>who</i> changed it, since anyone can hash anything. To actually own money, you need a fingerprint that <b>only you</b> can produce.",
+    keys: "A signature proves <b>you</b> authorised one specific message. Add a from, a to, and an amount to that signature and you have a <b>transaction</b>, the basic unit everything else in this course builds on.",
+    tx: "One signed transaction, waiting in the mempool. The miner's job is to scoop a batch of them into a box and <b>seal it shut</b>, so no one can ever reshuffle what's inside.",
+    block: "You sealed a block with one fingerprint, but a real block holds <b>thousands</b> of transactions. The next lesson shows how a single short hash can stand in for all of them, and still let you prove any one is inside.",
+    merkle: "The Merkle root crushes a whole block into one hash for the header. But building a block is <i>easy</i>; anyone can do it. What makes <b>adding</b> one to the chain cost real money is the single number you tune next.",
+    nonce: "Mining is just spinning that dial until the hash lands in the target zone. It requires millions of guesses and real electricity burned. The next lesson covers why anyone would bother: miners get paid for it.",
+    incentives: "The block pays its own miner, so honesty is simply the profitable move. The next lesson covers the last piece of the chain itself: how each sealed block <b>locks onto the one before it</b>, and why that makes the past unrewritable.",
+    chainlink: "Fingerprints make tampering visible; work makes fixing it a race you lose. That is <i>one</i> computer's chain, but there are thousands of them. The next lesson covers how a new block reaches all of them, and what happens when two appear at once.",
+    gossip: "News spreads with no coordinator, hop by hop. Because light isn't instant, two miners can win at nearly the same moment. When the network briefly <b>splits in two</b>, the next lesson covers which block ends up real.",
+    forks: "The longest chain wins, and every confirmation buries your payment deeper. That whole safety rests on one bet: that no single miner controls most of the power. The next lesson covers what happens if someone did.",
+    attack: "Even a majority can only reverse its <i>own</i> recent payments. It cannot forge signatures or mint coins from nothing. Proof of work makes attacks expensive by burning <b>electricity</b>. The next lesson covers a second way to make attacks expensive: putting money on the line instead.",
+    pos: "Work or stake, the trick is identical: make lying cost more than it pays. A chain of pure <b>payments</b> can stay honest either way. The next leap is what happens when the chain can run <i>programs</i>.",
     contracts: "A contract is unstoppable code that holds funds by its own rules. Once a chain can run code, it can track far more than one coin. It can mint <b>entirely new assets</b>.",
-    tokens: "Tokens and NFTs are just entries in a contract's ledger. But every one of them (coins, tokens, NFTs) is only <i>yours</i> because of a key. So where does that key actually live, and who holds it?",
-    wallets: "A wallet holds <b>keys</b>, not coins, and “not your keys, not your coins” is the whole trade-off. Keys let anyone use the chain, but if everyone does at once, a deliberately slow base layer chokes. How do you scale without breaking it?",
-    layer2: "Rollups do the work off to the side and post one summary back. Some prove that summary is honest <i>without revealing the transactions inside</i>. They use a piece of maths that sounds impossible until you play with it.",
-    zk: "Prove something true while revealing nothing else: private payments, cheap scaling, quiet compliance. Now zoom all the way out. This same technology can free money from the state, or hand the state total control.",
+    tokens: "Tokens and NFTs are just entries in a contract's ledger, and every one of them (coins, tokens, NFTs) is only <i>yours</i> because of a key. The next lesson covers where that key actually lives, and who holds it.",
+    wallets: "A wallet holds <b>keys</b>, not coins, and \"not your keys, not your coins\" is the whole trade-off. Keys let anyone use the chain, but if everyone does at once, a deliberately slow base layer chokes. The next lesson covers how to scale without breaking it.",
+    layer2: "Rollups do the work off to the side and post one summary back. Some prove that summary is honest <i>without revealing the transactions inside</i>, using zero-knowledge proofs, math that sounds impossible until you see it work.",
+    zk: "Proving something true while revealing nothing else enables private payments, cheap scaling, and provable compliance. This same technology can free money from the state, or hand the state total control over it.",
     money: "From censorship-proof Bitcoin to a programmable CBDC, it is a spectrum set entirely by <b>who holds the keys</b>. None of it protects <i>you</i> from being talked out of your own keys, which is how most crypto is actually lost.",
-    safety: "Urgency, secrecy, guaranteed upside: that is the shape of every scam, because the chain is hard to attack but people are not. That is the last piece. You have now built every part by hand. Time to watch them run <b>together</b>.",
-    recap: "That's the whole machine: strangers keeping one honest record with no one in charge. Take the referee out and you get money no state can freeze; hand a state the keys and you get the most controllable money in history. Same machine, pointed in opposite directions. Now you understand exactly why.",
+    safety: "Most scams run on urgency, secrecy, and a promise of guaranteed upside, because attacking the chain is hard but tricking a person into handing over their key is easy. That's the last piece. You've now built every part of the machine by hand; time to watch them run <b>together</b>.",
+    recap: "That's the whole machine: strangers keeping one honest record with no one in charge. Take the referee out and the result is money no state can freeze. Hand a state the keys and the result is the most controllable money in history. It's the same technology, producing an opposite result depending only on who holds the keys.",
   };
   Object.keys(BRIDGES).forEach(id => setBridge(id, BRIDGES[id]));
 
@@ -615,20 +615,20 @@ import './lessons-extra.js'; // Ensure extra runs first
      lessons whose "deeper" was thinnest.
      ============================================================ */
   setDeeper("block", `<p>A block has two parts: a small fixed-size <b>header</b> and the list of transactions. The header holds the previous block's hash, a timestamp, the difficulty target, the nonce, and one more field: the <b>Merkle root</b>. It is a single hash that stands in for every transaction in the body (the very next lesson builds it). Hashing that roughly 80-byte header is what produces the block's ID and its seal.</p>
-    <p>That header design is a quiet masterstroke: because the root commits to <i>all</i> the transactions, you can prove things about a block's contents using only the tiny header. A miner only ever has to hash 80 bytes, no matter whether the block carries ten transactions or ten thousand.</p>
+    <p>That header design does a lot of work: because the root commits to <i>all</i> the transactions, you can prove things about a block's contents using only the tiny header. A miner only ever has to hash 80 bytes, no matter whether the block carries ten transactions or ten thousand.</p>
     <p>A block on its own is nothing special; anyone can build one in a millisecond. What makes <i>adding</i> it to the chain expensive, and the past unrewritable, is everything still ahead of you: the nonce that costs real work, the reward that pays for that work, and the links that chain each block to the last.</p>`);
 
   setDeeper("merkle", `<p>The tree's height is <code>log₂(n)</code>, so a million transactions need only about <b>20</b> sibling hashes to prove membership, and a billion need about <b>30</b>. Doubling the block size adds a single hash to any proof. That logarithmic scaling is the whole trick.</p>
     <p>The proof is <b>self-verifying</b>: you re-hash your transaction with each supplied sibling, climbing the tree, and you either land on the known Merkle root or you don't. A forged sibling produces the wrong root, so the proof fails safely even when a completely untrusted server hands it to you. You never trust the source, only the root.</p>
     <p>This is exactly what lets a phone wallet (a "light client") confirm a payment in milliseconds. It stores only the tiny block headers, asks a full node for one short Merkle branch, and checks it against the root already in the header. This verifies that a transaction is really in the chain without ever downloading the hundreds of gigabytes of the chain itself.</p>
-    <p>Satoshi designed for this from day one: the whitepaper gives light clients their own section (§8, “Simplified Payment Verification”) built entirely on the Merkle branch you just clicked through.</p>
-    <blockquote>“It is possible to verify payments without running a full network node. A user only needs to keep a copy of the block headers of the longest proof-of-work chain… and obtain the Merkle branch linking the transaction to the block it's timestamped in.” - <a href="https://bitcoin.org/bitcoin.pdf" target="_blank" rel="noopener">Satoshi Nakamoto, the Bitcoin whitepaper (2008), §8</a></blockquote>`);
+    <p>Satoshi designed for this from day one: the whitepaper gives light clients their own section (§8, "Simplified Payment Verification") built entirely on the Merkle branch you just clicked through.</p>
+    <blockquote>"It is possible to verify payments without running a full network node. A user only needs to keep a copy of the block headers of the longest proof-of-work chain… and obtain the Merkle branch linking the transaction to the block it's timestamped in." - <a href="https://bitcoin.org/bitcoin.pdf" target="_blank" rel="noopener">Satoshi Nakamoto, the Bitcoin whitepaper (2008), §8</a></blockquote>`);
 
   setDeeper("tokens", `<p>Under the hood a token contract is almost boringly simple: a single table mapping addresses to numbers (<code>balances[you] = 40</code>) plus a <code>transfer</code> function that subtracts from one row and adds to another. That is the entire "coin." There is no coin object anywhere; there is only the table, and everyone's agreement about it.</p>
     <p>What makes tokens powerful is <b>standards</b>. ERC-20 (fungible) and ERC-721 (non-fungible) fix a shared set of function names, so every wallet, exchange, and contract can handle a token it has never seen before. That common interface is why thousands of different tokens just work everywhere, and why one contract can snap into another. This is the composability that DeFi is built from.</p>
     <p>The catch with NFTs: the contract usually stores only a <b>pointer</b> (a URL or an IPFS hash) to the image, not the image itself. So "I own the NFT" really means "the chain agrees I own token #7, whose metadata points over there." Owning the entry is ironclad; owning the thing it points at is only as durable as wherever that file actually lives.</p>`);
 
-  setDeeper("tour", `<p>Those five moves map cleanly onto the rest of the course: <b>signing</b> is Cryptography; <b>pooling and sealing with work</b> are Building the Chain; <b>every copy agreeing</b> is Consensus. If you remember one thing, remember the loop: <i>sign, pool, seal, link, agree</i>. This repeats on Bitcoin roughly every ten minutes, forever.</p>
-    <p>Two details to carry forward. First, the payment is never "done" the instant it lands in a block; it becomes <i>progressively</i> final as more blocks stack on top, which is why merchants wait for confirmations. Second, no one is in charge of any single step: you broadcast to whoever will listen, any miner may seal your payment, and every node independently re-checks the result. The absence of a coordinator isn't a gap in the design. It <b>is</b> the design.</p>`);
+  setDeeper("tour", `<p>Those five moves map cleanly onto the rest of the course: <b>signing</b> is Cryptography; <b>pooling and sealing with work</b> are Building the Chain; <b>every copy agreeing</b> is Consensus. The loop is <i>sign, pool, seal, link, agree</i>, and it repeats on Bitcoin roughly every ten minutes, forever.</p>
+    <p>Two details to carry forward. First, the payment is never "done" the instant it lands in a block; it becomes <i>progressively</i> final as more blocks stack on top, which is why merchants wait for confirmations. Second, no one is in charge of any single step, and that's deliberate: you broadcast to whoever will listen, any miner may seal your payment, and every node independently re-checks the result on its own.</p>`);
 
 })();

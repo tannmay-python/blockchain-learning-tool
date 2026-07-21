@@ -265,7 +265,7 @@ export const VIEWS = (function () {
         <span class="ob-mark" aria-hidden="true">◇</span>
         <div class="ob-main">
           <div class="ob-t">Optional chapter</div>
-          <p class="ob-d">Nothing later in the course depends on <b>${w.title}</b>. Take it if it interests you, skip it if it doesn't.</p>
+          <p class="ob-d">Nothing later in the course depends on <b>${w.title}</b>. Take it because it interests you, not because it's required.</p>
         </div>
         <button class="btn ob-skip" data-go="#/map">Back to the map →</button>
       </div>` : ""}

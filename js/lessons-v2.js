@@ -63,9 +63,9 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
   /* ---- 01.3 Who runs the network -------------------------------- */
   L.nodes = {
     world: "foundations", title: "Who runs it?", oneliner: "Wallets, full nodes, and miners", icon: "▣",
-    hero: "\"The network\" sounds like one thing. It is really three different jobs, done by different machines with different powers. Sorting out who does what kills most of the confusion about blockchains in one go.",
+    hero: "\"The network\" sounds like one thing. It is really three different jobs, run by different machines with different powers: wallets, full nodes, and miners.",
     beats: [
-      { n: "01", h: "Three jobs, not one", cap: "Everyone on the network is doing one of three jobs. They hold different amounts of data, and they can do very different things. Pick a role and see exactly what it can and cannot do.",
+      { n: "01", h: "Three jobs on one network", cap: "Everyone on the network is doing one of three jobs. They hold different amounts of data, and they can do very different things. Pick a role and see exactly what it can and cannot do.",
         build(s) {
           const ROLES = [
             { k: "Wallet", ic: "❖", holds: "Your keys. Nothing else.", size: "a few kilobytes",
@@ -75,7 +75,7 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
             { k: "Full node", ic: "▣", holds: "Every block, every transaction, ever.", size: "hundreds of gigabytes",
               can: ["Verify every rule for itself", "Reject an invalid block instantly", "Serve the chain to wallets"],
               cant: ["Create new blocks", "Force anyone to accept its view"],
-              note: "This is the one that matters. A full node takes nobody's word for anything: it checks every signature and every seal itself." },
+              note: "A full node takes nobody's word for anything: it checks every signature and every seal itself." },
             { k: "Miner", ic: "⛏", holds: "Every block, plus a lot of hardware.", size: "gigabytes, and megawatts",
               can: ["Propose the next block", "Choose which transactions to include", "Reorder the queue for profit"],
               cant: ["Break a signature rule and be accepted", "Spend coins it does not own"],
@@ -102,7 +102,7 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
           draw(0);
         } },
 
-      { n: "02", h: "Run a node for ten seconds", cap: "A full node is not clever. It is a checklist. A block arrives, it runs three checks, and it accepts or rejects. Break any rule and watch it refuse. no committee, no appeal.",
+      { n: "02", h: "Run a node for ten seconds", cap: "A full node just runs a fixed checklist. A block arrives, three checks run, and it gets accepted or rejected. Break any rule and watch it refuse the block: no committee, no appeal.",
         build(s) {
           let rules = { link: true, seal: true, sig: true };
           const w = card(s, "an incoming block, and your checklist", `
@@ -150,29 +150,29 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
               <div class="kvs"><div class="k">disk needed</div><div class="v">${t < .5 ? "~5 MB" : "~600 GB"}</div></div>
               <div class="kvs"><div class="k">if your provider lies about your balance</div><div class="v">${t < .5 ? "you believe it" : "you catch it"}</div></div>
               <p class="note" style="margin-top:12px">${t < .5
-                ? "A light wallet asks a server “am I rich?” and believes the answer. In practice this is usually fine, and it is also exactly the middleman the whole system was built to remove."
-                : "A full node is the only way to be certain. You are not trusting a company, a website, or a miner. You are checking the maths yourself."}</p>`;
+                ? "A light wallet asks a server \"am I rich?\" and believes the answer. In practice this is usually fine, and it is also exactly the middleman the whole system was built to remove."
+                : "A full node is the only way to be certain. You check the maths yourself."}</p>`;
           };
           w.querySelector("#tr").oninput = (e) => draw(+e.target.value);
           draw(0);
         } },
     ],
-    deeper: P("The split between miners and full nodes is the most misunderstood part of the whole design. Miners have hashpower, so people assume miners are in charge. They are not. A miner who mints itself a million coins produces a block that every full node rejects on sight, and a rejected block earns nothing. Miners choose the <b>order</b> of transactions; full nodes enforce the <b>rules</b>. This is exactly why the 2017 Bitcoin block-size fight was settled by node operators rather than by mining pools, despite the pools having the raw power."),
+    deeper: P("Miners have hashpower, so it's tempting to assume miners are in charge. They are not. A miner who mints itself a million coins produces a block that every full node rejects on sight, and a rejected block earns nothing. That's exactly why the 2017 Bitcoin block-size fight was settled by node operators, who simply refused to run the software that changed the rules, despite mining pools holding the raw hashpower."),
   };
 
   /* ---- 06.2 Finality -------------------------------------------- */
   L.finality = {
     world: "attacks", title: "How final is final?", oneliner: "Confirmations, reorgs, and when to ship", icon: "◷",
-    hero: "You have seen that the longest chain wins. That has an uncomfortable consequence: a payment that looks settled can still be undone, if someone builds a longer chain. \"Final\" is not a yes or no. It is a probability that climbs with every block.",
+    hero: "The longest chain wins, and that has an uncomfortable consequence: a payment that looks settled can still be undone if someone builds a longer chain. Finality isn't a yes-or-no state, it's a probability that climbs with every block.",
     beats: [
-      { n: "01", h: "Nothing is settled, only expensive to undo", cap: "Every block stacked on top of yours makes reversing it harder. Drag through the confirmations and watch the cost of a reversal climb. This is why a coffee and a car have very different waiting rooms.",
+      { n: "01", h: "Confirmations raise the cost of reversal", cap: "Every block stacked on top of yours makes reversing it harder. Drag through the confirmations and watch the cost of a reversal climb, which is why a coffee and a car call for very different waits.",
         build(s) {
           const w = card(s, "confirmations, and what they buy you", `
             <input type="range" min="0" max="12" value="0" id="cf" style="width:100%">
             <div class="xchain" id="blocks" style="margin:14px 0"></div>
             <div id="out"></div>`);
           const POLICY = [
-            [0, "nothing", "A payment nobody has mined yet. It is a promise, not a fact."],
+            [0, "nothing", "A payment nobody has mined yet, so there is nothing on any chain yet to reverse."],
             [1, "a coffee", "One block. Cheap to reverse, but nobody burns a block to steal a flat white."],
             [3, "a laptop", "Three blocks is the common merchant default for ordinary goods."],
             [6, "a car", "Six is the old Bitcoin convention: about an hour, and priced out of casual attack."],
@@ -196,7 +196,7 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
           draw(0);
         } },
 
-      { n: "02", h: "Watch one get undone", cap: "This is not theoretical. Here is your payment, two blocks deep and looking settled. Then a longer chain arrives that was mined in secret, and your block is simply not part of history any more.",
+      { n: "02", h: "Watch one get undone", cap: "Here is your payment, two blocks deep and looking settled. Then a longer chain, mined in secret, arrives and takes over, and your block simply stops being part of history.",
         build(s) {
           const w = card(s, "your payment, and a rival chain", `
             <div id="stage" style="min-height:120px"></div>
@@ -242,15 +242,15 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
             </div>`).join("");
         } },
     ],
-    deeper: P("The exponential in beat one is Satoshi's, from section 11 of the Bitcoin paper. An attacker holding a fraction <b>q</b> of the hashpower catches up from <b>n</b> blocks behind with probability roughly (q/(1-q))<sup>n</sup> when q &lt; 0.5. At 20% and six blocks that is under a thousandth of a percent, which is why six became folklore. Notice what happens as q approaches 0.5: the ratio approaches 1, the exponent stops helping, and no number of confirmations is enough. That is the real content of the 51% threshold."),
+    deeper: P("The exponential in beat one is Satoshi's, from section 11 of the Bitcoin paper: an attacker holding a fraction <b>q</b> of the hashpower catches up from <b>n</b> blocks behind with probability roughly (q/(1-q))<sup>n</sup> when q &lt; 0.5. At 20% and six blocks, that works out to under a thousandth of a percent, which is why six became the folk convention. As q approaches 0.5, the ratio approaches 1, the exponent stops helping, and no number of confirmations closes the gap. That's what the 51% threshold actually means."),
   };
 
   /* ---- 07.2 Seed phrases ---------------------------------------- */
   L.seed = {
     world: "keysworld", title: "Twelve words", oneliner: "How a seed phrase backs up a fortune", icon: "✎",
-    hero: "A wallet does not really store coins, and it barely stores keys. It stores one number, written down as a handful of ordinary English words. Every key you will ever own unfolds from it, deterministically, forever.",
+    hero: "A wallet mostly holds a single number, written down as a handful of ordinary English words. Every key you will ever own unfolds from that one number, deterministically, forever.",
     beats: phrase.concat([
-      { n: "02", h: "Lose a word and find out", cap: "The words are not arbitrary. They come from a fixed list of 2048, and the last word encodes a <b>checksum</b> of all the others. That makes a typo obvious. it also makes a missing word recoverable, and a missing three words hopeless.",
+      { n: "02", h: "Lose a word and find out", cap: "The words come from a fixed list of 2048, and the last word encodes a <b>checksum</b> of all the others. That makes a typo obvious, makes one missing word recoverable, and turns three missing words into a lost cause.",
         build(s) {
           const WORDS = ["ridge", "cactus", "velvet", "orbit", "salmon", "timber", "gossip", "anchor", "puzzle", "meadow", "lantern", "crisp"];
           let lost = 0;
@@ -285,7 +285,7 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
           const OPT = [
             { t: "A screenshot on your phone", theft: 5, loss: 1, v: "Synced to a cloud account protected by a password you reuse. This is the single most common way people are robbed." },
             { t: "Written on paper, in a drawer", theft: 3, loss: 3, v: "Fine against hackers, useless against a house fire, a flood, or a tidy-minded relative." },
-            { t: "Stamped into steel, in a safe", theft: 2, loss: 1, v: "Survives fire and water. Costs a little money and an afternoon. This is what serious holders do." },
+            { t: "Stamped into steel, in a safe", theft: 2, loss: 1, v: "Survives fire and water. Costs a little money and an afternoon: what serious holders actually use." },
             { t: "Split in three, two needed", theft: 1, loss: 2, v: "Shamir-style splitting: no single location can be robbed, but you now have three things to keep track of, and losing two is fatal." },
             { t: "Memorised, nowhere else", theft: 1, loss: 5, v: "Nobody can steal a thought. Unfortunately you will forget it, and there is no recovery from a forgotten phrase." },
           ];
@@ -302,7 +302,7 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
             </div>`).join("");
         } },
     ]),
-    deeper: P("The scheme is BIP-39, and the maths is tidier than it looks. Your wallet picks 128 bits of entropy, appends a 4-bit checksum taken from the SHA-256 of that entropy, and slices the 132 bits into twelve 11-bit chunks. Each chunk indexes a fixed 2048-word list, which is why the words are always ordinary and never quite random-sounding. Those bits then seed BIP-32, a tree of keys derived by repeated hashing, so a single phrase regenerates every address you have ever used, in order, on any wallet software, forever. The words are not a password on your wallet. They <b>are</b> the wallet."),
+    deeper: P("The scheme is BIP-39, and the maths is tidier than it looks. Your wallet picks 128 bits of entropy, appends a 4-bit checksum taken from the SHA-256 of that entropy, and slices the 132 bits into twelve 11-bit chunks. Each chunk indexes a fixed 2048-word list, which is why the words are always ordinary and never quite random-sounding. Those bits then seed BIP-32, a tree of keys derived by repeated hashing, so a single phrase regenerates every address you have ever used, in order, on any wallet software, forever. Nothing about the wallet is stored anywhere else: whoever holds those twelve words can rebuild every key from scratch."),
   };
 
   /* ---- 08.2 Gas -------------------------------------------------- */
@@ -356,27 +356,27 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
             m.className = "sig-state " + (inBlock ? "good" : "bad");
             m.innerHTML = inBlock
               ? `<b>Included.</b> You outbid the queue and land in the next block, roughly 12 seconds away. You pay ${bid} gwei whether the network needed it or not.`
-              : `<b>Still waiting.</b> Five seats, and ${rank} people bid more than you. Your transaction is not lost, it just sits in the mempool until the network calms down or you raise the bid.`;
+              : `<b>Still waiting.</b> Five seats, and ${rank} people bid more than you, so your transaction sits in the mempool until the network calms down or you raise your bid.`;
           };
           w.querySelector("#bid").oninput = (e) => { bid = +e.target.value; w.querySelector("#bidv").textContent = bid + " gwei"; draw(); };
           w.querySelector("#load").oninput = (e) => { load = +e.target.value; w.querySelector("#loadv").textContent = LOADS[load].k; draw(); };
           draw();
         } },
     ]),
-    deeper: P("Gas separates two things that feel like one: <b>how much work</b> an operation costs, and <b>how much you pay</b> for it. The work is fixed by the protocol, in gas units, identical on every machine. a storage write is 20,000 gas whether the network is idle or on fire. The price of a gas unit is what floats, set by an auction for the limited space in each block. Ethereum's EIP-1559 later split that price into a <b>base fee</b> that the protocol burns and adjusts automatically, plus a <b>tip</b> that goes to the proposer, which is why fees became far more predictable without ever becoming free."),
+    deeper: P("Gas separates two things that feel like one: <b>how much work</b> an operation costs, and <b>how much you pay</b> for it. The work is fixed by the protocol, in gas units, identical on every machine: a storage write costs 20,000 gas whether the network is idle or on fire. The price of a gas unit is what floats, set by an auction for the limited space in each block. Ethereum's EIP-1559 later split that price into a <b>base fee</b> that the protocol burns and adjusts automatically, plus a <b>tip</b> that goes to the proposer, which is why fees became far more predictable without ever becoming free."),
   };
 
   /* ---- 10.3 Regulation ------------------------------------------- */
   L.regulation = {
     world: "state", title: "Regulating a protocol", oneliner: "Where the law can actually reach", icon: "§",
-    hero: "You cannot serve a court order on a hash function. But almost nobody touches a blockchain directly. they touch an exchange, an app, a bank. Regulation works by finding the places where the decentralised thing meets an entity with an address and a bank account.",
+    hero: "You cannot serve a court order on a hash function, but almost nobody touches a blockchain directly: they touch an exchange, an app, a bank. Regulation works by finding the places where the decentralised thing meets an entity with an address and a bank account.",
     beats: [
       { n: "01", h: "Find the pressure points", cap: "Here is the stack, from raw protocol to the person holding the phone. Click each layer and see how much leverage a regulator actually has over it. The answer changes sharply as you move up.",
         build(s) {
           const LAYERS = [
             { t: "The protocol", grip: 0, d: "Open-source rules running on machines in every jurisdiction at once. There is no company, no office and no server to seize. Banning the maths has never worked anywhere it has been tried." },
-            { t: "Node operators & miners", grip: 1, d: "Real people using real electricity in real places. China's 2021 mining ban moved an estimated half of the world's Bitcoin hashrate in a matter of months. The chain did not stop. it just moved house." },
-            { t: "Wallet & app developers", grip: 2, d: "Publishing code is largely speech, but running an interface, holding keys, or taking a fee starts to look like operating a business. This is the genuinely contested frontier." },
+            { t: "Node operators & miners", grip: 1, d: "Real people using real electricity in real places. China's 2021 mining ban moved an estimated half of the world's Bitcoin hashrate in a matter of months. The chain did not stop, it just moved house." },
+            { t: "Wallet & app developers", grip: 2, d: "Publishing code is largely speech, but running an interface, holding keys, or taking a fee starts to look like operating a business. It's the genuinely contested frontier right now." },
             { t: "Exchanges & custodians", grip: 4, d: "Holds customer money, needs banking, needs licences. This is where nearly all real regulation lands: KYC checks, reporting, capital rules, audits." },
             { t: "Banks & payment rails", grip: 5, d: "The oldest and tightest chokepoint. Cut an exchange off from the banking system and it does not matter how decentralised the chain underneath is." },
           ];
@@ -439,13 +439,13 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
             w.querySelector("#out").innerHTML = `
               <div class="sig-state good" style="margin-bottom:10px"><b>You gain.</b> ${gain}</div>
               <div class="sig-state bad"><b>You pay.</b> ${cost}</div>
-              <p class="note" style="margin-top:12px">There is no setting on this dial that is simply correct. Which is why this is a political question and not a technical one, and why it is being answered differently in Brussels, Washington, Beijing and Delhi.</p>`;
+              <p class="note" style="margin-top:12px">There is no setting on this dial that is simply correct, which is why this is a political question rather than a technical one, and why Brussels, Washington, Beijing and Delhi are answering it differently.</p>`;
           };
           w.querySelector("#d").oninput = (e) => draw(+e.target.value);
           draw(50);
         } },
     ],
-    deeper: P("The pattern above has a name in the literature: regulating the <b>on-ramps and off-ramps</b> rather than the network. It is why the EU's MiCA regime and the FATF travel rule both define obligations for “virtual asset service providers”, an entity-shaped category, and say almost nothing about the protocols themselves. It also explains the shape of the hardest open questions, which are precisely the cases where no entity exists: a decentralised exchange that is only a contract, a privacy tool that is only a library, a stablecoin issuer that has redomiciled offshore. India's own approach has so far run along the same grain. tax and reporting duties on exchanges, rather than any attempt to reach the chain."),
+    deeper: P("The pattern above is well known: regulators go after the <b>on-ramps and off-ramps</b>, the points where the system touches banks and identity. It is why the EU's MiCA regime and the FATF travel rule both define obligations for \"virtual asset service providers\", an entity-shaped category, and say almost nothing about the protocols themselves. It also explains the shape of the hardest open questions, which are precisely the cases where no entity exists: a decentralised exchange that is only a contract, a privacy tool that is only a library, a stablecoin issuer that has redomiciled offshore. India's own approach has run along the same grain: tax and reporting duties on exchanges, not any attempt to reach the chain itself."),
   };
 
   /* ============================================================
@@ -454,7 +454,7 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
 
   /* ---- tour: the five-step walk needed a why and a what-if ------- */
   L.tour.beats.push(
-    { n: "02", h: "Where the time actually goes", cap: "The whole trip takes about ten minutes, and it is not evenly spent. Almost all of it is one step. Knowing which one explains why blockchain payments feel the way they do.",
+    { n: "02", h: "Where the time actually goes", cap: "The whole trip takes about ten minutes, but it is not spent evenly: almost all of it is one step, and knowing which one explains why blockchain payments feel the way they do.",
       build(s) {
         const STEPS = [
           { t: "You sign it", ms: 2, d: "Local maths on your own device." },
@@ -479,7 +479,7 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
           </div>`).join("");
       } },
 
-    { n: "03", h: "What breaks at each step", cap: "Each of the five steps has its own failure, and each one is a later chapter in this course. Click a step to see what goes wrong there, and where you will fix it.",
+    { n: "03", h: "What breaks at each step", cap: "Each of the five steps has its own failure, and each one is a later chapter in this course. Click a step to see what goes wrong there, and which later chapter deals with it.",
       build(s) {
         const F = [
           { t: "You sign it", f: "Someone else signs for you", d: "Only possible if they have your key. Which is why the whole custody chapter exists.", w: "Chapter 07" },
@@ -508,7 +508,7 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
 
   /* ---- history: one card-flip beat was not a chapter ------------- */
   L.history.beats.push(
-    { n: "02", h: "Which rule did each one break?", cap: "Every disaster below broke a rule you have already learned. Match the failure to the lesson it violated. the point is that none of them were failures of the chain itself.",
+    { n: "02", h: "Which rule did each one break?", cap: "Every disaster below broke a rule you have already learned. Match the failure to the lesson it violated: none of them were failures of the chain itself.",
       build(s) {
         const CASES = [
           { t: "Mt. Gox, 2014", lost: "850,000 BTC", rule: "Not your keys, not your coins", d: "An exchange held everyone's keys and quietly leaked them for years. The Bitcoin protocol worked perfectly throughout." },
@@ -535,7 +535,7 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
         draw();
       } },
 
-    { n: "03", h: "The chain, or the company?", cap: "Sort them yourself. Every headline said “crypto collapsed”. Almost none of these were the chain failing. that distinction is the single most useful thing in this chapter.",
+    { n: "03", h: "The chain, or the company?", cap: "Sort them yourself. Every headline said \"crypto collapsed,\" but almost none of these were the chain itself failing.",
       build(s) {
         const ITEMS = [
           { t: "Mt. Gox", a: "company" }, { t: "The DAO", a: "chain" }, { t: "Terra / Luna", a: "design" },
@@ -560,8 +560,8 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
           sc.innerHTML = done < ITEMS.length
             ? `${done} of ${ITEMS.length} sorted.`
             : right === ITEMS.length
-              ? "<b>All six.</b> Exactly one of these, The DAO, was a failure on the chain. and even that was a bug in one contract, not in Ethereum. Everything else was a company or an economic design."
-              : `<b>${right} of ${ITEMS.length}.</b> Look again at the ones in red. Ask each time: did the protocol do something it was not supposed to, or did a human promise something they could not keep?`;
+              ? "<b>All six.</b> Exactly one of these, The DAO, was a failure on the chain, and even that was a bug in one contract, not in Ethereum itself. Everything else was a company or an economic design."
+              : `<b>${right} of ${ITEMS.length}.</b> Look again at the ones in red: check whether the protocol did something it wasn't supposed to, or a human promised something they couldn't keep.`;
           w.querySelectorAll("button[data-i]").forEach(b => b.onclick = () => { picks[+b.dataset.i] = b.dataset.k; draw(); });
         };
         draw();
@@ -594,7 +594,7 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
             </div>
             <p class="note" style="margin:0">${searchers < 3
               ? "With almost no competition the searcher keeps nearly everything. This is the early, lucrative era of MEV."
-              : "As searchers pile in they bid against each other, and the profit flows through to whoever orders the block. Your loss does not shrink. it just changes pockets."}</p>`;
+              : "As searchers pile in they bid against each other, and the profit flows through to whoever orders the block. Your loss does not shrink, it just moves from the searcher's pocket to the block producer's."}</p>`;
         };
         w.querySelector("#n").oninput = (e) => { searchers = +e.target.value; w.querySelector("#nv").textContent = searchers; draw(); };
         draw();
@@ -604,7 +604,7 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
   /* ---- difficulty: the retarget half of the old nonce lesson ----- */
   L.difficulty = {
     world: "mining", title: "The difficulty thermostat", oneliner: "Why blocks arrive every ten minutes, forever", icon: "◐",
-    hero: "Miners join and leave constantly. Hashpower has grown by a factor of trillions since 2009. And yet blocks still arrive about every ten minutes. Something is holding that steady, and it is one of the most elegant pieces of the whole design.",
+    hero: "Miners join and leave constantly, and hashpower has grown by a factor of trillions since 2009, yet blocks still arrive about every ten minutes. Something holds that steady: a rule that re-checks the pace every 2016 blocks and adjusts.",
     beats: thermostat.concat([
       { n: "02", h: "Do the retarget yourself", cap: "Every 2016 blocks the network compares how long that batch <b>should</b> have taken with how long it actually took, and scales the difficulty by the ratio. That is the entire algorithm. Try it.",
         build(s) {
@@ -629,7 +629,7 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
               <p class="note" style="margin-top:12px">${days < target
                 ? "Blocks came too fast, so the puzzle gets harder and the average slides back toward ten minutes."
                 : days > target
-                  ? "Blocks came too slowly, so the puzzle gets easier. This is what rescued the chain when China evicted half the world's miners in 2021: two painful weeks of slow blocks, one large downward retarget, back to normal."
+                  ? "Blocks came too slowly, so the puzzle gets easier. This is what rescued the chain when China evicted half the world's miners in 2021: two painful weeks of slow blocks, then one large downward retarget brought it back to normal."
                   : "Perfectly on schedule. No change."}
                 ${Math.abs(ratio - clamped) > 0.001 ? " <b>The adjustment is capped at 4× per retarget</b>, so this one is clamped." : ""}</p>`;
           };
@@ -637,16 +637,16 @@ import './lessons-coin.js'; // capstone sandbox; must land before the renumber b
           draw();
         } },
     ]),
-    deeper: P("The thermostat is what makes the ten-minute target a <b>property of the protocol</b> rather than a property of the hardware. It also quietly sets the security budget: difficulty rises until mining costs roughly what mining earns, so the electricity burned defending the chain tracks the block reward rather than anything about the transactions. That is why the long-run security question for Bitcoin is really a question about fees. once the subsidy halves away to nothing, fees alone have to pay for the thermostat's setting."),
+    deeper: P("The thermostat makes the ten-minute target a <b>property of the protocol</b>, not of the hardware underneath it. It also quietly sets the security budget: difficulty rises until mining costs roughly match mining rewards, so the electricity burned defending the chain scales with the block reward. That is why the long-run security question for Bitcoin is really a question about fees: once the subsidy halves away to nothing, fees alone have to fund the network's security."),
   };
 
   /* ---- wallets: lost its opening beat to `seed`, gains a better one */
   L.wallets.beats.unshift({
-    n: "01", h: "Hot, cold, and the space between", cap: "“Wallet” covers five quite different things, and the only real variable is how far your key sits from the internet. Every step toward safety costs you convenience. There is no option that is both.",
+    n: "01", h: "Hot, cold, and the space between", cap: "\"Wallet\" covers five quite different things, and the only real variable is how far your key sits from the internet. Every step toward safety costs convenience, and none of the five options give you both.",
     build(s) {
       const KINDS = [
-        { t: "Exchange account", key: "Someone else's", risk: 5, use: 5, d: "You do not have a key at all. You have an IOU from a company, which is exactly the arrangement Mt. Gox and FTX customers had." },
-        { t: "Phone wallet", key: "On an internet-connected device", risk: 3, use: 5, d: "Genuinely yours, and genuinely reachable by any malware that gets onto the phone. Fine for spending money." },
+        { t: "Exchange account", key: "Someone else's", risk: 5, use: 5, d: "You don't hold a key at all: you hold an IOU from a company, the same arrangement Mt. Gox and FTX customers had." },
+        { t: "Phone wallet", key: "On an internet-connected device", risk: 3, use: 5, d: "Genuinely yours, but reachable by any malware that gets onto the phone. Fine for spending money." },
         { t: "Hardware wallet", key: "On a chip that never sees the internet", risk: 2, use: 3, d: "The key signs inside the device and never leaves it. A compromised computer can show you a bad address, so you confirm on the device's own screen." },
         { t: "Multisig", key: "Split across 2 or 3 devices", risk: 1, use: 2, d: "Two of three keys are needed to move anything. One stolen key is not enough, and one lost key is not fatal. This is how institutions hold coins." },
         { t: "Paper, offline", key: "Written down, in a safe", risk: 2, use: 1, d: "Unhackable and inconvenient. To spend, you have to bring it back online, which is the moment of maximum risk." },
