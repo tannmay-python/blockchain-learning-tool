@@ -1,5 +1,5 @@
 /* ============================================================
-   app.js: router + ambient canvas backdrops (light theme).
+   app.js: router + hero constellation + confetti.
    ============================================================ */
 import { VIEWS as V } from './views.js';
 import { LESSONS } from './lessons.js';
@@ -12,7 +12,7 @@ export const APP = (function () {
   if (_rmq && _rmq.addEventListener) _rmq.addEventListener("change", e => { RM = e.matches; });
   const isDark = () => document.documentElement.dataset.theme === "dark";
 
-  let _starfieldResize = null, _starfieldAnim = null, _heroResize = null, _themeT = null;
+  let _heroResize = null, _themeT = null;
 
   function route() {
     toggleMobileNav(false);
@@ -31,33 +31,10 @@ export const APP = (function () {
     if (!RM) { const r = document.getElementById("root"); r.classList.remove("viewin"); void r.offsetWidth; r.classList.add("viewin"); }
   }
 
-  /* ambient drifting dots, subtle on a light page */
-  function starfield() {
-    const cv = document.getElementById("starfield"); if (!cv) return;
-    const ctx = cv.getContext("2d"); let W, H, dpr, dots = [];
-    // per-theme dot palettes, resolved every frame so a theme toggle takes effect immediately
-    const PALETTE = { light: ["98,13,60", "241,162,34"], dark: ["198,59,135", "241,162,34"] };
-    let lastW = 0;
-    function size() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (W === lastW && dots.length) return; // height-only change (mobile URL bar), so keep the field
-      lastW = W; dots = []; const n = Math.min(90, Math.round(W * H / (W < 640 ? 36000 : 18000))); for (let i = 0; i < n; i++) dots.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.4 + .4, a: Math.random(), tw: Math.random() * .015 + .003, vy: Math.random() * .1 + .02, ci: (Math.random() * 2) | 0 }); }
-    function frame() {
-      const cols = PALETTE[isDark() ? "dark" : "light"];
-      ctx.clearRect(0, 0, W, H);
-      dots.forEach(s => { s.a += s.tw; const al = .08 + Math.abs(Math.sin(s.a)) * .22; s.y += s.vy; if (s.y > H) { s.y = 0; s.x = Math.random() * W; } ctx.fillStyle = `rgba(${cols[s.ci]},${al})`; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill(); });
-      if (!RM) _starfieldAnim = requestAnimationFrame(frame);
-    }
-    if (_starfieldResize) removeEventListener("resize", _starfieldResize);
-    if (_starfieldAnim) cancelAnimationFrame(_starfieldAnim);
-    _starfieldResize = size;
-    size(); addEventListener("resize", _starfieldResize); frame();
-  }
-
   /* ------------------------------------------------------------------
-     Celebration burst. Its own full-opacity layer: the starfield canvas
-     sits at opacity .5, which washed the old confetti out. Two angled
-     cones fire from the element that earned them (the score dial), so
-     the burst reads as coming from the result, not raining on the page.
+     Celebration burst. Its own full-opacity layer. Two angled cones
+     fire from the element that earned them (the score dial), so the
+     burst reads as coming from the result, not raining on the page.
      ------------------------------------------------------------------ */
   const FX = (function () {
     let cv = null, ctx = null, W = 0, H = 0, dpr = 1, bits = [], running = false;
@@ -214,7 +191,7 @@ export const APP = (function () {
 
   function boot() {
     if (localStorage.getItem("theme") === "dark") document.documentElement.dataset.theme = "dark";
-    starfield(); addEventListener("hashchange", route); route();
+    addEventListener("hashchange", route); route();
     // keyboard: ← / → move between lessons
     addEventListener("keydown", (e) => {
       if (e.key === "Escape") { const mn = document.getElementById("mobileNav"); if (mn && mn.classList.contains("active")) { toggleMobileNav(false); return; } }

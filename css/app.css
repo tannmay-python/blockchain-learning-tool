@@ -59,7 +59,6 @@ button { font-family: var(--sans); cursor: pointer; }
 :focus-visible { outline: 2px solid var(--plum-2); outline-offset: 2px; border-radius: 4px; }
 [tabindex="-1"]:focus { outline: none !important; }
 
-#starfield { position: fixed; inset: 0; z-index: var(--z-bg); pointer-events: none; opacity: .5; }
 /* celebration burst: own layer at full opacity, above everything, inert */
 #fxLayer { position: fixed; top: 0; left: 0; z-index: var(--z-overlay-ui); pointer-events: none; }
 .bg-aura { position: fixed; inset: 0; z-index: var(--z-bg); pointer-events: none;
