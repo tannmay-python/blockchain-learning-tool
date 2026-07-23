@@ -50,7 +50,7 @@ export const APP = (function () {
     if (_starfieldResize) removeEventListener("resize", _starfieldResize);
     if (_starfieldAnim) cancelAnimationFrame(_starfieldAnim);
     _starfieldResize = size;
-    addEventListener("resize", _starfieldResize); frame();
+    size(); addEventListener("resize", _starfieldResize); frame();
   }
 
   /* ------------------------------------------------------------------
