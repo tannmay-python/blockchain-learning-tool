@@ -217,10 +217,12 @@ export const APP = (function () {
       }
     });
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
-  return { heroCanvas, confetti: (originEl) => FX(originEl), toggleTheme, toggleMobileNav };
+  return { heroCanvas, confetti: (originEl) => FX(originEl), toggleTheme, toggleMobileNav, boot };
 })();
 
 /* views.js and lessons-extra.js reach the canvas effects through window.APP.
-   app.js already imports views.js, so they cannot import back without a cycle. */
+   app.js already imports views.js, so they cannot import back without a cycle.
+   Must be set before boot() runs: boot() renders home() synchronously, which
+   calls window.APP.heroCanvas() on the very first paint. */
 window.APP = APP;
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", APP.boot); else APP.boot();
